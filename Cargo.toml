@@ -1,0 +1,7 @@
+[package]
+name = "rust-synth-2"
+version = "0.1.0"
+authors = ["Victor Basso <vitobasso@gmail.com>"]
+
+[dependencies]
+cpal = "0.8.2"
