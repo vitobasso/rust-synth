@@ -1,5 +1,5 @@
 use std::{
-    sync::mpsc::{Receiver, Sender},
+    sync::mpsc::{Receiver, SyncSender},
     thread,
     time::Duration,
 };
@@ -12,7 +12,7 @@ pub enum Command {
 
 type Sample = f32;
 
-pub fn start(sample_rate: f32, cmd_in: Receiver<Command>, signal_out: Sender<Sample>) {
+pub fn start(sample_rate: f32, cmd_in: Receiver<Command>, signal_out: SyncSender<Sample>) {
 
     let mut osc = Switch{ is_saw: false};
     let mut clock: f32 = 0.0;
@@ -31,8 +31,6 @@ pub fn start(sample_rate: f32, cmd_in: Receiver<Command>, signal_out: Sender<Sam
         let normalized_clock: f32 = clock/sample_rate;
         let sample: f32 = osc.next_sample(normalized_clock);
         signal_out.send(sample).expect("Failed to send a sample");
-
-        thread::sleep(Duration::from_nanos(11000)); //prevent sending faster than output can handle
     }
 }
 
