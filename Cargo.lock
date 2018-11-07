@@ -285,6 +285,7 @@ name = "rust-synth-2"
 version = "0.1.0"
 dependencies = [
  "cpal 0.8.2 (registry+https://github.com/rust-lang/crates.io-index)",
+ "termion 1.5.1 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]

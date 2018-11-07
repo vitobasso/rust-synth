@@ -1,23 +1,23 @@
+use oscilator_ctrl::Command;
+use std::thread;
+use std::sync::mpsc::channel;
 
-mod beep;
-use beep::WaveGen;
+mod audio_out;
+mod keyboard_in;
+mod wave_gen;
+mod oscilator_ctrl;
+
+type Sample = f32;
 
 fn main() {
+    let device = cpal::default_output_device().expect("Failed to get default output device");
+    let format = device.default_output_format().expect("Failed to get default output format");
+    let sample_rate = format.sample_rate.0 as f32;
 
-    struct Sine;
-    impl WaveGen for Sine {
-        fn next_sample(&self, clock: f32) -> f32 {
-            (clock * 440.0 * 2.0 * std::f32::consts::PI).sin()
-        }
-    }
+    let (cmd_out, cmd_in) = channel::<Command>();
+    let (sig_out, sig_in) = channel::<Sample>();
 
-    struct Saw;
-    impl WaveGen for Saw {
-        fn next_sample(&self, clock: f32) -> f32 {
-            ((clock * 440.0) % 1.0)
-        }
-    }
-
-    beep::beep(Sine)
-//    beep::beep(Saw)
+    thread::spawn(move || audio_out::play(&device, &format, sig_in));
+    thread::spawn(move || oscilator_ctrl::start(sample_rate, cmd_in, sig_out));
+    keyboard_in::listen(cmd_out);
 }

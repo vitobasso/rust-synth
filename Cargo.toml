@@ -5,3 +5,4 @@ authors = ["Victor Basso <vitobasso@gmail.com>"]
 
 [dependencies]
 cpal = "0.8.2"
+termion = "1.5.1"
