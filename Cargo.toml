@@ -1,8 +1,14 @@
 [package]
-name = "rust-synth-2"
+name = "rust-synth"
 version = "0.1.0"
 authors = ["Victor Basso <vitobasso@gmail.com>"]
 
+[features]
+winit = []
+glium = []
+
 [dependencies]
 cpal = "0.8.2"
-termion = "1.5.1"
+conrod = { version = "0.61.1", features = ["winit", "glium"] }
+find_folder = "0.3.0"
+rand = "*"

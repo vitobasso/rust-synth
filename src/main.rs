@@ -1,11 +1,13 @@
-use oscilator_ctrl::Command;
+#[cfg(all(feature="winit", feature="glium"))] #[macro_use] extern crate conrod;
+
 use std::thread;
 use std::sync::mpsc::{channel, sync_channel};
+use oscilator_ctrl::Command;
 
 mod audio_out;
-mod keyboard_in;
 mod wave_gen;
 mod oscilator_ctrl;
+mod gui;
 
 type Sample = f32;
 
@@ -20,5 +22,5 @@ fn main() {
 
     thread::spawn(move || audio_out::play(&device, &format, sig_in));
     thread::spawn(move || oscilator_ctrl::start(sample_rate, cmd_in, sig_out));
-    keyboard_in::listen(cmd_out);
+    gui::window::show(cmd_out);
 }
