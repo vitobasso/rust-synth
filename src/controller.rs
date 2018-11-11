@@ -1,5 +1,5 @@
 use std::sync::mpsc::{Receiver, SyncSender};
-use instrument::{WaveGen, Instrument, Switch};
+use instrument::*;
 use pitches::Pitch;
 
 pub enum Command {
@@ -15,17 +15,20 @@ pub fn run_forever(sample_rate: f32, cmd_in: Receiver<Command>, signal_out: Sync
     let mut note_on: bool = false;
     let mut instrument = Instrument {
         pitch: Pitch::default(),
-        osc: Switch { is_saw: false }
+        oscilator: Box::new(Sine),
     };
     let mut transpose: i8 = 0_i8;
     let mut clock: f32 = 0.0;
     loop {
         match cmd_in.try_recv() {
             Ok(Command::Osc1) => {
-                instrument.osc.is_saw = false;
+                instrument.oscilator = Box::new(Sine)
             },
             Ok(Command::Osc2) => {
-                instrument.osc.is_saw = true;
+                instrument.oscilator = Box::new(Saw)
+            },
+            Ok(Command::Osc3) => {
+                instrument.oscilator = Box::new(Mix::supersaw(8, 3.0))
             },
             Ok(Command::NoteOn(pitch)) => {
                 instrument.pitch = pitch + transpose;

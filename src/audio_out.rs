@@ -32,7 +32,7 @@ fn feed_buffer<T: SampleFromF32>(mut buffer: OutputBuffer<T>, sig_in: &Receiver<
                     *out = T::from_f32(sample);
                 },
             _ => {
-                println!("sample channel hang up?");
+                panic!("Sample channel hang up?");
             }
         }
     }
