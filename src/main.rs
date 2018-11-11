@@ -2,11 +2,12 @@
 
 use std::thread;
 use std::sync::mpsc::{channel, sync_channel};
-use oscilator_ctrl::Command;
+use controller::Command;
 
 mod audio_out;
-mod wave_gen;
-mod oscilator_ctrl;
+mod instrument;
+mod pitches;
+mod controller;
 mod gui;
 
 type Sample = f32;
@@ -20,7 +21,7 @@ fn main() {
     let (cmd_out, cmd_in) = channel::<Command>();
     let (sig_out, sig_in) = sync_channel::<Sample>(buffer_size);
 
-    thread::spawn(move || audio_out::play(&device, &format, sig_in));
-    thread::spawn(move || oscilator_ctrl::start(sample_rate, cmd_in, sig_out));
+    thread::spawn(move || audio_out::run_forever(&device, &format, sig_in));
+    thread::spawn(move || controller::run_forever(sample_rate, cmd_in, sig_out));
     gui::window::show(cmd_out);
 }

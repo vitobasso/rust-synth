@@ -1,11 +1,11 @@
 // A simple example that demonstrates using conrod within a basic `winit` window loop, using
 // `glium` to render the `conrod::render::Primitives` to screen.
 
-use conrod::{widget, Colorable, Positionable, Widget, event, input};
+use conrod::{widget, Colorable, Positionable, Widget};
 use conrod::backend::glium::glium::{self, Surface};
 use gui;
 use std::sync::mpsc::Sender;
-use oscilator_ctrl::Command;
+use controller::Command;
 
 pub fn show(cmd_out: Sender<Command>) {
     const WIDTH: u32 = 400;
@@ -60,17 +60,8 @@ pub fn show(cmd_out: Sender<Command>) {
                 },
             };
 
-             match input {
-                event::Input::Press(input::Button::Keyboard(input::Key::Up)) =>
-                    cmd_out.send(Command::Osc1),
-                event::Input::Press(input::Button::Keyboard(input::Key::Down)) =>
-                    cmd_out.send(Command::Osc2),
-                event::Input::Press(input::Button::Keyboard(input::Key::Space)) =>
-                    cmd_out.send(Command::NoteOn),
-                event::Input::Release(input::Button::Keyboard(input::Key::Space)) =>
-                    cmd_out.send(Command::NoteOff),
-                _ => Ok(()),
-            };
+            gui::keymap::command_for(&input)
+                .map(|c| cmd_out.send(c));
 
             // Handle the input with the `Ui`.
             ui.handle_event(input);

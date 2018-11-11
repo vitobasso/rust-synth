@@ -4,6 +4,7 @@ version = "0.1.0"
 authors = ["Victor Basso <vitobasso@gmail.com>"]
 
 [features]
+default = ["winit", "glium"]
 winit = []
 glium = []
 

@@ -2,12 +2,12 @@ extern crate cpal;
 use audio_out::cpal::{
     UnknownTypeOutputBuffer::{F32, I16, U16},
     StreamData::Output,
-    OutputBuffer, Sample, Device, Format, EventLoop
+    OutputBuffer, Device, Format, EventLoop
 };
 use std::sync::mpsc::Receiver;
 
-type MySample = f32;
-pub fn play(device: &Device, format: &Format, sig_in: Receiver<MySample>) {
+type Sample = f32;
+pub fn run_forever(device: &Device, format: &Format, sig_in: Receiver<Sample>) {
 
     let channels = format.channels as usize;
     let event_loop = EventLoop::new();
@@ -24,7 +24,7 @@ pub fn play(device: &Device, format: &Format, sig_in: Receiver<MySample>) {
     });
 }
 
-fn feed_buffer<T: SampleFromF32>(mut buffer: OutputBuffer<T>, sig_in: &Receiver<MySample>, channels: usize) -> () {
+fn feed_buffer<T: SampleFromF32>(mut buffer: OutputBuffer<T>, sig_in: &Receiver<Sample>, channels: usize) -> () {
     for buff_chunks in buffer.chunks_mut(channels) {
         match sig_in.recv() {
             Ok(sample) =>
@@ -38,7 +38,7 @@ fn feed_buffer<T: SampleFromF32>(mut buffer: OutputBuffer<T>, sig_in: &Receiver<
     }
 }
 
-trait SampleFromF32: Sample {
+trait SampleFromF32: cpal::Sample {
     fn from_f32(value: f32) -> Self;
 }
 impl SampleFromF32 for f32 {

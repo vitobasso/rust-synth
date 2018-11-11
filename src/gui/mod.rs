@@ -2,11 +2,11 @@
 
 extern crate rand;
 
-use conrod;
 use std;
 #[cfg(feature="glium")] use conrod::backend::glium::glium;
 
 pub mod window;
+pub mod keymap;
 
 /// In most of the examples the `glutin` crate is used for providing the window context and
 /// events while the `glium` crate is used for displaying `conrod::render::Primitives` to the
