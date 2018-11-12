@@ -10,12 +10,12 @@ mod pitches;
 mod controller;
 mod gui;
 
-type Sample = f32;
+type Sample = f64;
 
 fn main() {
     let device = cpal::default_output_device().expect("Failed to get default output device");
     let format = device.default_output_format().expect("Failed to get default output format");
-    let sample_rate = format.sample_rate.0 as f32;
+    let sample_rate = format.sample_rate.0 as f64;
     let buffer_size = sample_rate as usize / 250;
 
     let (cmd_out, cmd_in) = channel::<Command>();

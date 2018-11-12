@@ -44,10 +44,10 @@ impl Pitch {
     ///
     /// Source: http://pages.mtu.edu/~suits/NoteFreqCalcs.html
     ///
-    pub fn freq(&self) -> f32 {
+    pub fn freq(&self) -> f64 {
         let f0: f64 = 16.35_f64;
         let a: f64 = 2_f64.powf(1_f64/12_f64);
-        (f0 * a.powf(self.index() as f64)) as f32
+        (f0 * a.powf(self.index() as f64))
     }
 
     fn index(&self) -> u8{
@@ -83,7 +83,7 @@ mod tests {
     use pitches::{Pitch, PitchClass::*};
     #[test]
     fn should_convert_pitch_to_freq() {
-        let cases: &[(Pitch, f32)] = &[
+        let cases: &[(Pitch, f64)] = &[
             (Pitch{ octave: 0, class: C }, 16.35  ),
             (Pitch{ octave: 4, class: C }, 261.63 ),
             (Pitch{ octave: 4, class: A }, 440.0  ),

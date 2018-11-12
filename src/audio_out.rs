@@ -6,7 +6,7 @@ use audio_out::cpal::{
 };
 use std::sync::mpsc::Receiver;
 
-type Sample = f32;
+type Sample = f64;
 pub fn run_forever(device: &Device, format: &Format, sig_in: Receiver<Sample>) {
 
     let channels = format.channels as usize;
@@ -24,12 +24,12 @@ pub fn run_forever(device: &Device, format: &Format, sig_in: Receiver<Sample>) {
     });
 }
 
-fn feed_buffer<T: SampleFromF32>(mut buffer: OutputBuffer<T>, sig_in: &Receiver<Sample>, channels: usize) -> () {
+fn feed_buffer<T: SampleFromF64>(mut buffer: OutputBuffer<T>, sig_in: &Receiver<Sample>, channels: usize) -> () {
     for buff_chunks in buffer.chunks_mut(channels) {
         match sig_in.recv() {
             Ok(sample) =>
                 for out in buff_chunks.iter_mut() {
-                    *out = T::from_f32(sample);
+                    *out = T::from_f64(sample);
                 },
             _ => {
                 panic!("Sample channel hang up?");
@@ -38,21 +38,21 @@ fn feed_buffer<T: SampleFromF32>(mut buffer: OutputBuffer<T>, sig_in: &Receiver<
     }
 }
 
-trait SampleFromF32: cpal::Sample {
-    fn from_f32(value: f32) -> Self;
+trait SampleFromF64: cpal::Sample {
+    fn from_f64(value: f64) -> Self;
 }
-impl SampleFromF32 for f32 {
-    fn from_f32(value: f32) -> Self {
-        value
+impl SampleFromF64 for f32 {
+    fn from_f64(value: f64) -> Self {
+        value as f32
     }
 }
-impl SampleFromF32 for i16 {
-    fn from_f32(f: f32) -> i16 {
-        (f * std::i16::MAX as f32) as i16
+impl SampleFromF64 for i16 {
+    fn from_f64(value: f64) -> i16 {
+        (value * std::i16::MAX as f64) as i16
     }
 }
-impl SampleFromF32 for u16 {
-    fn from_f32(value: f32) -> u16 {
-        ((value * 0.5 + 0.5) * std::u16::MAX as f32) as u16
+impl SampleFromF64 for u16 {
+    fn from_f64(value: f64) -> u16 {
+        ((value * 0.5 + 0.5) * std::u16::MAX as f64) as u16
     }
 }

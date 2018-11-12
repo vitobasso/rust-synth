@@ -8,9 +8,9 @@ pub enum Command {
     Transpose(i8),
 }
 
-type Sample = f32;
+type Sample = f64;
 
-pub fn run_forever(sample_rate: f32, cmd_in: Receiver<Command>, signal_out: SyncSender<Sample>) {
+pub fn run_forever(sample_rate: f64, cmd_in: Receiver<Command>, signal_out: SyncSender<Sample>) {
 
     let mut note_on: bool = false;
     let mut instrument = Instrument {
@@ -18,7 +18,7 @@ pub fn run_forever(sample_rate: f32, cmd_in: Receiver<Command>, signal_out: Sync
         oscilator: Box::new(Sine),
     };
     let mut transpose: i8 = 0_i8;
-    let mut clock: f32 = 0.0;
+    let mut clock: f64 = 0.0;
     loop {
         match cmd_in.try_recv() {
             Ok(Command::Osc1) => {
@@ -45,12 +45,11 @@ pub fn run_forever(sample_rate: f32, cmd_in: Receiver<Command>, signal_out: Sync
             _ => (),
         }
 
-        clock = (clock + 1.0) % sample_rate;
+        clock = clock + 1.0;
         if note_on {
-            let normalized_clock: f32 = clock/sample_rate;
-            let sample: f32 = instrument.next_sample(normalized_clock);
+            let normalized_clock: f64 = clock/sample_rate;
+            let sample: f64 = instrument.next_sample(normalized_clock);
             signal_out.send(sample).expect("Failed to send a sample");
         }
     }
 }
-
