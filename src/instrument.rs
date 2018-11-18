@@ -57,18 +57,61 @@ impl Mix {
     }
 }
 
+pub trait Filter {
+    fn filter(&mut self, cutoff: f64, q_factor: f64, input: Sample, sample_rate: f64) -> Sample;
+}
+
+pub struct LPF {
+    input_history: [Sample;2],
+    output_history: [Sample;2],
+}
+impl LPF {
+    pub fn new() -> Self {
+        LPF {
+            input_history: [0.0, 0.0],
+            output_history: [0.0, 0.0],
+        }
+    }
+}
+impl Filter for LPF {
+    /// http://www.musicdsp.org/files/Audio-EQ-Cookbook.txt
+    fn filter(&mut self, cutoff: f64, q_factor: f64, input: Sample, sample_rate: f64) -> Sample {
+        let w0 = 2.0 * PI * cutoff / sample_rate;
+        let alpha = w0.sin() / (2.0 * q_factor);
+        let cos_w0 = w0.cos();
+        let b0 =  (1.0 - cos_w0)/2.0;
+        let b1 =   1.0 - cos_w0;
+        let b2 =  (1.0 - cos_w0)/2.0;
+        let a0 =   1.0 + alpha;
+        let a1 =  -2.0 * cos_w0;
+        let a2 =   1.0 - alpha;
+        let output = (b0/a0) * input
+            + (b1/a0) * self.input_history[1]  + (b2/a0) * self.input_history[0]
+            - (a1/a0) * self.output_history[1] - (a2/a0) * self.output_history[0];
+
+        self.input_history  = [self.input_history[1], input];
+        self.output_history = [self.output_history[1], output];
+
+        output
+    }
+}
+
 
 pub trait WaveGen {
-    fn next_sample(&self, clock: f64) -> Sample;
+    fn next_sample(&mut self, clock: f64, sample_rate: f64) -> Sample;
 }
 
 pub struct Instrument {
     pub pitch: Pitch,
     pub oscilator: Box<Osc>,
+    pub filter: Box<Filter>,
+    pub mod_param_1: f64,
+    pub mod_param_2: f64,
 }
 
 impl WaveGen for Instrument {
-    fn next_sample(&self, clock: f64) -> Sample {
-        self.oscilator.next_sample(clock, self.pitch.freq(), 0.0)
+    fn next_sample(&mut self, clock: f64, sample_rate: f64) -> Sample {
+        let raw = self.oscilator.next_sample(clock, self.pitch.freq(), 0.0);
+        self.filter.filter(self.mod_param_1, self.mod_param_2, raw, sample_rate)
     }
 }

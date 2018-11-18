@@ -61,7 +61,8 @@ pub fn show(cmd_out: Sender<Command>) {
             };
 
             gui::keymap::command_for(&input)
-                .map(|c| cmd_out.send(c));
+                .into_iter().map(|c| cmd_out.send(c))
+                .collect::<Result<Vec<_>, _>>().unwrap(); //TODO propagate up
 
             // Handle the input with the `Ui`.
             ui.handle_event(input);

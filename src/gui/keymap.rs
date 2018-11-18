@@ -2,15 +2,22 @@ use conrod::{event, input};
 use controller::Command;
 use pitches::{Pitch, PitchClass};
 
-pub fn command_for(input: &event::Input) -> Option<Command> {
+pub fn command_for(input: &event::Input) -> Vec<Command> {
     match input {
         event::Input::Press(input::Button::Keyboard(key)) =>
             pitches(key).map(Command::NoteOn)
                 .or(patches(key))
-                .or(transpose(key)),
+                .or(transpose(key))
+                .map_or(vec![], |v| vec![v]),
         event::Input::Release(input::Button::Keyboard(key)) =>
-            pitches(key).map(Command::NoteOff),
-        _ => None,
+            pitches(key).map(Command::NoteOff)
+                .map_or(vec![], |v| vec![v]),
+        event::Input::Motion(input::Motion::MouseCursor {x, y}) => {
+            let norm_y = (y + 100.0)/200.0; //TODO get from screen size
+            let norm_x = (x + 200.0)/400.0; //TODO get from screen size
+            vec!(Command::ModParam1(norm_y), Command::ModParam2(norm_x))
+        }
+        _ => vec![],
     }
 }
 

@@ -6,6 +6,7 @@ pub enum Command {
     Osc1, Osc2, Osc3, Osc4, Osc5, Osc6, Osc7, Osc8, Osc9, Osc0,
     NoteOn(Pitch), NoteOff(Pitch),
     Transpose(i8),
+    ModParam1(f64), ModParam2(f64),
 }
 
 type Sample = f64;
@@ -15,7 +16,10 @@ pub fn run_forever(sample_rate: f64, cmd_in: Receiver<Command>, signal_out: Sync
     let mut note_on: bool = false;
     let mut instrument = Instrument {
         pitch: Pitch::default(),
-        oscilator: Box::new(Sine),
+        oscilator: Box::new(Mix::supersaw(8, 3.0)),
+        filter: Box::new(LPF::new()),
+        mod_param_1: 880.0,
+        mod_param_2: 0.0,
     };
     let mut transpose: i8 = 0_i8;
     let mut clock: f64 = 0.0;
@@ -42,13 +46,19 @@ pub fn run_forever(sample_rate: f64, cmd_in: Receiver<Command>, signal_out: Sync
             Ok(Command::Transpose(n)) => {
                 transpose = transpose + n;
             },
+            Ok(Command::ModParam1(value)) => {
+                instrument.mod_param_1 = value * 440.0 * 4.0;
+            }
+            Ok(Command::ModParam2(value)) => {
+                instrument.mod_param_2 = value * 50.0;
+            }
             _ => (),
         }
 
         clock = clock + 1.0;
         if note_on {
             let normalized_clock: f64 = clock/sample_rate;
-            let sample: f64 = instrument.next_sample(normalized_clock);
+            let sample: f64 = instrument.next_sample(normalized_clock, sample_rate);
             signal_out.send(sample).expect("Failed to send a sample");
         }
     }
