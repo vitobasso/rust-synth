@@ -18,13 +18,11 @@ type Sample = f64;
 pub fn run_forever(sample_rate: f64, cmd_in: Receiver<Command>, signal_out: SyncSender<Sample>) {
 
     let mut note_on: bool = false;
-    let mut instrument = Instrument {
-        pitch: Pitch::default(),
-        oscillator: Box::new(Mix::supersaw(8, 3.0)),
-        filter: Box::new(BiquadFilter::lpf()),
-        mod_param_1: 880.0,
-        mod_param_2: 0.0,
-    };
+    let mut instrument = Instrument::new(
+        sample_rate,
+        Box::new(Mix::supersaw(8, 3.0)),
+        Box::new(BiquadFilter::lpf()),
+    );
     let mut transpose: i8 = 0_i8;
     let mut clock: f64 = 0.0;
     loop {
@@ -51,10 +49,10 @@ pub fn run_forever(sample_rate: f64, cmd_in: Receiver<Command>, signal_out: Sync
                 transpose = transpose + n;
             },
             Ok(Command::ModParam1(value)) => {
-                instrument.mod_param_1 = value * 440.0 * 4.0;
+                instrument.set_mod_1(value);
             }
             Ok(Command::ModParam2(value)) => {
-                instrument.mod_param_2 = value * 50.0;
+                instrument.set_mod_2(value);
             }
             _ => (),
         }
@@ -62,7 +60,7 @@ pub fn run_forever(sample_rate: f64, cmd_in: Receiver<Command>, signal_out: Sync
         clock = clock + 1.0;
         if note_on {
             let normalized_clock: f64 = clock/sample_rate;
-            let sample: f64 = instrument.next_sample(normalized_clock, sample_rate);
+            let sample: f64 = instrument.next_sample(normalized_clock);
             signal_out.send(sample).expect("Failed to send a sample");
         }
     }

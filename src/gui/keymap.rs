@@ -13,8 +13,8 @@ pub fn command_for(input: &event::Input) -> Vec<Command> {
             pitches(key).map(Command::NoteOff)
                 .map_or(vec![], |v| vec![v]),
         event::Input::Motion(input::Motion::MouseCursor {x, y}) => {
-            let norm_y = (y + 100.0)/200.0; //TODO get from screen size
-            let norm_x = (x + 200.0)/400.0; //TODO get from screen size
+            let norm_y = ((y + 100.0)/200.0).max(0.).min(1.); //TODO get from screen size
+            let norm_x = ((x + 200.0)/400.0).max(0.).min(1.); //TODO get from screen size
             vec!(Command::ModParam1(norm_y), Command::ModParam2(norm_x))
         }
         _ => vec![],
