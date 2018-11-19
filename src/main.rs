@@ -5,7 +5,7 @@ use std::sync::mpsc::{channel, sync_channel};
 use controller::Command;
 
 mod audio_out;
-mod instrument;
+mod synth;
 mod pitches;
 mod controller;
 mod gui;

@@ -1,5 +1,9 @@
 use std::sync::mpsc::{Receiver, SyncSender};
-use instrument::*;
+use synth::{
+    WaveGen, Instrument,
+    oscillator::{Sine, Saw, Mix},
+    filter::{BiquadFilter}
+};
 use pitches::Pitch;
 
 pub enum Command {
@@ -16,7 +20,7 @@ pub fn run_forever(sample_rate: f64, cmd_in: Receiver<Command>, signal_out: Sync
     let mut note_on: bool = false;
     let mut instrument = Instrument {
         pitch: Pitch::default(),
-        oscilator: Box::new(Mix::supersaw(8, 3.0)),
+        oscillator: Box::new(Mix::supersaw(8, 3.0)),
         filter: Box::new(BiquadFilter::lpf()),
         mod_param_1: 880.0,
         mod_param_2: 0.0,
@@ -26,13 +30,13 @@ pub fn run_forever(sample_rate: f64, cmd_in: Receiver<Command>, signal_out: Sync
     loop {
         match cmd_in.try_recv() {
             Ok(Command::Osc1) => {
-                instrument.oscilator = Box::new(Sine)
+                instrument.oscillator = Box::new(Sine)
             },
             Ok(Command::Osc2) => {
-                instrument.oscilator = Box::new(Saw)
+                instrument.oscillator = Box::new(Saw)
             },
             Ok(Command::Osc3) => {
-                instrument.oscilator = Box::new(Mix::supersaw(8, 3.0))
+                instrument.oscillator = Box::new(Mix::supersaw(8, 3.0))
             },
             Ok(Command::NoteOn(pitch)) => {
                 instrument.pitch = pitch + transpose;
