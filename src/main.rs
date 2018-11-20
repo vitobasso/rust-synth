@@ -1,12 +1,12 @@
 #[cfg(all(feature="winit", feature="glium"))] #[macro_use] extern crate conrod;
+#[macro_use] extern crate num_derive;
 
 use std::thread;
 use std::sync::mpsc::{channel, sync_channel};
 use controller::Command;
 
 mod audio_out;
-mod synth;
-mod pitches;
+pub mod synth; //TODO pub is temporary to stop dead code wornings
 mod controller;
 mod gui;
 

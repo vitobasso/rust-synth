@@ -13,3 +13,5 @@ cpal = "0.8.2"
 conrod = { version = "0.61.1", features = ["winit", "glium"] }
 find_folder = "0.3.0"
 rand = "0.5.5"
+num-traits = "0.2.6"
+num-derive = "0.2.3"

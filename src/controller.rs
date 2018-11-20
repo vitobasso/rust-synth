@@ -1,67 +1,127 @@
 use std::sync::mpsc::{Receiver, SyncSender};
 use synth::{
-    WaveGen, Instrument,
+    Instrument,
+    pitch::{Pitch, PitchClass},
     oscillator::{Sine, Saw, Mix},
-    filter::{BiquadFilter}
+    filter::{BiquadFilter},
+    arpeggiator::Arpeggiator,
 };
-use pitches::Pitch;
-
-pub enum Command {
-    Osc1, Osc2, Osc3, Osc4, Osc5, Osc6, Osc7, Osc8, Osc9, Osc0,
-    NoteOn(Pitch), NoteOff(Pitch),
-    Transpose(i8),
-    ModParam1(f64), ModParam2(f64),
-}
 
 type Sample = f64;
 
 pub fn run_forever(sample_rate: f64, cmd_in: Receiver<Command>, signal_out: SyncSender<Sample>) {
-
-    let mut note_on: bool = false;
-    let mut instrument = Instrument::new(
-        sample_rate,
-        Box::new(Mix::supersaw(8, 3.0)),
-        Box::new(BiquadFilter::lpf()),
-    );
-    let mut transpose: i8 = 0_i8;
+    let mut state = State::new(sample_rate);
     let mut clock: f64 = 0.0;
     loop {
         match cmd_in.try_recv() {
-            Ok(Command::Osc1) => {
-                instrument.oscillator = Box::new(Sine)
-            },
-            Ok(Command::Osc2) => {
-                instrument.oscillator = Box::new(Saw)
-            },
-            Ok(Command::Osc3) => {
-                instrument.oscillator = Box::new(Mix::supersaw(8, 3.0))
-            },
-            Ok(Command::NoteOn(pitch)) => {
-                instrument.pitch = pitch + transpose;
-                note_on = true;
-            },
-            Ok(Command::NoteOff(pitch)) => {
-                if instrument.pitch == pitch + transpose {
-                    note_on = false;
-                }
-            },
-            Ok(Command::Transpose(n)) => {
-                transpose = transpose + n;
-            },
-            Ok(Command::ModParam1(value)) => {
-                instrument.set_mod_1(value);
-            }
-            Ok(Command::ModParam2(value)) => {
-                instrument.set_mod_2(value);
-            }
+            Ok(command) => state.interpret(command),
+            _ => (),
+        }
+        match state.arpeggiator.next() {
+            Some(command) => state.interpret(command),
             _ => (),
         }
 
         clock = clock + 1.0;
-        if note_on {
+        if state.note_on {
             let normalized_clock: f64 = clock/sample_rate;
-            let sample: f64 = instrument.next_sample(normalized_clock);
+            let sample: Sample = state.instrument.next_sample(normalized_clock);
             signal_out.send(sample).expect("Failed to send a sample");
+        }
+    }
+}
+
+//TODO move inside instrument
+pub enum Command {
+    Patch1, Patch2, Patch3, Patch4, Patch5, Patch6, Patch7, Patch8, Patch9, Patch0,
+    NoteOn(Pitch), NoteOff(Pitch), ArpNoteOn(Pitch), ArpNoteOff(Pitch),
+    Transpose(i8),
+    ModParam1(f64), ModParam2(f64),
+}
+
+//TODO move inside instrument
+struct State {
+    note_on: bool,
+    transpose: i8,
+    instrument: Instrument,
+    arpeggiator: Arpeggiator,
+    arpeggiator_on: bool,
+}
+impl State {
+    fn new(sample_rate: f64) -> State {
+        let instrument = Instrument::new(
+            sample_rate,
+            Box::new(Mix::supersaw(8, 3.0)),
+            Box::new(BiquadFilter::lpf()),
+        );
+        let arpeggiator = Arpeggiator::preset_1();
+        State {
+            note_on: false,
+            transpose: 0_i8,
+            instrument,
+            arpeggiator,
+            arpeggiator_on: false
+        }
+    }
+
+    fn interpret(&mut self, command: Command) {
+        match command {
+            Command::Patch1 => {
+                self.instrument.oscillator = Box::new(Sine)
+            },
+            Command::Patch2 => {
+                self.instrument.oscillator = Box::new(Saw)
+            },
+            Command::Patch3 => {
+                self.instrument.oscillator = Box::new(Mix::supersaw(8, 3.0))
+            },
+            Command::Patch7 => {
+                self.arpeggiator = Arpeggiator::preset_3();
+            },
+            Command::Patch8 => {
+                self.arpeggiator = Arpeggiator::preset_2();
+            },
+            Command::Patch9 => {
+                self.arpeggiator = Arpeggiator::preset_1();
+            },
+            Command::Patch0 => {
+                self.arpeggiator_on = !self.arpeggiator_on
+            },
+            Command::NoteOn(pitch) => {
+                if self.arpeggiator_on {
+                    self.arpeggiator.start(pitch);
+                } else {
+                    self.instrument.pitch = pitch + self.transpose;
+                    self.note_on = true;
+                }
+            },
+            Command::NoteOff(pitch) => {
+                if self.arpeggiator_on && self.arpeggiator.is_holding(pitch){
+                    self.arpeggiator.stop();
+                    self.note_on = false;
+                } else if self.instrument.pitch == pitch + self.transpose {
+                    self.note_on = false;
+                }
+            },
+            Command::ArpNoteOn(pitch) => {
+                self.instrument.pitch = pitch + self.transpose;
+                self.note_on = true;
+            },
+            Command::ArpNoteOff(pitch) => {
+                if self.instrument.pitch == pitch + self.transpose {
+                    self.note_on = false;
+                }
+            },
+            Command::Transpose(n) => {
+                self.transpose = self.transpose + n;
+            },
+            Command::ModParam1(value) => {
+                self.instrument.set_mod_1(value);
+            }
+            Command::ModParam2(value) => {
+                self.instrument.set_mod_2(value);
+            },
+            _ => (),
         }
     }
 }

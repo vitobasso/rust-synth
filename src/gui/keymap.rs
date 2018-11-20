@@ -1,6 +1,6 @@
 use conrod::{event, input};
 use controller::Command;
-use pitches::{Pitch, PitchClass};
+use synth::pitch::{Pitch, PitchClass};
 
 pub fn command_for(input: &event::Input) -> Vec<Command> {
     match input {
@@ -65,16 +65,16 @@ fn pitches(key: &input::Key) -> Option<Pitch> { //TODO shift => sharp pitches
 
 fn patches(key: &input::Key) -> Option<Command> {
     match key {
-        input::Key::D1 => Some(Command::Osc1),
-        input::Key::D2 => Some(Command::Osc2),
-        input::Key::D3 => Some(Command::Osc3),
-        input::Key::D4 => Some(Command::Osc4),
-        input::Key::D5 => Some(Command::Osc5),
-        input::Key::D6 => Some(Command::Osc6),
-        input::Key::D7 => Some(Command::Osc7),
-        input::Key::D8 => Some(Command::Osc8),
-        input::Key::D9 => Some(Command::Osc9),
-        input::Key::D0 => Some(Command::Osc0),
+        input::Key::D1 => Some(Command::Patch1),
+        input::Key::D2 => Some(Command::Patch2),
+        input::Key::D3 => Some(Command::Patch3),
+        input::Key::D4 => Some(Command::Patch4),
+        input::Key::D5 => Some(Command::Patch5),
+        input::Key::D6 => Some(Command::Patch6),
+        input::Key::D7 => Some(Command::Patch7),
+        input::Key::D8 => Some(Command::Patch8),
+        input::Key::D9 => Some(Command::Patch9),
+        input::Key::D0 => Some(Command::Patch0),
         _ => None,
     }
 }

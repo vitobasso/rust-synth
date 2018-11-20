@@ -1,36 +1,56 @@
+use std::ops::Add;
+use std::ops::Sub;
+use super::num_traits::FromPrimitive;
 
-#[derive(PartialEq, Clone)]
+
+#[derive(Clone, Copy, PartialEq, Debug, FromPrimitive)]
 pub enum PitchClass {
     C, Db, D, Eb, E, F, Gb, G, Ab, A, Bb, B
 }
 
 impl PitchClass {
-    fn from_index(i: u8) -> PitchClass {
-        match i {
-            0 => PitchClass::C,
-            1 => PitchClass::Db,
-            2 => PitchClass::D,
-            3 => PitchClass::Eb,
-            4 => PitchClass::E,
-            5 => PitchClass::F,
-            6 => PitchClass::Gb,
-            7 => PitchClass::G,
-            8 => PitchClass::Ab,
-            9 => PitchClass::A,
-            10 => PitchClass::Bb,
-            11 => PitchClass::B,
-            _ => panic!("Can't get PitchClass from index: {}.", i), //TODO type safely?
-        }
+    pub fn from_index(i: u8) -> Option<PitchClass> {
+        FromPrimitive::from_u8(i)
     }
 }
 
-#[derive(PartialEq)]
+impl Add<i8> for PitchClass {
+    type Output = Self;
+    fn add(self, rhs: i8) -> Self {
+        let i = ((((self as i8 + rhs) % 12) + 12) % 12) as u8;
+        PitchClass::from_index(i).expect(format!("Failed to get PitchClass for i={}", i).as_str())
+    }
+}
+impl Add<PitchClass> for PitchClass {
+    type Output = Self;
+    fn add(self, rhs: PitchClass) -> Self {
+        self + rhs as i8
+    }
+}
+impl Sub<i8> for PitchClass {
+    type Output = Self;
+    fn sub(self, rhs: i8) -> Self {
+        self + -rhs
+    }
+}
+impl Sub<PitchClass> for PitchClass {
+    type Output = Self;
+    fn sub(self, rhs: PitchClass) -> Self {
+        self - rhs as i8
+    }
+}
+
+#[derive(Clone, Copy, PartialEq, Debug)]
 pub struct Pitch {
     pub class: PitchClass,
     pub octave: u8,
 }
 
 impl Pitch {
+
+    pub fn new(class: PitchClass, octave: u8) -> Pitch {
+        Pitch { class, octave }
+    }
 
     /// Frequencies on the equal tempered scale:
     ///
@@ -58,6 +78,7 @@ impl Pitch {
         Pitch {
             octave: i/12,
             class: PitchClass::from_index(i%12)
+                .expect(format!("Failed to get PitchClass for i={}", i).as_str())
         }
     }
 
@@ -69,7 +90,6 @@ impl Default for Pitch {
     }
 }
 
-use std::ops::Add;
 impl Add<i8> for Pitch {
     type Output = Self;
     fn add(self, rhs: i8) -> Self {
@@ -80,7 +100,7 @@ impl Add<i8> for Pitch {
 
 #[cfg(test)]
 mod tests {
-    use pitches::{Pitch, PitchClass::*};
+    use super::{Pitch, PitchClass::*};
     #[test]
     fn should_convert_pitch_to_freq() {
         let cases: &[(Pitch, f64)] = &[
