@@ -1,21 +1,43 @@
 // A simple example that demonstrates using conrod within a basic `winit` window loop, using
 // `glium` to render the `conrod::render::Primitives` to screen.
 
-use conrod::{widget, Colorable, Positionable, Widget};
+use conrod::{widget, color, Colorable, Positionable, Widget, Sizeable, Borderable, Labelable};
 use conrod::backend::glium::glium::{self, Surface};
 use gui;
 use std::sync::mpsc::Sender;
 use controller::Command;
 
+enum Osc { Sine, Saw, Supersaw }
+
+struct AppState {
+    pub title: String,
+    pub oscillator_sel: Option<usize>,
+    pub oscillator_list: Vec<String>,
+    pub oscillator: Osc,
+}
+impl AppState {
+    fn new() -> AppState {
+        AppState {
+            title: "Sintetizador Maravilhoso".to_string(),
+            oscillator_sel: None,
+            oscillator_list: vec!["Sine".to_string(), "Saw".to_string(), "Supersaw".to_string()],
+            oscillator: Osc::Sine,
+        }
+    }
+}
+
+widget_ids!(struct Ids { text, canvas, oscillator_sel });
+
 pub fn show(cmd_out: Sender<Command>) {
     const WIDTH: u32 = 400;
     const HEIGHT: u32 = 200;
+    let mut app = AppState::new();
 
     // Build the window.
     let mut events_loop = glium::glutin::EventsLoop::new();
     let mut framework = gui::EventLoop::new();
     let window = glium::glutin::WindowBuilder::new()
-        .with_title("Sintetizador Maravilhoso")
+        .with_title(app.title.clone())
         .with_dimensions((WIDTH, HEIGHT).into());
     let context = glium::glutin::ContextBuilder::new()
         .with_vsync(true)
@@ -26,8 +48,7 @@ pub fn show(cmd_out: Sender<Command>) {
     let mut ui = conrod::UiBuilder::new([WIDTH as f64, HEIGHT as f64]).build();
 
     // Generate the widget identifiers.
-    widget_ids!(struct Ids { text });
-    let ids = Ids::new(ui.widget_id_generator());
+    let mut ids = Ids::new(ui.widget_id_generator());
 
     // Add a `Font` to the `Ui`'s `font::Map` from file.
     const FONT_PATH: &'static str = concat!(env!("CARGO_MANIFEST_DIR"), "/assets/fonts/VT323-Regular.ttf");
@@ -69,13 +90,7 @@ pub fn show(cmd_out: Sender<Command>) {
 
             // Set the widgets.
             let ui = &mut ui.set_widgets();
-
-            // "Hello World!" in the middle of the screen.
-            widget::Text::new("Sintetizador\nMaravilhoso")
-                .middle_of(ui.window)
-                .color(conrod::color::WHITE)
-                .font_size(32)
-                .set(ids.text, ui);
+            set_widgets(ui, &mut app, &mut ids);
         }
 
         // Draw the `Ui` if it has changed.
@@ -87,4 +102,37 @@ pub fn show(cmd_out: Sender<Command>) {
             target.finish().unwrap();
         }
     }
+}
+
+fn set_widgets(ui: &mut conrod::UiCell, app: &mut AppState, ids: &mut Ids) {
+
+    widget::Canvas::new()
+        .border(1.)
+        .pad(30.)
+        .color(color::BLACK)
+        .scroll_kids()
+        .set(ids.canvas, ui);
+
+    for selected_idx in widget::DropDownList::new(&app.oscillator_list, app.oscillator_sel)
+        .w_h(100., 20.)
+        .top_left_of(ids.canvas)
+        .max_visible_items(3)
+        .color(color::BLACK)
+        .border(1.)
+        .border_color(color::WHITE)
+        .label("Oscillator")
+        .label_color(color::WHITE)
+        .label_font_size(14)
+        .scrollbar_on_top()
+        .set(ids.oscillator_sel, ui){
+
+        app.oscillator_sel = Some(selected_idx);
+        app.oscillator = match &app.oscillator_list[selected_idx][..] {
+            "Sine" => Osc::Sine,
+            "Saw" => Osc::Saw,
+            "Supersaw" => Osc::Supersaw,
+            other => panic!("Unexpected oscillator name: {}", other),
+        }
+    }
+
 }
