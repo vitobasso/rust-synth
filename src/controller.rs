@@ -4,6 +4,7 @@ use synth::{
     pitch::{Pitch, PitchClass},
     oscillator::{Sine, Saw, Mix},
     filter::{BiquadFilter},
+    pulse::Pulse,
     arpeggiator::Arpeggiator,
 };
 
@@ -12,12 +13,13 @@ type Sample = f64;
 pub fn run_forever(sample_rate: f64, cmd_in: Receiver<Command>, signal_out: SyncSender<Sample>) {
     let mut state = State::new(sample_rate);
     let mut clock: f64 = 0.0;
+
     loop {
         match cmd_in.try_recv() {
             Ok(command) => state.interpret(command),
             _ => (),
         }
-        match state.arpeggiator.next() {
+        match state.next_arpeggiator_command() {
             Some(command) => state.interpret(command),
             _ => (),
         }
@@ -44,6 +46,7 @@ struct State {
     note_on: bool,
     transpose: i8,
     instrument: Instrument,
+    pulse: Pulse,
     arpeggiator: Arpeggiator,
     arpeggiator_on: bool,
 }
@@ -54,11 +57,13 @@ impl State {
             Box::new(Mix::supersaw(8, 3.0)),
             Box::new(BiquadFilter::lpf()),
         );
+        let pulse = Pulse::with_period_millis(100);
         let arpeggiator = Arpeggiator::preset_1();
         State {
             note_on: false,
             transpose: 0_i8,
             instrument,
+            pulse,
             arpeggiator,
             arpeggiator_on: false
         }
@@ -123,5 +128,10 @@ impl State {
             },
             _ => (),
         }
+    }
+
+    fn next_arpeggiator_command(&mut self) -> Option<Command> {
+        self.pulse.read()
+            .and_then(|_| self.arpeggiator.next())
     }
 }

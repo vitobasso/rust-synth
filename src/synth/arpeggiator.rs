@@ -1,13 +1,11 @@
 use std::time::{Duration, SystemTime};
 use super::rhythm::{*, Duration::*};
 use super::diatonic_scale::{*, Octave::*, ScaleDegree::*};
-use super::pulse::Pulse;
 use super::pitch::{Pitch, PitchClass};
 use super::super::controller::Command;
 
 pub struct Arpeggiator {
     sequence: Sequence,
-    pulse: Pulse,
     index: usize,
     key: Key,
     holding: Option<Pitch>,
@@ -17,7 +15,6 @@ impl Arpeggiator {
     pub fn new(key: Key, sequence: Sequence) -> Arpeggiator {
         Arpeggiator {
             sequence,
-            pulse: Pulse::new(),
             index: 0,
             key,
             holding: None,
@@ -38,8 +35,7 @@ impl Arpeggiator {
     }
 
     pub fn next(&mut self) -> Option<Command> {
-        self.pulse.read()
-            .and_then(|_| self.next_event())
+        self.next_event()
             .and_then(|e| self.update_and_command(e))
     }
 
@@ -101,22 +97,22 @@ impl Arpeggiator {
         Arpeggiator::new(
             PitchClass::C,
             Sequence::new(1, vec![
+                Note::note(Sixteenth, (Down1, I1)),
+                Note::note(Sixteenth, (Down1, I3)),
+                Note::note(Sixteenth, (Down1, I5)),
                 Note::note(Sixteenth, (Same, I1)),
                 Note::note(Sixteenth, (Same, I3)),
                 Note::note(Sixteenth, (Same, I5)),
                 Note::note(Sixteenth, (Up1, I1)),
                 Note::note(Sixteenth, (Up1, I3)),
                 Note::note(Sixteenth, (Up1, I5)),
-                Note::note(Sixteenth, (Up2, I1)),
-                Note::note(Sixteenth, (Up2, I3)),
-                Note::note(Sixteenth, (Up2, I5)),
-                Note::note(Sixteenth, (Up2, I3)),
-                Note::note(Sixteenth, (Up2, I1)),
-                Note::note(Sixteenth, (Up1, I5)),
                 Note::note(Sixteenth, (Up1, I3)),
                 Note::note(Sixteenth, (Up1, I1)),
                 Note::note(Sixteenth, (Same, I5)),
                 Note::note(Sixteenth, (Same, I3)),
+                Note::note(Sixteenth, (Same, I1)),
+                Note::note(Sixteenth, (Down1, I5)),
+                Note::note(Sixteenth, (Down1, I3)),
             ]).expect("Invalid sequence")
         )
     }
