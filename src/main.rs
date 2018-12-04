@@ -4,6 +4,7 @@
 use std::thread;
 use std::sync::mpsc::{channel, sync_channel};
 use controller::Command;
+use controller::StateUpdate;
 
 mod audio_out;
 pub mod synth; //TODO pub is temporary to stop dead code wornings
@@ -18,10 +19,11 @@ fn main() {
     let sample_rate = format.sample_rate.0 as f64;
     let buffer_size = sample_rate as usize / 250;
 
-    let (cmd_out, cmd_in) = channel::<Command>();
-    let (sig_out, sig_in) = sync_channel::<Sample>(buffer_size);
+    let (cmd_send, cmd_recv) = channel::<Command>();
+    let (sig_send, sig_recv) = sync_channel::<Sample>(buffer_size);
+    let (upd_send, upd_recv) = channel::<StateUpdate>();
 
-    thread::spawn(move || audio_out::run_forever(&device, &format, sig_in));
-    thread::spawn(move || controller::run_forever(sample_rate, cmd_in, sig_out));
-    gui::window::show(cmd_out);
+    thread::spawn(move || audio_out::run_forever(&device, &format, sig_recv));
+    thread::spawn(move || controller::run_forever(sample_rate, cmd_recv, sig_send, upd_send));
+    gui::window::show(cmd_send, upd_recv);
 }

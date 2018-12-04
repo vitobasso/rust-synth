@@ -30,7 +30,7 @@ impl Osc for StatefulSaw {
     }
 }
 
-pub struct Mix { pub voices: Vec<Box<Osc>> }
+pub struct Mix { voices: Vec<Box<Osc>> }
 impl Osc for Mix {
     fn next_sample(&self, clock: f64, freq: f64, phase: f64) -> Sample {
         let sum: f64 = self.voices.iter()

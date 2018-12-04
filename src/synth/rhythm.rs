@@ -38,6 +38,7 @@ impl Note {
     }
 }
 
+#[derive(Clone, Debug)]
 pub struct Sequence {
     measures: u32,
     pub events: Vec<Event>,

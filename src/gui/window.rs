@@ -4,31 +4,41 @@
 use conrod::{widget, color, Colorable, Positionable, Widget, Sizeable, Borderable, Labelable};
 use conrod::backend::glium::glium::{self, Surface};
 use gui;
-use std::sync::mpsc::Sender;
-use controller::Command;
+use std::sync::mpsc::{Sender, Receiver};
+use controller::{Command, StateUpdate, OscillatorType};
 
 enum Osc { Sine, Saw, Supersaw }
 
 struct AppState {
     pub title: String,
-    pub oscillator_sel: Option<usize>,
-    pub oscillator_list: Vec<String>,
-    pub oscillator: Osc,
+    pub oscillator: Option<String>,
 }
 impl AppState {
     fn new() -> AppState {
         AppState {
             title: "Sintetizador Maravilhoso".to_string(),
-            oscillator_sel: None,
-            oscillator_list: vec!["Sine".to_string(), "Saw".to_string(), "Supersaw".to_string()],
-            oscillator: Osc::Sine,
+            oscillator: None,
+        }
+    }
+    fn update(&mut self, upd: StateUpdate) -> Option<()> {
+        match upd {
+            StateUpdate::Oscillator(osc_type) => {
+                let label = match osc_type {
+                    OscillatorType::Sine => "Sine",
+                    OscillatorType::Saw => "Saw",
+                    OscillatorType::Supersaw => "Supersaw",
+                };
+                self.oscillator = Some(label.to_string());
+                Some(())
+            }
+            _ => None
         }
     }
 }
 
-widget_ids!(struct Ids { text, canvas, oscillator_sel });
+widget_ids!(struct Ids { text, canvas, oscillator });
 
-pub fn show(cmd_out: Sender<Command>) {
+pub fn show(cmd_out: Sender<Command>, update_in: Receiver<StateUpdate>) {
     const WIDTH: u32 = 400;
     const HEIGHT: u32 = 200;
     let mut app = AppState::new();
@@ -63,6 +73,10 @@ pub fn show(cmd_out: Sender<Command>) {
 
     'render: loop {
         let mut events = framework.next(&mut events_loop);
+
+        for update in update_in.try_iter() {
+            app.update(update).map(|_| framework.needs_update());
+        }
 
         // Process the events.
         for event in events.drain(..) {
@@ -113,26 +127,13 @@ fn set_widgets(ui: &mut conrod::UiCell, app: &mut AppState, ids: &mut Ids) {
         .scroll_kids()
         .set(ids.canvas, ui);
 
-    for selected_idx in widget::DropDownList::new(&app.oscillator_list, app.oscillator_sel)
+    let string = app.oscillator.clone().unwrap_or("?".to_string());
+    let oscillator = string.as_str();
+    widget::Text::new(oscillator)
         .w_h(100., 20.)
         .top_left_of(ids.canvas)
-        .max_visible_items(3)
-        .color(color::BLACK)
-        .border(1.)
-        .border_color(color::WHITE)
-        .label("Oscillator")
-        .label_color(color::WHITE)
-        .label_font_size(14)
-        .scrollbar_on_top()
-        .set(ids.oscillator_sel, ui){
-
-        app.oscillator_sel = Some(selected_idx);
-        app.oscillator = match &app.oscillator_list[selected_idx][..] {
-            "Sine" => Osc::Sine,
-            "Saw" => Osc::Saw,
-            "Supersaw" => Osc::Supersaw,
-            other => panic!("Unexpected oscillator name: {}", other),
-        }
-    }
+        .color(color::WHITE)
+        .font_size(14)
+        .set(ids.oscillator, ui);
 
 }

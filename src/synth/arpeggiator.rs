@@ -60,9 +60,19 @@ impl Arpeggiator {
             _ => None,
         }
     }
+}
 
-    pub fn preset_1() -> Arpeggiator {
-        Arpeggiator::new(
+pub struct Builder { pub key: PitchClass, pub sequence: Sequence }
+impl Builder {
+    pub fn new(key: PitchClass, sequence: Sequence) -> Builder {
+        Builder { key, sequence }
+    }
+    pub fn build(&self) -> Arpeggiator {
+        Arpeggiator::new(self.key, self.sequence.clone())
+    }
+
+    pub fn preset_1() -> Builder {
+        Builder::new(
             PitchClass::C,
             Sequence::new(1, vec![
                 Note::note(Eight, (Down1, I1)),
@@ -77,8 +87,8 @@ impl Arpeggiator {
         )
     }
 
-    pub fn preset_2() -> Arpeggiator {
-        Arpeggiator::new(
+    pub fn preset_2() -> Builder {
+        Builder::new(
             PitchClass::C,
             Sequence::new(1, vec![
                 Note::note(Eight, (Down2, I1)),
@@ -93,8 +103,8 @@ impl Arpeggiator {
         )
     }
 
-    pub fn preset_3() -> Arpeggiator {
-        Arpeggiator::new(
+    pub fn preset_3() -> Builder {
+        Builder::new(
             PitchClass::C,
             Sequence::new(1, vec![
                 Note::note(Sixteenth, (Down1, I1)),
