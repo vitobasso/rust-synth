@@ -17,6 +17,11 @@ pub fn run_forever(sample_rate: f64,
                    update_out: Sender<StateUpdate>) {
 
     let mut state = State::new(sample_rate);
+    update_out.send(StateUpdate::Oscillator(OscillatorType::Supersaw));
+    update_out.send(StateUpdate::FilterType(FilterType::LPF));
+    update_out.send(StateUpdate::FilterParams(1., 0.));
+    update_out.send(StateUpdate::ArpeggiatorToggle(false));
+    update_out.send(StateUpdate::Key(PitchClass::C));
     let mut clock: f64 = 0.;
 
     loop {

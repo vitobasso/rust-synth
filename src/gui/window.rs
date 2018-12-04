@@ -5,30 +5,33 @@ use conrod::{widget, color, Colorable, Positionable, Widget, Sizeable, Borderabl
 use conrod::backend::glium::glium::{self, Surface};
 use gui;
 use std::sync::mpsc::{Sender, Receiver};
-use controller::{Command, StateUpdate, OscillatorType};
+use controller::{Command, StateUpdate, OscillatorType, FilterType};
 
 enum Osc { Sine, Saw, Supersaw }
 
 struct AppState {
     pub title: String,
     pub oscillator: Option<String>,
+    pub filter: Option<String>,
 }
 impl AppState {
     fn new() -> AppState {
         AppState {
             title: "Sintetizador Maravilhoso".to_string(),
             oscillator: None,
+            filter: None,
         }
     }
     fn update(&mut self, upd: StateUpdate) -> Option<()> {
         match upd {
             StateUpdate::Oscillator(osc_type) => {
-                let label = match osc_type {
-                    OscillatorType::Sine => "Sine",
-                    OscillatorType::Saw => "Saw",
-                    OscillatorType::Supersaw => "Supersaw",
-                };
+                let label = format!("{:?}", osc_type);
                 self.oscillator = Some(label.to_string());
+                Some(())
+            },
+            StateUpdate::FilterType(filter_type) => {
+                let label = format!("{:?}", filter_type);
+                self.filter = Some(label.to_string());
                 Some(())
             }
             _ => None
@@ -36,7 +39,7 @@ impl AppState {
     }
 }
 
-widget_ids!(struct Ids { text, canvas, oscillator });
+widget_ids!(struct Ids { text, canvas, oscillator, filter });
 
 pub fn show(cmd_out: Sender<Command>, update_in: Receiver<StateUpdate>) {
     const WIDTH: u32 = 400;
@@ -127,13 +130,20 @@ fn set_widgets(ui: &mut conrod::UiCell, app: &mut AppState, ids: &mut Ids) {
         .scroll_kids()
         .set(ids.canvas, ui);
 
-    let string = app.oscillator.clone().unwrap_or("?".to_string());
-    let oscillator = string.as_str();
-    widget::Text::new(oscillator)
+    let oscillator = app.oscillator.clone().unwrap_or("?".to_string());
+    widget::Text::new(oscillator.as_str())
         .w_h(100., 20.)
         .top_left_of(ids.canvas)
         .color(color::WHITE)
         .font_size(14)
         .set(ids.oscillator, ui);
+
+    let filter = app.filter.clone().unwrap_or("?".to_string());
+    widget::Text::new(filter.as_str())
+        .w_h(100., 20.)
+        .right_from(ids.oscillator, 0.)
+        .color(color::WHITE)
+        .font_size(14)
+        .set(ids.filter, ui);
 
 }
