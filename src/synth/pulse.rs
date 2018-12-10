@@ -1,6 +1,4 @@
 use std::time::{Duration, SystemTime};
-use super::rhythm::*;
-use super::diatonic_scale::*;
 
 pub struct Pulse {
     period: Duration,

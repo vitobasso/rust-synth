@@ -13,3 +13,4 @@
 - [ ] Polyphony
 - [ ] GUI
 - [ ] Patch creation, storage
+- [ ] Talk to Midi controllers

@@ -1,21 +1,26 @@
-use std::time::{Duration, SystemTime};
-use super::rhythm::{*, Duration::*};
-use super::diatonic_scale::{*, Octave::*, ScaleDegree::*};
-use super::pitch::{Pitch, PitchClass};
+use super::{
+    rhythm::{*, Duration::*},
+    diatonic_scale::{*, Octave::*, ScaleDegree::*},
+    pitch::{Pitch, PitchClass},
+    pulse::Pulse,
+};
 use super::super::controller::Command;
 
 pub struct Arpeggiator {
     sequence: Sequence,
     index: usize,
+    pulse: Pulse,
     key: Key,
     holding: Option<Pitch>,
     playing: Option<Pitch>,
 }
 impl Arpeggiator {
-    pub fn new(key: Key, sequence: Sequence) -> Arpeggiator {
+    pub fn new(pulse_millis: u64, key: Key, sequence: Sequence) -> Arpeggiator {
+        let pulse = Pulse::with_period_millis(pulse_millis);
         Arpeggiator {
             sequence,
             index: 0,
+            pulse,
             key,
             holding: None,
             playing: None,
@@ -35,7 +40,8 @@ impl Arpeggiator {
     }
 
     pub fn next(&mut self) -> Option<Command> {
-        self.next_event()
+        self.pulse.read()
+            .and_then(|_| self.next_event())
             .and_then(|e| self.update_and_command(e))
     }
 
@@ -61,8 +67,9 @@ impl Arpeggiator {
         }
     }
 
-    pub fn preset_1() -> Arpeggiator {
+    pub fn preset_1(pulse_millis: u64) -> Arpeggiator {
         Arpeggiator::new(
+            pulse_millis,
             PitchClass::C,
             Sequence::new(1, vec![
                 Note::note(Eight, (Down1, I1)),
@@ -77,8 +84,9 @@ impl Arpeggiator {
         )
     }
 
-    pub fn preset_2() -> Arpeggiator {
+    pub fn preset_2(pulse_millis: u64) -> Arpeggiator {
         Arpeggiator::new(
+            pulse_millis,
             PitchClass::C,
             Sequence::new(1, vec![
                 Note::note(Eight, (Down2, I1)),
@@ -93,8 +101,9 @@ impl Arpeggiator {
         )
     }
 
-    pub fn preset_3() -> Arpeggiator {
+    pub fn preset_3(pulse_millis: u64) -> Arpeggiator {
         Arpeggiator::new(
+            pulse_millis,
             PitchClass::C,
             Sequence::new(1, vec![
                 Note::note(Sixteenth, (Down1, I1)),

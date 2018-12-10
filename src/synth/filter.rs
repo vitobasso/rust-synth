@@ -6,12 +6,13 @@ const MAX_CUTOFF: f64 = 440. * 8.;
 const MAX_Q_FACTOR: f64 = 50.;
 
 pub trait Filter {
-    fn set_params(&mut self, cutoff: f64, q_factor: f64, sample_rate: f64) -> ();
+    fn set_params(&mut self, cutoff: f64, q_factor: f64) -> ();
     fn filter(&mut self, input: Sample) -> Sample;
 }
 
 /// http://www.musicdsp.org/files/Audio-EQ-Cookbook.txt
 pub struct BiquadFilter {
+    sample_rate: f64,
     input_history: [Sample;2],
     output_history: [Sample;2],
     coefficients: Coefficients,
@@ -22,13 +23,12 @@ pub struct Coefficients {
 }
 
 impl Filter for BiquadFilter {
-    fn set_params(&mut self, cutoff: f64, q_factor: f64, sample_rate: f64) -> () {
-        assert!(sample_rate > 0., "sample_rate was: {}", sample_rate);
+    fn set_params(&mut self, cutoff: f64, q_factor: f64) -> () {
         assert!(cutoff >= 0. && cutoff <= 1., "cutoff was: {}", cutoff);
         assert!(q_factor >= 0. && q_factor <= 1., "q_factor was: {}", q_factor);
         let scaled_cutoff = cutoff * MAX_CUTOFF;
         let scaled_q_factor = q_factor * MAX_Q_FACTOR;
-        let w0 = 2. * PI * scaled_cutoff / sample_rate;
+        let w0 = 2. * PI * scaled_cutoff / self.sample_rate;
         let alpha = w0.sin() / (2. * scaled_q_factor);
         self.coefficients = (self.calculate)(w0, alpha);
     }
@@ -47,15 +47,17 @@ impl Filter for BiquadFilter {
 }
 
 impl BiquadFilter {
-    pub fn new(calculate: Box<Fn(f64, f64) -> Coefficients>) -> Self {
+    pub fn new(sample_rate: f64, calculate: Box<Fn(f64, f64) -> Coefficients>) -> Self {
+        assert!(sample_rate > 0., "sample_rate was: {}", sample_rate);
         BiquadFilter {
+            sample_rate,
             input_history: [0., 0.],
             output_history: [0., 0.],
             coefficients: Coefficients{ b0: 0., b1: 0., b2: 0., a0: 0., a1: 0., a2: 0. },
             calculate,
         }
     }
-    pub fn lpf() -> Self {
+    pub fn lpf(sample_rate: f64) -> Self {
         let calculate = |w0: f64, alpha: f64| {
             let cos_w0 = w0.cos();
             Coefficients {
@@ -67,9 +69,9 @@ impl BiquadFilter {
                 a2:  1. - alpha,
             }
         };
-        BiquadFilter::new(Box::new(calculate))
+        BiquadFilter::new(sample_rate, Box::new(calculate))
     }
-    pub fn hpf() -> Self {
+    pub fn hpf(sample_rate: f64) -> Self {
         let calculate = |w0: f64, alpha: f64| {
             let cos_w0 = w0.cos();
             Coefficients{
@@ -81,9 +83,9 @@ impl BiquadFilter {
                 a2:   1. - alpha,
             }
         };
-        BiquadFilter::new(Box::new(calculate))
+        BiquadFilter::new(sample_rate, Box::new(calculate))
     }
-    pub fn bpf() -> Self {
+    pub fn bpf(sample_rate: f64) -> Self {
         let calculate = |w0: f64, alpha: f64| {
             let sin_w0 = w0.sin();
             let cos_w0 = w0.cos();
@@ -96,9 +98,9 @@ impl BiquadFilter {
                 a2:   1. - alpha,
             }
         };
-        BiquadFilter::new(Box::new(calculate))
+        BiquadFilter::new(sample_rate, Box::new(calculate))
     }
-    pub fn notch() -> Self {
+    pub fn notch(sample_rate: f64) -> Self {
         let calculate = |w0: f64, alpha: f64| {
             let cos_w0 = w0.cos();
             Coefficients{
@@ -110,6 +112,6 @@ impl BiquadFilter {
                 a2:   1. - alpha,
             }
         };
-        BiquadFilter::new(Box::new(calculate))
+        BiquadFilter::new(sample_rate, Box::new(calculate))
     }
 }
