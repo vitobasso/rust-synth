@@ -6,7 +6,7 @@
 - [x] Arpeggiator
     - Rhythm sequencing
     - Diatonic scale, relative pitches
-- [ ] ADSR Envelope
+- [x] ADSR Envelope
 - [ ] LFO's
 - [ ] Distortion effect
 - [ ] Delay effect

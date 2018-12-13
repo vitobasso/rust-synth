@@ -1,40 +1,54 @@
-use super::{Sample, pitch::Pitch, oscillator::Osc, filter::Filter};
+use super::{Sample, pitch::Pitch, oscillator::Osc, filter::Filter, modulation::Adsr};
 
 pub struct Instrument {
-    clock: Clock,
+    sample_rate: f64,
     pub oscillator: Box<Osc>,
     pub filter: Box<Filter>,
-    pub pitch: Option<Pitch>,
+    pub adsr: Adsr,
     pub transpose: i8,
+    voice: Option<Voice>,
     mod_1: f64,
     mod_2: f64,
 }
 
 impl Instrument {
 
-    pub fn new(sample_rate: f64, oscillator: Box<Osc>, filter: Box<Filter>) -> Instrument {
+    pub fn new(sample_rate: f64, oscillator: Box<Osc>, filter: Box<Filter>, adsr: Adsr) -> Instrument {
         let mut instrument = Instrument {
-            oscillator,
-            filter,
-            clock: Clock::new(sample_rate),
-            pitch: None,
+            sample_rate, oscillator, filter, adsr,
+            voice: None,
             transpose: 0_i8,
-            mod_1: 1.,
-            mod_2: 0.,
+            mod_1: 1., mod_2: 0.,
         };
         instrument.update_filter();
         instrument
     }
 
-    pub fn transposed_pitch(&self) -> Option<Pitch> {
-        self.pitch.map(|p| p + self.transpose)
+    pub fn hold(&mut self, pitch: Pitch) {
+        self.voice = Some(Voice::new(self.sample_rate, pitch));
+    }
+
+    pub fn release(&mut self) {
+        self.voice.as_mut().map(|v| v.release());
+    }
+
+    pub fn is_holding(&self, pitch: Pitch) -> bool {
+        self.voice.as_ref()
+            .map(|v| v.pitch == pitch && v.is_holding())
+            .unwrap_or(false)
     }
 
     pub fn next_sample(&mut self) -> Option<Sample> {
-        self.transposed_pitch().map(|p| {
-            let clock = self.clock.tick();
-            let raw = self.oscillator.next_sample(clock, p.freq(), 0.);
-            self.filter.filter( raw)
+        let transpose = self.transpose.clone();
+        let oscillator = &self.oscillator;
+        let filter = &mut self.filter;
+        let adsr = &self.adsr;
+        self.voice.as_mut().map(|v| {
+            let clock = v.clock.tick();
+            let pitch = v.transposed_pitch(transpose);
+            let raw = oscillator.next_sample(clock, pitch.freq(), 0.);
+            let filtered = filter.filter( raw);
+            adsr.modulate(v.clock(), v.released_clock().unwrap_or(0.), filtered)
         })
     }
 
@@ -53,6 +67,35 @@ impl Instrument {
     }
 }
 
+struct Voice {
+    pitch: Pitch,
+    released_at: Option<f64>,
+    clock: Clock,
+}
+impl Voice {
+    fn new(sample_rate: f64, pitch: Pitch) -> Voice {
+        Voice {
+            pitch,
+            released_at: None,
+            clock: Clock::new(sample_rate)
+        }
+    }
+    fn transposed_pitch(&self, transpose: i8) -> Pitch {
+        self.pitch + transpose
+    }
+    fn clock(&self) -> f64 {
+        self.clock.get()
+    }
+    fn release(&mut self) {
+        self.released_at = Some(self.clock.get())
+    }
+    fn released_clock(&self) -> Option<f64> {
+        self.released_at.as_ref().map(|begin| self.clock() - begin)
+    }
+    fn is_holding(&self) -> bool {
+        self.released_at.is_none()
+    }
+}
 
 struct Clock {
     sample_rate: f64,
@@ -64,6 +107,9 @@ impl Clock {
     }
     fn tick(&mut self) -> f64 {
         self.clock = self.clock + 1.0;
+        self.get()
+    }
+    fn get(&self) -> f64 {
         self.clock / self.sample_rate
     }
 }

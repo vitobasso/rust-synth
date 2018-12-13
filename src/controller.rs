@@ -5,6 +5,7 @@ use synth::{
     oscillator::{Sine, Saw, Mix},
     filter::{BiquadFilter},
     arpeggiator::Arpeggiator,
+    modulation::Adsr,
 };
 
 type Sample = f64;
@@ -45,6 +46,7 @@ impl State {
             sample_rate,
             Box::new(Mix::supersaw(8, 3.0)),
             Box::new(BiquadFilter::lpf(sample_rate)),
+            Adsr::new(0.05, 0.2, 0.9, 0.5)
         );
         State {
             instrument,
@@ -77,8 +79,15 @@ impl State {
             },
             Command::NoteOn(pitch) => {
                 match self.arpeggiator.as_mut() {
-                    Some(arp) => arp.start(pitch),
-                    None => self.instrument.pitch = Some(pitch)
+                    Some(arp) =>
+                        if !arp.is_holding(pitch) {
+                            arp.start(pitch)
+                        },
+                    None => {
+                        if !self.instrument.is_holding(pitch) {
+                            self.instrument.hold(pitch)
+                        }
+                    }
                 }
             },
             Command::NoteOff(pitch) => {
@@ -86,20 +95,20 @@ impl State {
                     Some(arp) =>
                         if arp.is_holding(pitch) {
                             arp.stop();
-                            self.instrument.pitch = None
+                            self.instrument.release()
                         }
                     None =>
-                        if self.instrument.pitch == Some(pitch) {
-                            self.instrument.pitch = None
+                        if self.instrument.is_holding(pitch) {
+                            self.instrument.release()
                         }
                 }
             },
             Command::ArpNoteOn(pitch) => {
-                self.instrument.pitch = Some(pitch);
+                self.instrument.hold(pitch)
             },
             Command::ArpNoteOff(pitch) => {
-                if self.instrument.pitch == Some(pitch) {
-                    self.instrument.pitch = None
+                if self.instrument.is_holding(pitch) {
+                    self.instrument.release()
                 }
             },
             Command::Transpose(n) => {
