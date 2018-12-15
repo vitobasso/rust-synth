@@ -1,7 +1,10 @@
 use std::ops::Add;
 use std::ops::Sub;
 use super::num_traits::FromPrimitive;
+use super::Hz;
 
+pub type Semitones = i8;
+pub type Octave = i8;
 
 #[derive(Clone, Copy, PartialEq, Debug, FromPrimitive)]
 pub enum PitchClass {
@@ -9,46 +12,46 @@ pub enum PitchClass {
 }
 
 impl PitchClass {
-    pub fn from_index(i: u8) -> Option<PitchClass> {
-        FromPrimitive::from_u8(i)
+    pub fn from_index(i: isize) -> Option<PitchClass> {
+        FromPrimitive::from_isize(i)
     }
 }
 
-impl Add<i8> for PitchClass {
+impl Add<Semitones> for PitchClass {
     type Output = Self;
-    fn add(self, rhs: i8) -> Self {
-        let i = ((((self as i8 + rhs) % 12) + 12) % 12) as u8;
+    fn add(self, rhs: Semitones) -> Self {
+        let i = ((((self as Semitones + rhs) % 12) + 12) % 12) as isize;
         PitchClass::from_index(i).expect(format!("Failed to get PitchClass for i={}", i).as_str())
     }
 }
 impl Add<PitchClass> for PitchClass {
     type Output = Self;
     fn add(self, rhs: PitchClass) -> Self {
-        self + rhs as i8
+        self + rhs as Semitones
     }
 }
-impl Sub<i8> for PitchClass {
+impl Sub<Semitones> for PitchClass {
     type Output = Self;
-    fn sub(self, rhs: i8) -> Self {
+    fn sub(self, rhs: Semitones) -> Self {
         self + -rhs
     }
 }
 impl Sub<PitchClass> for PitchClass {
     type Output = Self;
     fn sub(self, rhs: PitchClass) -> Self {
-        self - rhs as i8
+        self - rhs as Semitones
     }
 }
 
 #[derive(Clone, Copy, PartialEq, Debug)]
 pub struct Pitch {
     pub class: PitchClass,
-    pub octave: u8,
+    pub octave: Octave,
 }
 
 impl Pitch {
 
-    pub fn new(class: PitchClass, octave: u8) -> Pitch {
+    pub fn new(class: PitchClass, octave: Octave) -> Pitch {
         Pitch { class, octave }
     }
 
@@ -64,19 +67,19 @@ impl Pitch {
     ///
     /// Source: http://pages.mtu.edu/~suits/NoteFreqCalcs.html
     ///
-    pub fn freq(&self) -> f64 {
-        let f0: f64 = 16.35_f64;
+    pub fn freq(&self) -> Hz {
+        let f0: Hz = 16.35_f64;
         let a: f64 = 2_f64.powf(1_f64/12_f64);
         (f0 * a.powf(self.index() as f64))
     }
 
-    fn index(&self) -> u8{
-        self.octave * 12 + self.class.clone() as u8
+    fn index(&self) -> isize{
+        (self.octave * 12 + self.class.clone() as i8) as isize
     }
 
-    fn from_index(i: u8) -> Pitch {
+    fn from_index(i: isize) -> Pitch {
         Pitch {
-            octave: i/12,
+            octave: (i/12) as Octave,
             class: PitchClass::from_index(i%12)
                 .expect(format!("Failed to get PitchClass for i={}", i).as_str())
         }
@@ -90,20 +93,20 @@ impl Default for Pitch {
     }
 }
 
-impl Add<i8> for Pitch {
+impl Add<Semitones> for Pitch {
     type Output = Self;
-    fn add(self, rhs: i8) -> Self {
-        Pitch::from_index((self.index() as i8 + rhs) as u8)
+    fn add(self, rhs: Semitones) -> Self {
+        Pitch::from_index((self.index() as Semitones + rhs) as isize)
     }
 }
 
 
 #[cfg(test)]
 mod tests {
-    use super::{Pitch, PitchClass::*};
+    use super::{Pitch, PitchClass::*, Hz};
     #[test]
     fn should_convert_pitch_to_freq() {
-        let cases: &[(Pitch, f64)] = &[
+        let cases: &[(Pitch, Hz)] = &[
             (Pitch{ octave: 0, class: C }, 16.35  ),
             (Pitch{ octave: 4, class: C }, 261.63 ),
             (Pitch{ octave: 4, class: A }, 440.0  ),

@@ -1,16 +1,16 @@
 
-use super::Sample;
+use super::{Sample, Seconds};
 
-/// The time params `attack`, `decay` and `release` are in seconds.
-/// `sustain` is a level between 0 and 1
+pub type ScaleRatio = f64;
+
 pub struct Adsr {
-    pub attack: f64,
-    pub decay: f64,
-    pub sustain: f64,
-    pub release: f64,
+    pub attack: Seconds,
+    pub decay: Seconds,
+    pub sustain: ScaleRatio,
+    pub release: Seconds,
 }
 impl Adsr {
-    pub fn new(attack: f64, decay: f64, sustain: f64, release: f64) -> Adsr {
+    pub fn new(attack: Seconds, decay: Seconds, sustain: ScaleRatio, release: Seconds) -> Adsr {
         assert!(attack >= 0., "attack was: {}", attack);
         assert!(decay >= 0., "decay was: {}", decay);
         assert!(sustain >= 0. && sustain <= 1., "sustain was: {}", sustain);
@@ -18,20 +18,17 @@ impl Adsr {
         Adsr { attack, decay, sustain, release }
     }
 
-    /// `clock` measures the time elapsed from:
-    ///     - when the note was triggered, if `is_holding` is true.
-    ///     - when note was released otherwise.
-    pub fn modulate(&self, clock: f64, release_clock: f64, sample: Sample) -> Sample {
-        let scale =
-            if release_clock > 0. {
-                (1. - (release_clock / self.release)).max(0.)
-            } else if clock < self.attack {
-                (clock / self.attack)
-            } else if clock < self.decay {
-                1. - (clock - self.attack / self.decay)
+    pub fn modulate(&self, elapsed: Seconds, elapsed_since_release: Seconds, sample: Sample) -> Sample {
+        let scale_ratio =
+            if elapsed_since_release > 0. {
+                (1. - (elapsed_since_release / self.release)).max(0.)
+            } else if elapsed < self.attack {
+                (elapsed / self.attack)
+            } else if elapsed < self.decay {
+                1. - (elapsed - self.attack / self.decay)
             } else {
                 self.sustain
             };
-        sample * scale
+        sample * scale_ratio
     }
 }

@@ -1,4 +1,4 @@
-use super::pitch::{Pitch, PitchClass::{self, *}};
+use super::pitch::{Pitch, PitchClass::{self, *}, Octave};
 use self::ScaleDegree::*;
 use std::ops::Add;
 use super::num_traits::FromPrimitive;
@@ -8,10 +8,10 @@ pub enum ScaleDegree {
     I1, I2, I3, I4, I5, I6, I7
 }
 #[derive(Clone, Copy, PartialEq, Debug)]
-pub enum Octave {
+pub enum OctaveShift {
     Down3=-3, Down2=-2, Down1=-1, Same=0, Up1=1, Up2=2, Up3=3
 }
-pub type ScalePitch = (Octave, ScaleDegree);
+pub type ScalePitch = (OctaveShift, ScaleDegree);
 
 impl Add<ScaleDegree> for ScaleDegree {
     type Output = Self;
@@ -29,10 +29,10 @@ impl Key {
             let (octave_increment, degree_increment) = interval;
             let new_degree: ScaleDegree = offset_degree + degree_increment;
             let new_class: PitchClass = self.pitch_class_at(new_degree);
-            let carry_octave: i8 = if (new_class as u8) < offset.class as u8 {1} else {0};
-            let new_octave: i8 = offset.octave as i8 + octave_increment as i8 + carry_octave;
+            let carry_octave: Octave = if (new_class as u8) < offset.class as u8 {1} else {0};
+            let new_octave: Octave = offset.octave as i8 + octave_increment as i8 + carry_octave;
             if new_octave > 0 {
-                Some(Pitch::new(new_class, new_octave as u8))
+                Some(Pitch::new(new_class, new_octave))
             } else {
                 None
             }
@@ -68,7 +68,7 @@ impl Key {
 
 #[cfg(test)]
 mod tests {
-    use super::{PitchClass::{self, *}, Pitch, Key, ScaleDegree::{self, *}, Octave::*, ScalePitch};
+    use super::{PitchClass::{self, *}, Pitch, Key, ScaleDegree::{self, *}, OctaveShift::*, ScalePitch};
 
     #[test]
     fn pitch_class_to_scale_degree() {

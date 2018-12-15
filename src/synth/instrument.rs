@@ -1,11 +1,13 @@
-use super::{Sample, pitch::Pitch, oscillator::Osc, filter::Filter, modulation::Adsr};
+use super::{Sample, Seconds, Hz,
+            pitch::{Pitch, Semitones},
+            oscillator::Osc, filter::Filter, modulation::Adsr, };
 
 pub struct Instrument {
-    sample_rate: f64,
+    sample_rate: Hz,
     pub oscillator: Box<Osc>,
     pub filter: Box<Filter>,
     pub adsr: Adsr,
-    pub transpose: i8,
+    pub transpose: Semitones,
     voice: Option<Voice>,
     mod_1: f64,
     mod_2: f64,
@@ -13,7 +15,7 @@ pub struct Instrument {
 
 impl Instrument {
 
-    pub fn new(sample_rate: f64, oscillator: Box<Osc>, filter: Box<Filter>, adsr: Adsr) -> Instrument {
+    pub fn new(sample_rate: Hz, oscillator: Box<Osc>, filter: Box<Filter>, adsr: Adsr) -> Instrument {
         let mut instrument = Instrument {
             sample_rate, oscillator, filter, adsr,
             voice: None,
@@ -69,27 +71,27 @@ impl Instrument {
 
 struct Voice {
     pitch: Pitch,
-    released_at: Option<f64>,
+    released_at: Option<Seconds>,
     clock: Clock,
 }
 impl Voice {
-    fn new(sample_rate: f64, pitch: Pitch) -> Voice {
+    fn new(sample_rate: Hz, pitch: Pitch) -> Voice {
         Voice {
             pitch,
             released_at: None,
             clock: Clock::new(sample_rate)
         }
     }
-    fn transposed_pitch(&self, transpose: i8) -> Pitch {
+    fn transposed_pitch(&self, transpose: Semitones) -> Pitch {
         self.pitch + transpose
     }
-    fn clock(&self) -> f64 {
+    fn clock(&self) -> Seconds {
         self.clock.get()
     }
     fn release(&mut self) {
         self.released_at = Some(self.clock.get())
     }
-    fn released_clock(&self) -> Option<f64> {
+    fn released_clock(&self) -> Option<Seconds> {
         self.released_at.as_ref().map(|begin| self.clock() - begin)
     }
     fn is_holding(&self) -> bool {
@@ -98,18 +100,18 @@ impl Voice {
 }
 
 struct Clock {
-    sample_rate: f64,
-    clock: f64,
+    sample_rate: Hz,
+    clock: Seconds,
 }
 impl Clock {
-    fn new(sample_rate: f64) -> Clock {
+    fn new(sample_rate: Hz) -> Clock {
         Clock{ sample_rate, clock: 0. }
     }
-    fn tick(&mut self) -> f64 {
+    fn tick(&mut self) -> Seconds {
         self.clock = self.clock + 1.0;
         self.get()
     }
-    fn get(&self) -> f64 {
+    fn get(&self) -> Seconds {
         self.clock / self.sample_rate
     }
 }

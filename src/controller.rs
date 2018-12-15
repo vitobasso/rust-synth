@@ -1,17 +1,17 @@
 use std::sync::mpsc::{Receiver, SyncSender};
 use synth::{
+    Sample, Hz,
     instrument::Instrument,
-    pitch::Pitch,
+    pitch::{Pitch, Semitones},
     oscillator::{Sine, Saw, Mix},
     filter::{BiquadFilter},
     arpeggiator::Arpeggiator,
     modulation::Adsr,
 };
 
-type Sample = f64;
 const PULSE_MILLIS: u64 = 100;
 
-pub fn run_forever(sample_rate: f64, cmd_in: Receiver<Command>, signal_out: SyncSender<Sample>) {
+pub fn run_forever(sample_rate: Hz, cmd_in: Receiver<Command>, signal_out: SyncSender<Sample>) {
     let mut state = State::new(sample_rate);
 
     loop {
@@ -32,7 +32,7 @@ pub fn run_forever(sample_rate: f64, cmd_in: Receiver<Command>, signal_out: Sync
 pub enum Command {
     Patch1, Patch2, Patch3, Patch4, Patch5, Patch6, Patch7, Patch8, Patch9, Patch0,
     NoteOn(Pitch), NoteOff(Pitch), ArpNoteOn(Pitch), ArpNoteOff(Pitch),
-    Transpose(i8),
+    Transpose(Semitones),
     ModParam1(f64), ModParam2(f64),
 }
 
@@ -41,10 +41,10 @@ struct State {
     arpeggiator: Option<Arpeggiator>,
 }
 impl State {
-    fn new(sample_rate: f64) -> State {
+    fn new(sample_rate: Hz) -> State {
         let instrument = Instrument::new(
             sample_rate,
-            Box::new(Mix::supersaw(8, 3.0)),
+            Box::new(Mix::supersaw(8, 3.)),
             Box::new(BiquadFilter::lpf(sample_rate)),
             Adsr::new(0.05, 0.2, 0.9, 0.5)
         );

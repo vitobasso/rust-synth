@@ -1,30 +1,30 @@
 extern crate rand;
 
-use super::Sample;
+use super::{Sample, Seconds, Hz};
 use self::rand::{Rng, ThreadRng};
 use std::f64::consts::PI;
 
 pub trait Osc {
-    fn next_sample(&self, clock: f64, freq: f64, phase: f64) -> Sample;
+    fn next_sample(&self, clock: Seconds, freq: Hz, phase: Seconds) -> Sample;
 }
 
 pub struct Sine;
 impl Osc for Sine {
-    fn next_sample(&self, clock: f64, freq: f64, phase: f64) -> Sample {
+    fn next_sample(&self, clock: Seconds, freq: Hz, phase: Seconds) -> Sample {
         ((clock + phase) * freq * 2. * PI).sin()
     }
 }
 
 pub struct Saw;
 impl Osc for Saw {
-    fn next_sample(&self, clock: f64, freq: f64, phase: f64) -> Sample {
+    fn next_sample(&self, clock: Seconds, freq: Hz, phase: Seconds) -> Sample {
         (((clock + phase) * freq) % 1.)
     }
 }
 
 pub struct StatefulSaw { pub detune: f64 }
 impl Osc for StatefulSaw {
-    fn next_sample(&self, clock: f64, freq: f64, phase: f64) -> f64 {
+    fn next_sample(&self, clock: Seconds, freq: Hz, phase: Seconds) -> Sample {
         let final_freq = freq + self.detune;
         Saw.next_sample(clock, final_freq, phase)
     }
@@ -32,7 +32,7 @@ impl Osc for StatefulSaw {
 
 pub struct Mix { pub voices: Vec<Box<Osc>> }
 impl Osc for Mix {
-    fn next_sample(&self, clock: f64, freq: f64, phase: f64) -> Sample {
+    fn next_sample(&self, clock: Seconds, freq: Hz, phase: Seconds) -> Sample {
         let sum: f64 = self.voices.iter()
             .map(|o| o.next_sample(clock, freq, phase))
             .sum();
@@ -40,9 +40,9 @@ impl Osc for Mix {
     }
 }
 impl Mix {
-    pub fn supersaw(n_voices: u16, detune_amount: f64) -> Mix {
+    pub fn supersaw(n_voices: u16, detune_amount: Hz) -> Mix {
         let mut rng = rand::thread_rng();
-        fn random_around_zero(rng: &mut ThreadRng, amount: f64) -> f64 {
+        fn random_around_zero(rng: &mut ThreadRng, amount: Hz) -> Hz {
             rng.gen_range(-amount, amount)
         }
 

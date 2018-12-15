@@ -1,12 +1,14 @@
 use std::time::{Duration, SystemTime};
 
+pub type Millis = u64;
+
 pub struct Pulse {
     period: Duration,
     latest: SystemTime,
 }
 impl Pulse {
-    pub fn with_period_millis(period_millis: u64) -> Pulse {
-        Pulse::with_period(Duration::from_millis(period_millis))
+    pub fn with_period_millis(period: Millis) -> Pulse {
+        Pulse::with_period(Duration::from_millis(period))
     }
     pub fn with_period(period: Duration) -> Pulse {
         Pulse{ period, latest: SystemTime::now() }

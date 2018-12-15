@@ -72,8 +72,8 @@ pub enum Invalid {
 
 #[cfg(test)]
 mod tests {
-    use super::{Sequence, Event::{self, *}, Note, Duration::{self, *}, Invalid};
-    use super::super::diatonic_scale::{ScalePitch, Octave::*, ScaleDegree::*};
+    use super::{Sequence, Event::{self, *}, Note, Duration::*};
+    use super::super::diatonic_scale::{OctaveShift::*, ScaleDegree::*};
 
     const W: Note = Note{duration: Whole,     pitch: None};
     const H: Note = Note{duration: Half,      pitch: None};

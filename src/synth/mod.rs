@@ -10,4 +10,6 @@ pub mod pulse;
 pub mod arpeggiator;
 pub mod modulation;
 
-type Sample = f64;
+pub type Sample = f64;
+pub type Seconds = f64;
+pub type Hz = f64;

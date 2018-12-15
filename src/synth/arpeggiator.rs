@@ -1,8 +1,8 @@
 use super::{
     rhythm::{*, Duration::*},
-    diatonic_scale::{*, Octave::*, ScaleDegree::*},
+    diatonic_scale::{*, OctaveShift::*, ScaleDegree::*},
     pitch::{Pitch, PitchClass},
-    pulse::Pulse,
+    pulse::*,
 };
 use super::super::controller::Command;
 
@@ -15,8 +15,8 @@ pub struct Arpeggiator {
     playing: Option<Pitch>,
 }
 impl Arpeggiator {
-    pub fn new(pulse_millis: u64, key: Key, sequence: Sequence) -> Arpeggiator {
-        let pulse = Pulse::with_period_millis(pulse_millis);
+    pub fn new(pulse: Millis, key: Key, sequence: Sequence) -> Arpeggiator {
+        let pulse = Pulse::with_period_millis(pulse);
         Arpeggiator {
             sequence,
             index: 0,
@@ -67,9 +67,9 @@ impl Arpeggiator {
         }
     }
 
-    pub fn preset_1(pulse_millis: u64) -> Arpeggiator {
+    pub fn preset_1(pulse: Millis) -> Arpeggiator {
         Arpeggiator::new(
-            pulse_millis,
+            pulse,
             PitchClass::C,
             Sequence::new(1, vec![
                 Note::note(Eight, (Down1, I1)),
@@ -84,9 +84,9 @@ impl Arpeggiator {
         )
     }
 
-    pub fn preset_2(pulse_millis: u64) -> Arpeggiator {
+    pub fn preset_2(pulse: Millis) -> Arpeggiator {
         Arpeggiator::new(
-            pulse_millis,
+            pulse,
             PitchClass::C,
             Sequence::new(1, vec![
                 Note::note(Eight, (Down2, I1)),
@@ -101,9 +101,9 @@ impl Arpeggiator {
         )
     }
 
-    pub fn preset_3(pulse_millis: u64) -> Arpeggiator {
+    pub fn preset_3(pulse: Millis) -> Arpeggiator {
         Arpeggiator::new(
-            pulse_millis,
+            pulse,
             PitchClass::C,
             Sequence::new(1, vec![
                 Note::note(Sixteenth, (Down1, I1)),
