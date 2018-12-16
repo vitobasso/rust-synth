@@ -1,5 +1,6 @@
 extern crate num_traits;
 
+pub mod controller;
 pub mod instrument;
 pub mod pitch;
 pub mod oscillator;

@@ -5,7 +5,7 @@ use conrod::{widget, Colorable, Positionable, Widget};
 use conrod::backend::glium::glium::{self, Surface};
 use gui;
 use std::sync::mpsc::Sender;
-use controller::Command;
+use synth::controller::Command;
 
 pub fn show(cmd_out: Sender<Command>) {
     const WIDTH: u32 = 400;

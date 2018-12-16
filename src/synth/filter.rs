@@ -6,7 +6,7 @@ const MAX_CUTOFF: Hz = 440. * 8.;
 const MAX_Q_FACTOR: f64 = 50.;
 
 pub trait Filter {
-    fn set_params(&mut self, cutoff: Hz, q_factor: f64) -> ();
+    fn set_params(&mut self, cutoff: Hz, q_factor: f64);
     fn filter(&mut self, input: Sample) -> Sample;
 }
 
@@ -23,7 +23,7 @@ pub struct Coefficients {
 }
 
 impl Filter for BiquadFilter {
-    fn set_params(&mut self, cutoff: Hz, q_factor: f64) -> () {
+    fn set_params(&mut self, cutoff: Hz, q_factor: f64) {
         assert!(cutoff >= 0. && cutoff <= 1., "cutoff was: {}", cutoff);
         assert!(q_factor >= 0. && q_factor <= 1., "q_factor was: {}", q_factor);
         let scaled_cutoff = cutoff * MAX_CUTOFF;

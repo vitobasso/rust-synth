@@ -1,13 +1,13 @@
 use super::{Sample, Seconds, Hz,
             pitch::{Pitch, Semitones},
-            oscillator::Osc, filter::Filter, modulation::Adsr, };
+            oscillator::Oscillator, filter::Filter, modulation::Adsr, };
 
 pub struct Instrument {
     sample_rate: Hz,
-    pub oscillator: Box<Osc>,
+    pub oscillator: Box<Oscillator>,
     pub filter: Box<Filter>,
     pub adsr: Adsr,
-    pub transpose: Semitones,
+    transpose: Semitones,
     voice: Option<Voice>,
     mod_1: f64,
     mod_2: f64,
@@ -15,7 +15,7 @@ pub struct Instrument {
 
 impl Instrument {
 
-    pub fn new(sample_rate: Hz, oscillator: Box<Osc>, filter: Box<Filter>, adsr: Adsr) -> Instrument {
+    pub fn new(sample_rate: Hz, oscillator: Box<Oscillator>, filter: Box<Filter>, adsr: Adsr) -> Instrument {
         let mut instrument = Instrument {
             sample_rate, oscillator, filter, adsr,
             voice: None,
@@ -27,10 +27,18 @@ impl Instrument {
     }
 
     pub fn hold(&mut self, pitch: Pitch) {
-        self.voice = Some(Voice::new(self.sample_rate, pitch));
+        if !self.is_holding(pitch) {
+            self.voice = Some(Voice::new(self.sample_rate, pitch));
+        }
     }
 
-    pub fn release(&mut self) {
+    pub fn release(&mut self, pitch: Pitch) {
+        if self.is_holding(pitch) {
+            self.release_any()
+        }
+    }
+
+    pub fn release_any(&mut self) {
         self.voice.as_mut().map(|v| v.release());
     }
 
@@ -54,17 +62,21 @@ impl Instrument {
         })
     }
 
-    pub fn set_mod_1(&mut self, value: f64) -> () {
+    pub fn transpose(&mut self, value: Semitones) {
+        self.transpose = self.transpose + value
+    }
+
+    pub fn set_mod_1(&mut self, value: f64) {
         self.mod_1 = value;
         self.update_filter();
     }
 
-    pub fn set_mod_2(&mut self, value: f64) -> () {
+    pub fn set_mod_2(&mut self, value: f64) {
         self.mod_2 = value;
         self.update_filter();
     }
 
-    fn update_filter(&mut self) -> () {
+    fn update_filter(&mut self) {
         self.filter.set_params(self.mod_1, self.mod_2)
     }
 }
@@ -101,7 +113,7 @@ impl Voice {
 
 struct Clock {
     sample_rate: Hz,
-    clock: Seconds,
+    clock: f64,
 }
 impl Clock {
     fn new(sample_rate: Hz) -> Clock {

@@ -1,10 +1,7 @@
 use super::{
-    rhythm::{*, Duration::*},
-    diatonic_scale::{*, OctaveShift::*, ScaleDegree::*},
-    pitch::{Pitch, PitchClass},
-    pulse::*,
+    pulse::*, rhythm::*, diatonic_scale::Key,
+    pitch::Pitch, controller::Command,
 };
-use super::super::controller::Command;
 
 pub struct Arpeggiator {
     sequence: Sequence,
@@ -15,12 +12,11 @@ pub struct Arpeggiator {
     playing: Option<Pitch>,
 }
 impl Arpeggiator {
-    pub fn new(pulse: Millis, key: Key, sequence: Sequence) -> Arpeggiator {
-        let pulse = Pulse::with_period_millis(pulse);
+    pub fn new(pulse_period: Millis, key: Key, sequence: Sequence) -> Arpeggiator {
         Arpeggiator {
             sequence,
             index: 0,
-            pulse,
+            pulse: Pulse::with_period_millis(pulse_period),
             key,
             holding: None,
             playing: None,
@@ -67,62 +63,4 @@ impl Arpeggiator {
         }
     }
 
-    pub fn preset_1(pulse: Millis) -> Arpeggiator {
-        Arpeggiator::new(
-            pulse,
-            PitchClass::C,
-            Sequence::new(1, vec![
-                Note::note(Eight, (Down1, I1)),
-                Note::note(Eight, (Same, I1)),
-                Note::note(Eight, (Down1, I1)),
-                Note::note(Eight, (Same, I1)),
-                Note::note(Eight, (Down1, I1)),
-                Note::note(Eight, (Same, I1)),
-                Note::note(Eight, (Down1, I1)),
-                Note::note(Eight, (Same, I1)),
-            ]).expect("Invalid sequence")
-        )
-    }
-
-    pub fn preset_2(pulse: Millis) -> Arpeggiator {
-        Arpeggiator::new(
-            pulse,
-            PitchClass::C,
-            Sequence::new(1, vec![
-                Note::note(Eight, (Down2, I1)),
-                Note::note(Eight, (Down1, I1)),
-                Note::note(Eight, (Same, I1)),
-                Note::note(Eight, (Down1, I1)),
-                Note::note(Eight, (Same, I1)),
-                Note::note(Eight, (Down1, I1)),
-                Note::note(Eight, (Down2, I1)),
-                Note::note(Eight, (Down1, I1)),
-            ]).expect("Invalid sequence")
-        )
-    }
-
-    pub fn preset_3(pulse: Millis) -> Arpeggiator {
-        Arpeggiator::new(
-            pulse,
-            PitchClass::C,
-            Sequence::new(1, vec![
-                Note::note(Sixteenth, (Down1, I1)),
-                Note::note(Sixteenth, (Down1, I3)),
-                Note::note(Sixteenth, (Down1, I5)),
-                Note::note(Sixteenth, (Same, I1)),
-                Note::note(Sixteenth, (Same, I3)),
-                Note::note(Sixteenth, (Same, I5)),
-                Note::note(Sixteenth, (Up1, I1)),
-                Note::note(Sixteenth, (Up1, I3)),
-                Note::note(Sixteenth, (Up1, I5)),
-                Note::note(Sixteenth, (Up1, I3)),
-                Note::note(Sixteenth, (Up1, I1)),
-                Note::note(Sixteenth, (Same, I5)),
-                Note::note(Sixteenth, (Same, I3)),
-                Note::note(Sixteenth, (Same, I1)),
-                Note::note(Sixteenth, (Down1, I5)),
-                Note::note(Sixteenth, (Down1, I3)),
-            ]).expect("Invalid sequence")
-        )
-    }
 }

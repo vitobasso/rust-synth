@@ -24,7 +24,7 @@ pub fn run_forever(device: &Device, format: &Format, sig_in: Receiver<Sample>) {
     });
 }
 
-fn feed_buffer<T: SampleFromF64>(mut buffer: OutputBuffer<T>, sig_in: &Receiver<Sample>, channels: usize) -> () {
+fn feed_buffer<T: SampleFromF64>(mut buffer: OutputBuffer<T>, sig_in: &Receiver<Sample>, channels: usize) {
     for buff_chunks in buffer.chunks_mut(channels) {
         match sig_in.recv() {
             Ok(sample) =>

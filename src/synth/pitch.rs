@@ -12,15 +12,15 @@ pub enum PitchClass {
 }
 
 impl PitchClass {
-    pub fn from_index(i: isize) -> Option<PitchClass> {
-        FromPrimitive::from_isize(i)
+    pub fn from_index(i: usize) -> Option<PitchClass> {
+        FromPrimitive::from_usize(i)
     }
 }
 
 impl Add<Semitones> for PitchClass {
     type Output = Self;
     fn add(self, rhs: Semitones) -> Self {
-        let i = ((((self as Semitones + rhs) % 12) + 12) % 12) as isize;
+        let i = ((((self as Semitones + rhs) % 12) + 12) % 12) as usize;
         PitchClass::from_index(i).expect(format!("Failed to get PitchClass for i={}", i).as_str())
     }
 }
@@ -73,11 +73,11 @@ impl Pitch {
         (f0 * a.powf(self.index() as f64))
     }
 
-    fn index(&self) -> isize{
-        (self.octave * 12 + self.class.clone() as i8) as isize
+    fn index(&self) -> usize{
+        (self.octave * 12 + self.class.clone() as i8) as usize
     }
 
-    fn from_index(i: isize) -> Pitch {
+    fn from_index(i: usize) -> Pitch {
         Pitch {
             octave: (i/12) as Octave,
             class: PitchClass::from_index(i%12)
@@ -96,7 +96,7 @@ impl Default for Pitch {
 impl Add<Semitones> for Pitch {
     type Output = Self;
     fn add(self, rhs: Semitones) -> Self {
-        Pitch::from_index((self.index() as Semitones + rhs) as isize)
+        Pitch::from_index((self.index() as Semitones + rhs) as usize)
     }
 }
 
