@@ -1,8 +1,7 @@
 
-use super::{Sample, Seconds};
+use super::{Sample, Seconds, ScaleRatio};
 
-pub type ScaleRatio = f64;
-
+#[derive(Clone, Copy)]
 pub struct Adsr {
     pub attack: Seconds,
     pub decay: Seconds,
@@ -18,7 +17,7 @@ impl Adsr {
         Adsr { attack, decay, sustain, release }
     }
 
-    pub fn modulate(&self, elapsed: Seconds, elapsed_since_release: Seconds, sample: Sample) -> Sample {
+    pub fn apply(&self, elapsed: Seconds, elapsed_since_release: Seconds, sample: Sample) -> Sample {
         let scale_ratio =
             if elapsed_since_release > 0. {
                 (1. - (elapsed_since_release / self.release)).max(0.)

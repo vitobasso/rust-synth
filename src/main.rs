@@ -5,7 +5,8 @@ use std::thread;
 use std::sync::mpsc::{channel, sync_channel};
 use synth::{
     Sample, Hz, controller::{self, Patch, Command},
-    oscillator::Specs::*, rhythm::{*, Duration::*}, diatonic_scale::{ScaleDegree::*, OctaveShift::*},
+    instrument, oscillator::Specs::*, filter::Specs::*, envelope::Adsr,
+    rhythm::{*, Duration::*}, diatonic_scale::{ScaleDegree::*, OctaveShift::*},
 };
 
 mod audio_out;
@@ -27,6 +28,14 @@ fn main() {
 }
 
 fn patches() -> Vec<Patch> {
+
+    let adsr_smooth = Adsr::new(0.05, 0.2, 0.9, 0.5);
+    let adsr_noop = Adsr::new(0., 0., 1., 0.);
+    let osc_supersaw = Supersaw {n_voices: 8, detune_amount: 3.};
+    let sine = instrument::Specs { oscillator: Sine, filter: LPF, adsr: adsr_smooth, amplify: 1. };
+    let saw = instrument::Specs { oscillator: Saw, filter: LPF, adsr: adsr_smooth, amplify: 0.8 };
+    let supersaw = instrument::Specs { oscillator: osc_supersaw, filter: LPF, adsr: adsr_noop, amplify: 1.5 };
+
     let arp_1 = Sequence::new(1, vec![
         Note::note(Eight, (Down1, I1)),
         Note::note(Eight, (Same, I1)),
@@ -59,9 +68,9 @@ fn patches() -> Vec<Patch> {
 
     vec![
         Patch::Arpeggiator(None),
-        Patch::Oscillator(Sine),
-        Patch::Oscillator(Saw),
-        Patch::Oscillator(Supersaw {n_voices: 8, detune_amount: 3.}),
+        Patch::Instrument(sine),
+        Patch::Instrument(saw),
+        Patch::Instrument(supersaw),
         Patch::Noop,
         Patch::Noop,
         Patch::Noop,

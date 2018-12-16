@@ -1,8 +1,7 @@
 use std::sync::mpsc::{Receiver, SyncSender};
 use super::{
     Sample, Hz, pulse::Millis, pitch::{Pitch, PitchClass, Semitones},
-    instrument::Instrument, oscillator::{self, Oscillator, Specs::Supersaw},
-    filter::{BiquadFilter}, modulation::Adsr,
+    instrument::{self, Instrument}, oscillator::{self, Oscillator},
     arpeggiator::Arpeggiator, rhythm::Sequence,
 };
 
@@ -29,17 +28,19 @@ pub enum Command {
     SetPatch(usize),
     NoteOn(Pitch), NoteOff(Pitch), ArpNoteOn(Pitch), ArpNoteOff(Pitch),
     Transpose(Semitones),
-    ModParam1(f64), ModParam2(f64),
+    ModXY(f64, f64),
 }
 
 #[derive(Clone)]
 pub enum Patch {
+    Instrument(instrument::Specs),
     Oscillator(oscillator::Specs),
     Arpeggiator(Option<Sequence>),
     Noop,
 }
 
 struct State {
+    sample_rate: Hz,
     instrument: Instrument,
     arpeggiator: Option<Arpeggiator>,
     patches: Vec<Patch>,
@@ -47,13 +48,13 @@ struct State {
 
 impl State {
     pub fn new(sample_rate: Hz, patches: Vec<Patch>) -> State {
-        let instrument = Instrument::new(
-            sample_rate,
-            Oscillator::new(Supersaw {n_voices: 8, detune_amount: 3.}),
-            Box::new(BiquadFilter::lpf(sample_rate)),
-            Adsr::new(0.05, 0.2, 0.9, 0.5)
-        );
-        State { instrument, arpeggiator: None, patches, }
+        let default_instrument_specs =
+            match patches.get(1).cloned().expect("No default patch.") {
+                Patch::Instrument(specs) => specs,
+                _ => panic!("Default patch must be of type Instrument."),
+            };
+        let instrument = Instrument::new(default_instrument_specs, sample_rate);
+        State { sample_rate, instrument, arpeggiator: None, patches, }
     }
 
     fn interpret(&mut self, command: Command) {
@@ -63,8 +64,7 @@ impl State {
             Command::ArpNoteOn(pitch) => self.instrument.hold(pitch),
             Command::ArpNoteOff(pitch) => self.instrument.release(pitch),
             Command::Transpose(n) => self.instrument.transpose(n),
-            Command::ModParam1(value) => self.instrument.set_mod_1(value),
-            Command::ModParam2(value) => self.instrument.set_mod_2(value),
+            Command::ModXY(x, y) => self.instrument.set_params(x, y),
             Command::SetPatch(i) => {
                 let patch: Patch = self.patches.get(i).cloned().unwrap_or(Patch::Noop);
                 self.set_patch(patch);
@@ -95,8 +95,10 @@ impl State {
 
     fn set_patch(&mut self, patch: Patch) {
         match patch {
-            Patch::Oscillator(osc) =>
-                self.instrument.oscillator = Oscillator::new(osc),
+            Patch::Instrument(specs) =>
+                self.instrument = Instrument::new(specs, self.sample_rate),
+            Patch::Oscillator(specs) =>
+                self.instrument.oscillator = Oscillator::new(specs),
             Patch::Arpeggiator(seq) =>
                 self.arpeggiator = seq.map(|s| Arpeggiator::new(PULSE, PitchClass::C, s)),
             Patch::Noop => (),

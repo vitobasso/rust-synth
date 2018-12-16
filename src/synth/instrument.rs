@@ -1,29 +1,36 @@
-use super::{Sample, Seconds, Hz,
-            pitch::{Pitch, Semitones},
-            oscillator::Oscillator, filter::Filter, modulation::Adsr, };
+use super::{Sample, Seconds, Hz, ScaleRatio, pitch::{Pitch, Semitones},
+            oscillator::{self, Oscillator}, filter::{self, Filter}, envelope::Adsr, };
+
+#[derive(Clone, Copy)]
+pub struct Specs {
+    pub oscillator: oscillator::Specs,
+    pub filter: filter::Specs,
+    pub adsr: Adsr,
+    pub amplify: ScaleRatio,
+}
 
 pub struct Instrument {
     sample_rate: Hz,
     pub oscillator: Box<Oscillator>,
     pub filter: Box<Filter>,
     pub adsr: Adsr,
-    transpose: Semitones,
     voice: Option<Voice>,
-    mod_1: f64,
-    mod_2: f64,
+    amplify: ScaleRatio,
+    transpose: Semitones,
 }
 
 impl Instrument {
 
-    pub fn new(sample_rate: Hz, oscillator: Box<Oscillator>, filter: Box<Filter>, adsr: Adsr) -> Instrument {
-        let mut instrument = Instrument {
-            sample_rate, oscillator, filter, adsr,
+    pub fn new(specs: Specs, sample_rate: Hz) -> Instrument {
+        let oscillator = Oscillator::new(specs.oscillator);
+        let filter = Filter::new(specs.filter, sample_rate);
+        let adsr = specs.adsr;
+        let amplify = specs.amplify;
+        Instrument {
+            sample_rate, oscillator, filter, adsr, amplify,
             voice: None,
             transpose: 0_i8,
-            mod_1: 1., mod_2: 0.,
-        };
-        instrument.update_filter();
-        instrument
+        }
     }
 
     pub fn hold(&mut self, pitch: Pitch) {
@@ -53,12 +60,14 @@ impl Instrument {
         let oscillator = &self.oscillator;
         let filter = &mut self.filter;
         let adsr = &self.adsr;
+        let amplify = &self.amplify;
         self.voice.as_mut().map(|v| {
             let clock = v.clock.tick();
             let pitch = v.transposed_pitch(transpose);
-            let raw = oscillator.next_sample(clock, pitch.freq(), 0.);
-            let filtered = filter.filter( raw);
-            adsr.modulate(v.clock(), v.released_clock().unwrap_or(0.), filtered)
+            let sample_raw = oscillator.next_sample(clock, pitch.freq(), 0.);
+            let sample_filtered = filter.filter( sample_raw);
+            let sample_adsr = adsr.apply(v.clock(), v.released_clock().unwrap_or(0.), sample_filtered);
+            sample_adsr * amplify
         })
     }
 
@@ -66,19 +75,11 @@ impl Instrument {
         self.transpose = self.transpose + value
     }
 
-    pub fn set_mod_1(&mut self, value: f64) {
-        self.mod_1 = value;
-        self.update_filter();
+    pub fn set_params(&mut self, x: f64, y: f64) {
+        let params = filter::Params{cutoff: y, q_factor: x};
+        self.filter.set_params(params)
     }
 
-    pub fn set_mod_2(&mut self, value: f64) {
-        self.mod_2 = value;
-        self.update_filter();
-    }
-
-    fn update_filter(&mut self) {
-        self.filter.set_params(self.mod_1, self.mod_2)
-    }
 }
 
 struct Voice {

@@ -5,9 +5,25 @@ use std::f64::consts::PI;
 const MAX_CUTOFF: Hz = 440. * 8.;
 const MAX_Q_FACTOR: f64 = 50.;
 
+#[derive(Clone, Copy)]
+pub enum Specs { LPF, HPF, BPF, Notch, }
+
+#[derive(Clone, Copy)]
+pub struct Params { pub cutoff: Hz, pub q_factor: f64 }
+
 pub trait Filter {
-    fn set_params(&mut self, cutoff: Hz, q_factor: f64);
+    fn set_params(&mut self, params: Params);
     fn filter(&mut self, input: Sample) -> Sample;
+}
+impl Filter {
+    pub fn new(specs: Specs, sample_rate: Hz) -> Box<Filter> {
+        match specs {
+            Specs::LPF => Box::new(BiquadFilter::lpf(sample_rate)),
+            Specs::HPF => Box::new(BiquadFilter::hpf(sample_rate)),
+            Specs::BPF => Box::new(BiquadFilter::bpf(sample_rate)),
+            Specs::Notch => Box::new(BiquadFilter::notch(sample_rate)),
+        }
+    }
 }
 
 /// http://www.musicdsp.org/files/Audio-EQ-Cookbook.txt
@@ -18,14 +34,17 @@ pub struct BiquadFilter {
     coefficients: Coefficients,
     calculate: Box<Fn(f64, f64) -> Coefficients>,
 }
+#[derive(Debug)]
 pub struct Coefficients {
     b0: f64, b1: f64, b2: f64, a0: f64, a1: f64, a2: f64,
 }
 
 impl Filter for BiquadFilter {
-    fn set_params(&mut self, cutoff: Hz, q_factor: f64) {
+    fn set_params(&mut self, params: Params) {
+        let cutoff = params.cutoff;
+        let q_factor = params.q_factor;
         assert!(cutoff >= 0. && cutoff <= 1., "cutoff was: {}", cutoff);
-        assert!(q_factor >= 0. && q_factor <= 1., "q_factor was: {}", q_factor);
+        assert!(q_factor > 0. && q_factor <= 1., "q_factor was: {}", q_factor);
         let scaled_cutoff = cutoff * MAX_CUTOFF;
         let scaled_q_factor = q_factor * MAX_Q_FACTOR;
         let w0 = 2. * PI * scaled_cutoff / self.sample_rate;
@@ -47,17 +66,20 @@ impl Filter for BiquadFilter {
 }
 
 impl BiquadFilter {
-    pub fn new(sample_rate: Hz, calculate: Box<Fn(f64, f64) -> Coefficients>) -> Self {
+    fn new(sample_rate: Hz, calculate: Box<Fn(f64, f64) -> Coefficients>) -> Self {
         assert!(sample_rate > 0., "sample_rate was: {}", sample_rate);
-        BiquadFilter {
+        let mut filter = BiquadFilter {
             sample_rate,
             input_history: [0., 0.],
             output_history: [0., 0.],
             coefficients: Coefficients{ b0: 0., b1: 0., b2: 0., a0: 0., a1: 0., a2: 0. },
             calculate,
-        }
+        };
+        let init_params = Params{cutoff: 1., q_factor: 0.05};
+        filter.set_params(init_params);
+        filter
     }
-    pub fn lpf(sample_rate: Hz) -> Self {
+    fn lpf(sample_rate: Hz) -> Self {
         let calculate = |w0: f64, alpha: f64| {
             let cos_w0 = w0.cos();
             Coefficients {
@@ -71,7 +93,7 @@ impl BiquadFilter {
         };
         BiquadFilter::new(sample_rate, Box::new(calculate))
     }
-    pub fn hpf(sample_rate: Hz) -> Self {
+    fn hpf(sample_rate: Hz) -> Self {
         let calculate = |w0: f64, alpha: f64| {
             let cos_w0 = w0.cos();
             Coefficients{
@@ -85,7 +107,7 @@ impl BiquadFilter {
         };
         BiquadFilter::new(sample_rate, Box::new(calculate))
     }
-    pub fn bpf(sample_rate: Hz) -> Self {
+    fn bpf(sample_rate: Hz) -> Self {
         let calculate = |w0: f64, alpha: f64| {
             let sin_w0 = w0.sin();
             let cos_w0 = w0.cos();
@@ -100,7 +122,7 @@ impl BiquadFilter {
         };
         BiquadFilter::new(sample_rate, Box::new(calculate))
     }
-    pub fn notch(sample_rate: Hz) -> Self {
+    fn notch(sample_rate: Hz) -> Self {
         let calculate = |w0: f64, alpha: f64| {
             let cos_w0 = w0.cos();
             Coefficients{
@@ -115,3 +137,5 @@ impl BiquadFilter {
         BiquadFilter::new(sample_rate, Box::new(calculate))
     }
 }
+
+//TODO test invalid cutoff & q_factor values

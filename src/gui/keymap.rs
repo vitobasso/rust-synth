@@ -15,7 +15,7 @@ pub fn command_for(input: &event::Input) -> Vec<Command> {
         event::Input::Motion(input::Motion::MouseCursor {x, y}) => {
             let norm_y = ((y + 100.0)/200.0).max(0.).min(1.); //TODO get from screen size
             let norm_x = ((x + 200.0)/400.0).max(0.).min(1.); //TODO get from screen size
-            vec!(Command::ModParam1(norm_y), Command::ModParam2(norm_x))
+            vec!(Command::ModXY(norm_x, norm_y))
         }
         _ => vec![],
     }
