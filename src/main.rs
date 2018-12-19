@@ -67,7 +67,6 @@ fn patches() -> Vec<Patch> {
     ]).expect("Invalid sequence");
 
     vec![
-        Patch::Arpeggiator(None),
         Patch::Instrument(sine),
         Patch::Instrument(saw),
         Patch::Instrument(supersaw),
@@ -77,5 +76,6 @@ fn patches() -> Vec<Patch> {
         Patch::Noop,
         Patch::Arpeggiator(Some(arp_2)),
         Patch::Arpeggiator(Some(arp_1)),
+        Patch::Arpeggiator(None),
     ]
 }

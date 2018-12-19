@@ -2,7 +2,7 @@ use std::sync::mpsc::{Receiver, SyncSender};
 use super::{
     Sample, Hz, pulse::Millis, pitch::{Pitch, PitchClass, Semitones},
     instrument::{self, Instrument}, oscillator::{self, Oscillator},
-    arpeggiator::Arpeggiator, rhythm::Sequence,
+    arpeggiator::Arpeggiator, rhythm::Sequence, diatonic_scale::Key,
 };
 
 const PULSE: Millis = 100;
@@ -27,7 +27,7 @@ pub fn run_forever(sample_rate: Hz, patches: Vec<Patch>, cmd_in: Receiver<Comman
 pub enum Command {
     SetPatch(usize),
     NoteOn(Pitch), NoteOff(Pitch), ArpNoteOn(Pitch), ArpNoteOff(Pitch),
-    Transpose(Semitones),
+    ShiftPitch(Semitones), TransposeKey(Semitones),
     ModXY(f64, f64),
 }
 
@@ -44,26 +44,41 @@ struct State {
     instrument: Instrument,
     arpeggiator: Option<Arpeggiator>,
     patches: Vec<Patch>,
+    key: Key, pitch_shift: Semitones,
 }
 
 impl State {
     pub fn new(sample_rate: Hz, patches: Vec<Patch>) -> State {
         let default_instrument_specs =
-            match patches.get(1).cloned().expect("No default patch.") {
+            match patches.get(0).cloned().expect("No default patch.") {
                 Patch::Instrument(specs) => specs,
                 _ => panic!("Default patch must be of type Instrument."),
             };
         let instrument = Instrument::new(default_instrument_specs, sample_rate);
-        State { sample_rate, instrument, arpeggiator: None, patches, }
+        State { sample_rate, instrument, arpeggiator: None, patches,
+                key: PitchClass::C, pitch_shift: 0 }
     }
 
     fn interpret(&mut self, command: Command) {
         match command {
-            Command::NoteOn(pitch) => self.handle_note_on(pitch),
-            Command::NoteOff(pitch) => self.handle_note_off(pitch),
-            Command::ArpNoteOn(pitch) => self.instrument.hold(pitch),
-            Command::ArpNoteOff(pitch) => self.instrument.release(pitch),
-            Command::Transpose(n) => self.instrument.transpose(n),
+            Command::NoteOn(pitch) => {
+                let transposed_pitch = self.transpose(pitch);
+                self.handle_note_on(transposed_pitch)
+            },
+            Command::NoteOff(pitch) => {
+                let transposed_pitch = self.transpose(pitch);
+                self.handle_note_off(transposed_pitch)
+            },
+            Command::ArpNoteOn(pitch) => {
+                let transposed_pitch = self.transpose(pitch);
+                self.instrument.hold(transposed_pitch)
+            },
+            Command::ArpNoteOff(pitch) => {
+                let transposed_pitch = self.transpose(pitch);
+                self.instrument.release(transposed_pitch)
+            },
+            Command::ShiftPitch(n) => self.pitch_shift = self.pitch_shift + n,
+            Command::TransposeKey(n) => self.key = self.key.circle_of_fifths(n),
             Command::ModXY(x, y) => self.instrument.set_params(x, y),
             Command::SetPatch(i) => {
                 let patch: Patch = self.patches.get(i).cloned().unwrap_or(Patch::Noop);
@@ -91,6 +106,12 @@ impl State {
                 },
             None => self.instrument.release(pitch)
         }
+    }
+
+    fn transpose(&self, pitch: Pitch) -> Pitch {
+        let transposed = PitchClass::C.transpose_to(self.key, pitch)
+            .expect(&format!("Failed to transpose: {:?}", pitch));
+        transposed + self.pitch_shift
     }
 
     fn set_patch(&mut self, patch: Patch) {

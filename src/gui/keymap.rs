@@ -1,6 +1,6 @@
 use conrod::{event, input};
 use synth::controller::Command;
-use synth::pitch::{Pitch, PitchClass};
+use synth::pitch::{Pitch, PitchClass::*};
 
 pub fn command_for(input: &event::Input) -> Vec<Command> {
     match input {
@@ -23,41 +23,53 @@ pub fn command_for(input: &event::Input) -> Vec<Command> {
 
 fn pitches(key: &input::Key) -> Option<Pitch> { //TODO shift => sharp pitches
     match key {
+        //num row
+        input::Key::D1 =>        Some(Pitch::new(A, 4)),
+        input::Key::D2 =>        Some(Pitch::new(B, 4)),
+        input::Key::D3 =>        Some(Pitch::new(C, 5)),
+        input::Key::D4 =>        Some(Pitch::new(D, 5)),
+        input::Key::D5 =>        Some(Pitch::new(E, 5)),
+        input::Key::D6 =>        Some(Pitch::new(F, 5)),
+        input::Key::D7 =>        Some(Pitch::new(G, 5)),
+        input::Key::D8 =>        Some(Pitch::new(A, 5)),
+        input::Key::D9 =>        Some(Pitch::new(B, 5)),
+        input::Key::D0 =>        Some(Pitch::new(C, 6)),
+
         //top row
-        input::Key::Q => Some(Pitch { class: PitchClass::A, octave: 4 }),
-        input::Key::W => Some(Pitch { class: PitchClass::B, octave: 4 }),
-        input::Key::E => Some(Pitch { class: PitchClass::C, octave: 5 }),
-        input::Key::R => Some(Pitch { class: PitchClass::D, octave: 5 }),
-        input::Key::T => Some(Pitch { class: PitchClass::E, octave: 5 }),
-        input::Key::Y => Some(Pitch { class: PitchClass::F, octave: 5 }),
-        input::Key::U => Some(Pitch { class: PitchClass::G, octave: 5 }),
-        input::Key::I => Some(Pitch { class: PitchClass::A, octave: 5 }),
-        input::Key::O => Some(Pitch { class: PitchClass::B, octave: 5 }),
-        input::Key::P => Some(Pitch { class: PitchClass::C, octave: 6 }),
+        input::Key::Q =>         Some(Pitch::new(A, 3)),
+        input::Key::W =>         Some(Pitch::new(B, 3)),
+        input::Key::E =>         Some(Pitch::new(C, 4)),
+        input::Key::R =>         Some(Pitch::new(D, 4)),
+        input::Key::T =>         Some(Pitch::new(E, 4)),
+        input::Key::Y =>         Some(Pitch::new(F, 4)),
+        input::Key::U =>         Some(Pitch::new(G, 4)),
+        input::Key::I =>         Some(Pitch::new(A, 4)),
+        input::Key::O =>         Some(Pitch::new(B, 4)),
+        input::Key::P =>         Some(Pitch::new(C, 5)),
 
         //middle row
-        input::Key::A => Some(Pitch { class: PitchClass::A, octave: 3 }),
-        input::Key::S => Some(Pitch { class: PitchClass::B, octave: 3 }),
-        input::Key::D => Some(Pitch { class: PitchClass::C, octave: 4 }),
-        input::Key::F => Some(Pitch { class: PitchClass::D, octave: 4 }),
-        input::Key::G => Some(Pitch { class: PitchClass::E, octave: 4 }),
-        input::Key::H => Some(Pitch { class: PitchClass::F, octave: 4 }),
-        input::Key::J => Some(Pitch { class: PitchClass::G, octave: 4 }),
-        input::Key::K => Some(Pitch { class: PitchClass::A, octave: 4 }),
-        input::Key::L => Some(Pitch { class: PitchClass::B, octave: 4 }),
-        input::Key::Semicolon => Some(Pitch { class: PitchClass::C, octave: 5 }),
+        input::Key::A =>         Some(Pitch::new(A, 2)),
+        input::Key::S =>         Some(Pitch::new(B, 2)),
+        input::Key::D =>         Some(Pitch::new(C, 3)),
+        input::Key::F =>         Some(Pitch::new(D, 3)),
+        input::Key::G =>         Some(Pitch::new(E, 3)),
+        input::Key::H =>         Some(Pitch::new(F, 3)),
+        input::Key::J =>         Some(Pitch::new(G, 3)),
+        input::Key::K =>         Some(Pitch::new(A, 3)),
+        input::Key::L =>         Some(Pitch::new(B, 3)),
+        input::Key::Semicolon => Some(Pitch::new(C, 4)),
 
         //bottom row
-        input::Key::Z => Some(Pitch { class: PitchClass::A, octave: 2 }),
-        input::Key::X => Some(Pitch { class: PitchClass::B, octave: 2 }),
-        input::Key::C => Some(Pitch { class: PitchClass::C, octave: 3 }),
-        input::Key::V => Some(Pitch { class: PitchClass::D, octave: 3 }),
-        input::Key::B => Some(Pitch { class: PitchClass::E, octave: 3 }),
-        input::Key::N => Some(Pitch { class: PitchClass::F, octave: 3 }),
-        input::Key::M => Some(Pitch { class: PitchClass::G, octave: 3 }),
-        input::Key::Comma => Some(Pitch { class: PitchClass::A, octave: 3 }),
-        input::Key::Period => Some(Pitch { class: PitchClass::B, octave: 3 }),
-        input::Key::Slash => Some(Pitch { class: PitchClass::C, octave: 4 }),
+        input::Key::Z =>         Some(Pitch::new(A, 1)),
+        input::Key::X =>         Some(Pitch::new(B, 1)),
+        input::Key::C =>         Some(Pitch::new(C, 2)),
+        input::Key::V =>         Some(Pitch::new(D, 2)),
+        input::Key::B =>         Some(Pitch::new(E, 2)),
+        input::Key::N =>         Some(Pitch::new(F, 2)),
+        input::Key::M =>         Some(Pitch::new(G, 2)),
+        input::Key::Comma =>     Some(Pitch::new(A, 2)),
+        input::Key::Period =>    Some(Pitch::new(B, 2)),
+        input::Key::Slash =>     Some(Pitch::new(C, 3)),
 
         _ => None,
     }
@@ -65,25 +77,28 @@ fn pitches(key: &input::Key) -> Option<Pitch> { //TODO shift => sharp pitches
 
 fn patches(key: &input::Key) -> Option<Command> {
     match key {
-        input::Key::D1 => Some(Command::SetPatch(1)),
-        input::Key::D2 => Some(Command::SetPatch(2)),
-        input::Key::D3 => Some(Command::SetPatch(3)),
-        input::Key::D4 => Some(Command::SetPatch(4)),
-        input::Key::D5 => Some(Command::SetPatch(5)),
-        input::Key::D6 => Some(Command::SetPatch(6)),
-        input::Key::D7 => Some(Command::SetPatch(7)),
-        input::Key::D8 => Some(Command::SetPatch(8)),
-        input::Key::D9 => Some(Command::SetPatch(9)),
-        input::Key::D0 => Some(Command::SetPatch(0)),
+        input::Key::F1 => Some(Command::SetPatch(0)),
+        input::Key::F2 => Some(Command::SetPatch(1)),
+        input::Key::F3 => Some(Command::SetPatch(2)),
+        input::Key::F4 => Some(Command::SetPatch(3)),
+        input::Key::F5 => Some(Command::SetPatch(4)),
+        input::Key::F6 => Some(Command::SetPatch(5)),
+        input::Key::F7 => Some(Command::SetPatch(6)),
+        input::Key::F8 => Some(Command::SetPatch(7)),
+        input::Key::F9 => Some(Command::SetPatch(8)),
+        input::Key::F10 => Some(Command::SetPatch(9)),
         _ => None,
     }
 }
 
 fn transpose(key: &input::Key) -> Option<Command> {
     match key {
-        input::Key::LeftBracket => Some(Command::Transpose(-1)),
-        input::Key::RightBracket => Some(Command::Transpose(1)),
-        //TODO shift brackets => octave up/down
+        input::Key::Down => Some(Command::ShiftPitch(-12)),
+        input::Key::Up => Some(Command::ShiftPitch(12)),
+        input::Key::Left => Some(Command::ShiftPitch(-1)),
+        input::Key::Right => Some(Command::ShiftPitch(1)),
+        input::Key::LeftBracket => Some(Command::TransposeKey(-1)),
+        input::Key::RightBracket => Some(Command::TransposeKey(1)),
         _ => None,
     }
 }

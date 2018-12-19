@@ -1,4 +1,4 @@
-use super::{Sample, Seconds, Hz, ScaleRatio, pitch::{Pitch, Semitones},
+use super::{Sample, Seconds, Hz, ScaleRatio, pitch::Pitch,
             oscillator::{self, Oscillator}, filter::{self, Filter}, envelope::Adsr, };
 
 #[derive(Clone, Copy)]
@@ -16,7 +16,6 @@ pub struct Instrument {
     pub adsr: Adsr,
     voice: Option<Voice>,
     amplify: ScaleRatio,
-    transpose: Semitones,
 }
 
 impl Instrument {
@@ -27,9 +26,7 @@ impl Instrument {
         let adsr = specs.adsr;
         let amplify = specs.amplify;
         Instrument {
-            sample_rate, oscillator, filter, adsr, amplify,
-            voice: None,
-            transpose: 0_i8,
+            sample_rate, oscillator, filter, adsr, amplify, voice: None
         }
     }
 
@@ -56,23 +53,17 @@ impl Instrument {
     }
 
     pub fn next_sample(&mut self) -> Option<Sample> {
-        let transpose = self.transpose.clone();
         let oscillator = &self.oscillator;
         let filter = &mut self.filter;
         let adsr = &self.adsr;
         let amplify = &self.amplify;
         self.voice.as_mut().map(|v| {
             let clock = v.clock.tick();
-            let pitch = v.transposed_pitch(transpose);
-            let sample_raw = oscillator.next_sample(clock, pitch.freq(), 0.);
+            let sample_raw = oscillator.next_sample(clock, v.pitch.freq(), 0.);
             let sample_filtered = filter.filter( sample_raw);
             let sample_adsr = adsr.apply(v.clock(), v.released_clock().unwrap_or(0.), sample_filtered);
             sample_adsr * amplify
         })
-    }
-
-    pub fn transpose(&mut self, value: Semitones) {
-        self.transpose = self.transpose + value
     }
 
     pub fn set_params(&mut self, x: f64, y: f64) {
@@ -94,9 +85,6 @@ impl Voice {
             released_at: None,
             clock: Clock::new(sample_rate)
         }
-    }
-    fn transposed_pitch(&self, transpose: Semitones) -> Pitch {
-        self.pitch + transpose
     }
     fn clock(&self) -> Seconds {
         self.clock.get()
