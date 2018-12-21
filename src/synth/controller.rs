@@ -27,7 +27,7 @@ pub fn run_forever(sample_rate: Hz, patches: Vec<Patch>, cmd_in: Receiver<Comman
 pub enum Command {
     SetPatch(usize),
     NoteOn(Pitch), NoteOff(Pitch), ArpNoteOn(Pitch), ArpNoteOff(Pitch),
-    ShiftPitch(Semitones), TransposeKey(Semitones),
+    ShiftPitch(Semitones), ShiftKeyboard(Semitones), TransposeKey(Semitones),
     ModXY(f64, f64),
 }
 
@@ -78,6 +78,10 @@ impl State {
                 self.instrument.release(transposed_pitch)
             },
             Command::ShiftPitch(n) => self.pitch_shift = self.pitch_shift + n,
+            Command::ShiftKeyboard(n) => {
+                self.key = self.key + n;
+                self.pitch_shift = self.pitch_shift - n;
+            }
             Command::TransposeKey(n) => self.key = self.key.circle_of_fifths(n),
             Command::ModXY(x, y) => self.instrument.set_params(x, y),
             Command::SetPatch(i) => {
