@@ -8,9 +8,10 @@
     - [ ] LFO's
     - [ ] Wire modulation to parameters
 - Effects
+    - [ ] Compression
     - [ ] Distortion
     - [ ] Delay
-- [ ] Polyphony
+- [x] Polyphony
 - [ ] Loop recording
 - [ ] GUI
 - [ ] Patch creation, storage

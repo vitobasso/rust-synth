@@ -6,7 +6,7 @@ use super::Hz;
 pub type Semitones = i8;
 pub type Octave = i8;
 
-#[derive(Clone, Copy, PartialEq, Debug, FromPrimitive)]
+#[derive(Clone, Copy, PartialEq, Eq, Hash, FromPrimitive, Debug)]
 pub enum PitchClass {
     C, Db, D, Eb, E, F, Gb, G, Ab, A, Bb, B
 }
@@ -43,7 +43,7 @@ impl Sub<PitchClass> for PitchClass {
     }
 }
 
-#[derive(Clone, Copy, PartialEq, Debug)]
+#[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
 pub struct Pitch {
     pub class: PitchClass,
     pub octave: Octave,

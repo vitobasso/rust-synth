@@ -1,7 +1,8 @@
 use std::sync::mpsc::{Receiver, SyncSender};
+use std::collections::HashMap;
 use super::{
     Sample, Hz, pulse::Millis, pitch::{Pitch, PitchClass, Semitones},
-    instrument::{self, Instrument}, oscillator::{self, Oscillator},
+    instrument::{self, Instrument}, oscillator,
     arpeggiator::Arpeggiator, rhythm::Sequence, diatonic_scale::Key,
 };
 
@@ -18,9 +19,8 @@ pub fn run_forever(sample_rate: Hz, patches: Vec<Patch>, cmd_in: Receiver<Comman
             .and_then(|arp| arp.next())
             .map(|cmd| state.interpret(cmd));
 
-        state.instrument.next_sample().map(|sample|
-            signal_out.send(sample).expect("Failed to send a sample")
-        );
+        let sample = state.instrument.next_sample();
+        signal_out.send(sample).expect("Failed to send a sample");
     }
 }
 
@@ -45,6 +45,7 @@ struct State {
     arpeggiator: Option<Arpeggiator>,
     patches: Vec<Patch>,
     key: Key, pitch_shift: Semitones,
+    holding_notes: HashMap<Pitch, Pitch>,
 }
 
 impl State {
@@ -56,20 +57,15 @@ impl State {
             };
         let instrument = Instrument::new(default_instrument_specs, sample_rate);
         State { sample_rate, instrument, arpeggiator: None, patches,
-                key: PitchClass::C, pitch_shift: 0 }
+                key: PitchClass::C, pitch_shift: 0, holding_notes: HashMap::new() }
     }
 
     fn interpret(&mut self, command: Command) {
         match command {
-            Command::NoteOn(pitch) => {
-                let transposed_pitch = self.transpose(pitch);
-                self.handle_note_on(transposed_pitch)
-            },
-            Command::NoteOff(pitch) => {
-                let transposed_pitch = self.transpose(pitch);
-                self.handle_note_off(transposed_pitch)
-            },
+            Command::NoteOn(pitch) => self.handle_note_on(pitch),
+            Command::NoteOff(pitch) => self.handle_note_off(pitch),
             Command::ArpNoteOn(pitch) => {
+                self.instrument.release_all();
                 let transposed_pitch = self.transpose(pitch);
                 self.instrument.hold(transposed_pitch)
             },
@@ -92,24 +88,28 @@ impl State {
     }
 
     fn handle_note_on(&mut self, pitch: Pitch) {
+        let transposed_pitch = self.transpose(pitch);
+        self.holding_notes.insert(pitch, transposed_pitch);
         match self.arpeggiator.as_mut() {
             Some(arp) =>
-                if !arp.is_holding(pitch) {
-                    arp.start(pitch)
+                if !arp.is_holding(transposed_pitch) {
+                    arp.start(transposed_pitch)
                 },
-            None => self.instrument.hold(pitch)
-        }
+            None => self.instrument.hold(transposed_pitch)
+        };
     }
 
     fn handle_note_off(&mut self, pitch: Pitch) {
-        match self.arpeggiator.as_mut() {
-            Some(arp) =>
-                if arp.is_holding(pitch) {
-                    arp.stop();
-                    self.instrument.release_any()
-                },
-            None => self.instrument.release(pitch)
-        }
+        self.holding_notes.remove(&pitch).map(|remembered_pitch|
+            match self.arpeggiator.as_mut() {
+                Some(arp) =>
+                    if arp.is_holding(remembered_pitch) {
+                        arp.stop();
+                        self.instrument.release_all();
+                    },
+                None => self.instrument.release(remembered_pitch)
+            }
+        );
     }
 
     fn transpose(&self, pitch: Pitch) -> Pitch {
@@ -123,7 +123,7 @@ impl State {
             Patch::Instrument(specs) =>
                 self.instrument = Instrument::new(specs, self.sample_rate),
             Patch::Oscillator(specs) =>
-                self.instrument.oscillator = Oscillator::new(specs),
+                self.instrument.set_oscillator(specs),
             Patch::Arpeggiator(seq) =>
                 self.arpeggiator = seq.map(|s| Arpeggiator::new(PULSE, PitchClass::C, s)),
             Patch::Noop => (),
