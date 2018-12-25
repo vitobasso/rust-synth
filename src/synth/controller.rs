@@ -1,9 +1,10 @@
 use std::sync::mpsc::{Receiver, SyncSender};
 use std::collections::HashMap;
 use super::{
-    Sample, Hz, pulse::Millis, pitch::{Pitch, PitchClass, Semitones},
+    Sample, Millis, Hz, pitch::{Pitch, PitchClass, Semitones},
     instrument::{self, Instrument}, oscillator,
     arpeggiator::Arpeggiator, rhythm::Sequence, diatonic_scale::Key,
+    loop_recorder::*,
 };
 
 const PULSE: Millis = 100;
@@ -20,15 +21,23 @@ pub fn run_forever(sample_rate: Hz, patches: Vec<Patch>, cmd_in: Receiver<Comman
             .map(|cmd| state.interpret(cmd));
 
         let sample = state.instrument.next_sample();
-        signal_out.send(sample).expect("Failed to send a sample");
+
+        let mix = state.loops.next_sample() + sample;
+
+        signal_out.send(mix).expect("Failed to send a sample");
+
+        if let Some(rec) = state.loops.get_recorder() {
+            rec.write(sample)
+        }
     }
 }
 
 pub enum Command {
-    SetPatch(usize),
     NoteOn(Pitch), NoteOff(Pitch), ArpNoteOn(Pitch), ArpNoteOff(Pitch),
-    ShiftPitch(Semitones), ShiftKeyboard(Semitones), TransposeKey(Semitones),
     ModXY(f64, f64),
+    SetPatch(usize),
+    LoopPlaybackToggle(usize), LoopRecordingToggle(usize),
+    ShiftPitch(Semitones), ShiftKeyboard(Semitones), TransposeKey(Semitones),
 }
 
 #[derive(Clone)]
@@ -46,6 +55,7 @@ struct State {
     patches: Vec<Patch>,
     key: Key, pitch_shift: Semitones,
     holding_notes: HashMap<Pitch, Pitch>,
+    loops: LoopManager,
 }
 
 impl State {
@@ -57,7 +67,8 @@ impl State {
             };
         let instrument = Instrument::new(default_instrument_specs, sample_rate);
         State { sample_rate, instrument, arpeggiator: None, patches,
-                key: PitchClass::C, pitch_shift: 0, holding_notes: HashMap::new() }
+                key: PitchClass::C, pitch_shift: 0, holding_notes: HashMap::new(),
+                loops: LoopManager::new() }
     }
 
     fn interpret(&mut self, command: Command) {
@@ -73,17 +84,19 @@ impl State {
                 let transposed_pitch = self.transpose(pitch);
                 self.instrument.release(transposed_pitch)
             },
+            Command::ModXY(x, y) => self.instrument.set_params(x, y),
             Command::ShiftPitch(n) => self.pitch_shift = self.pitch_shift + n,
             Command::ShiftKeyboard(n) => {
                 self.key = self.key + n;
                 self.pitch_shift = self.pitch_shift - n;
             }
             Command::TransposeKey(n) => self.key = self.key.circle_of_fifths(n),
-            Command::ModXY(x, y) => self.instrument.set_params(x, y),
             Command::SetPatch(i) => {
                 let patch: Patch = self.patches.get(i).cloned().unwrap_or(Patch::Noop);
                 self.set_patch(patch);
             },
+            Command::LoopRecordingToggle(i) => self.loops.toggle_recording(i),
+            Command::LoopPlaybackToggle(i) => self.loops.toggle_playback(i),
         }
     }
 

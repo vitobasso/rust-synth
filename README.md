@@ -12,7 +12,7 @@
     - [ ] Distortion
     - [ ] Delay
 - [x] Polyphony
-- [ ] Loop recording
+- [x] Loop recording
 - [ ] GUI
 - [ ] Patch creation, storage
 - [ ] Talk to Midi controllers

@@ -1,5 +1,5 @@
 use super::{
-    pulse::*, rhythm::*, diatonic_scale::Key,
+    Millis, pulse::Pulse, rhythm::*, diatonic_scale::Key,
     pitch::Pitch, controller::Command,
 };
 

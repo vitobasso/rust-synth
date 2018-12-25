@@ -1,29 +1,23 @@
-use std::time::{Duration, SystemTime};
-
-pub type Millis = u64;
+use std::time::{Duration, Instant};
+use super::Millis;
 
 pub struct Pulse {
     period: Duration,
-    latest: SystemTime,
+    latest: Instant,
 }
 impl Pulse {
     pub fn with_period_millis(period: Millis) -> Pulse {
         Pulse::with_period(Duration::from_millis(period))
     }
     pub fn with_period(period: Duration) -> Pulse {
-        Pulse{ period, latest: SystemTime::now() }
+        Pulse{ period, latest: Instant::now() }
     }
-    pub fn read(&mut self) -> Option<SystemTime> {
-        match self.latest.elapsed() {
-            Ok(elapsed) => {
-                let should_trigger = elapsed >= self.period;
-                if should_trigger {
-                    let current_pulse = self.latest + self.period;
-                    self.latest = current_pulse;
-                    Some(current_pulse)
-                } else { None }
-            },
-            _ => panic!("Failed to read clock")
-        }
+    pub fn read(&mut self) -> Option<Instant> {
+        let should_trigger = self.latest.elapsed() >= self.period;
+        if should_trigger {
+            let current_pulse = self.latest + self.period;
+            self.latest = current_pulse;
+            Some(current_pulse)
+        } else { None }
     }
 }

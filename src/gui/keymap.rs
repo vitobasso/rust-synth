@@ -7,6 +7,7 @@ pub fn command_for(input: &event::Input) -> Vec<Command> {
         event::Input::Press(input::Button::Keyboard(key)) =>
             pitches(key).map(Command::NoteOn)
                 .or(patches(key))
+                .or(loop_rec(key))
                 .or(transpose(key))
                 .map_or(vec![], |v| vec![v]),
         event::Input::Release(input::Button::Keyboard(key)) =>
@@ -79,15 +80,31 @@ fn patches(key: &input::Key) -> Option<Command> {
     }
 }
 
+fn loop_rec(key: &input::Key) -> Option<Command> {
+    match key {
+        input::Key::F1 =>  Some(Command::LoopPlaybackToggle(0)),
+        input::Key::F2 =>  Some(Command::LoopPlaybackToggle(1)),
+        input::Key::F3 =>  Some(Command::LoopPlaybackToggle(2)),
+        input::Key::F4 =>  Some(Command::LoopPlaybackToggle(3)),
+        input::Key::F5 =>  Some(Command::LoopPlaybackToggle(4)),
+        input::Key::F6 =>  Some(Command::LoopRecordingToggle(0)),
+        input::Key::F7 =>  Some(Command::LoopRecordingToggle(1)),
+        input::Key::F8 =>  Some(Command::LoopRecordingToggle(2)),
+        input::Key::F9 =>  Some(Command::LoopRecordingToggle(3)),
+        input::Key::F10 => Some(Command::LoopRecordingToggle(4)),
+        _ => None,
+    }
+}
+
 fn transpose(key: &input::Key) -> Option<Command> {
     match key {
-        input::Key::Down => Some(Command::ShiftPitch(-12)),
-        input::Key::Up => Some(Command::ShiftPitch(12)),
-        input::Key::Left => Some(Command::ShiftKeyboard(-1)),
-        input::Key::Right => Some(Command::ShiftKeyboard(1)),
-        input::Key::Minus => Some(Command::ShiftPitch(-1)),
-        input::Key::Equals => Some(Command::ShiftPitch(1)),
-        input::Key::LeftBracket => Some(Command::TransposeKey(-1)),
+        input::Key::Down =>         Some(Command::ShiftPitch(-12)),
+        input::Key::Up =>           Some(Command::ShiftPitch(12)),
+        input::Key::Left =>         Some(Command::ShiftKeyboard(-1)),
+        input::Key::Right =>        Some(Command::ShiftKeyboard(1)),
+        input::Key::Minus =>        Some(Command::ShiftPitch(-1)),
+        input::Key::Equals =>       Some(Command::ShiftPitch(1)),
+        input::Key::LeftBracket =>  Some(Command::TransposeKey(-1)),
         input::Key::RightBracket => Some(Command::TransposeKey(1)),
         _ => None,
     }
