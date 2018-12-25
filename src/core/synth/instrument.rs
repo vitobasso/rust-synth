@@ -1,5 +1,6 @@
-use super::{Sample, Seconds, Hz, ScaleRatio, pitch::Pitch,
-            oscillator::{self, Oscillator}, filter::{self, Filter}, envelope::Adsr, };
+use super::{Sample, Seconds, ScaleRatio,
+            oscillator::{self, Oscillator}, filter::{self, Filter}, envelope::Adsr};
+use core::music_theory::{Hz, pitch::Pitch};
 
 #[derive(Clone, Copy)]
 pub struct Specs {
@@ -45,9 +46,10 @@ impl Instrument {
         let filter = &mut self.filter;
         let adsr = &self.adsr;
         self.voices.drop_finished_voices();
-        self.voices.voices.iter_mut()
+        let mix: Sample = self.voices.voices.iter_mut()
             .map(|voice| Instrument::next_sample_for_voice(voice, oscillator, filter, adsr))
-            .fold(0., |a, b| a + b) * self.amplify
+            .sum();
+        mix * self.amplify
     }
 
     fn next_sample_for_voice (voice: &mut Voice, oscillator: &Box<Oscillator>, filter: &mut Box<Filter>, adsr: &Adsr) -> Sample {

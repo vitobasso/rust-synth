@@ -1,4 +1,3 @@
-
 use super::{Sample, Seconds, ScaleRatio};
 
 #[derive(Clone, Copy)]

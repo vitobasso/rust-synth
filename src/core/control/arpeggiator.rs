@@ -1,7 +1,5 @@
-use super::{
-    Millis, pulse::Pulse, rhythm::*, diatonic_scale::Key,
-    pitch::Pitch, controller::Command,
-};
+use core::control::{Millis, pulse::Pulse, controller::Command};
+use core::music_theory::{pitch::Pitch, rhythm::*, diatonic_scale::Key};
 
 pub struct Arpeggiator {
     sequence: Sequence,

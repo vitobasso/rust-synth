@@ -1,5 +1,5 @@
-
-use super::{Sample, Hz};
+use super::Sample;
+use core::music_theory::Hz;
 use std::f64::consts::PI;
 
 const MAX_CUTOFF: Hz = 440. * 8.;

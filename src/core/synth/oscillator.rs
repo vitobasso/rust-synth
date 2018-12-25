@@ -1,6 +1,7 @@
 extern crate rand;
 
-use super::{Sample, Seconds, Hz};
+use super::{Sample, Seconds};
+use core::music_theory::Hz;
 use self::rand::{Rng, ThreadRng};
 use std::f64::consts::PI;
 
@@ -48,10 +49,9 @@ impl Oscillator for StatefulSaw {
 pub struct Mix { pub voices: Vec<Box<Oscillator>> }
 impl Oscillator for Mix {
     fn next_sample(&self, clock: Seconds, freq: Hz, phase: Seconds) -> Sample {
-        let sum: f64 = self.voices.iter()
+        self.voices.iter()
             .map(|o| o.next_sample(clock, freq, phase))
-            .sum();
-        sum / self.voices.len() as f64
+            .sum()
     }
 }
 impl Mix {

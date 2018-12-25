@@ -1,10 +1,8 @@
-use std::sync::mpsc::{Receiver, SyncSender};
-use std::collections::HashMap;
-use super::{
-    Sample, Millis, Hz, pitch::{Pitch, PitchClass, Semitones},
-    instrument::{self, Instrument}, oscillator,
-    arpeggiator::Arpeggiator, rhythm::Sequence, diatonic_scale::Key,
-    loop_recorder::*,
+use std::{sync::mpsc::{Receiver, SyncSender}, collections::HashMap};
+use core::{
+    control::{Millis, arpeggiator::Arpeggiator, loop_recorder::*},
+    music_theory::{Hz, Semitones, pitch::{Pitch, PitchClass}, rhythm::Sequence, diatonic_scale::Key},
+    synth::{Sample, instrument::{self, Instrument}, oscillator},
 };
 
 const PULSE: Millis = 100;
@@ -20,14 +18,12 @@ pub fn run_forever(sample_rate: Hz, patches: Vec<Patch>, cmd_in: Receiver<Comman
             .and_then(|arp| arp.next())
             .map(|cmd| state.interpret(cmd));
 
-        let sample = state.instrument.next_sample();
-
-        let mix = state.loops.next_sample() + sample;
-
-        signal_out.send(mix).expect("Failed to send a sample");
+        let new_sample = state.instrument.next_sample();
+        let mix_sample = state.loops.next_sample() + new_sample;
+        signal_out.send(mix_sample).expect("Failed to send a sample");
 
         if let Some(rec) = state.loops.get_recorder() {
-            rec.write(sample)
+            rec.write(new_sample)
         }
     }
 }

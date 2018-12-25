@@ -1,4 +1,3 @@
-
 use super::diatonic_scale::ScalePitch;
 
 #[derive(Clone, Copy, Debug)]

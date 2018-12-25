@@ -1,10 +1,5 @@
-use std::ops::Add;
-use std::ops::Sub;
-use super::num_traits::FromPrimitive;
-use super::Hz;
-
-pub type Semitones = i8;
-pub type Octave = i8;
+use std::ops::{Add, Sub};
+use super::{Hz, Semitones, Octave, num_traits::FromPrimitive};
 
 #[derive(Clone, Copy, PartialEq, Eq, Hash, FromPrimitive, Debug)]
 pub enum PitchClass {

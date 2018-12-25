@@ -1,7 +1,6 @@
-use super::pitch::{Pitch, PitchClass::{self, *}, Octave, Semitones};
+use super::{Semitones, Octave, pitch::{Pitch, PitchClass::{self, *}}, num_traits::FromPrimitive};
 use self::ScaleDegree::*;
 use std::ops::{Add, Sub};
-use super::num_traits::FromPrimitive;
 
 #[derive(Clone, Copy, PartialEq, Debug, FromPrimitive)]
 pub enum ScaleDegree {

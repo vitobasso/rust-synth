@@ -1,6 +1,6 @@
 use conrod::{event, input};
-use synth::controller::Command;
-use synth::pitch::{Pitch, PitchClass::*};
+use core::control::controller::Command;
+use core::music_theory::pitch::{Pitch, PitchClass::*};
 
 pub fn command_for(input: &event::Input) -> Vec<Command> {
     match input {

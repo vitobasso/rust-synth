@@ -1,6 +1,5 @@
 use super::Sample;
-use std::collections::HashMap;
-use std::mem;
+use std::{collections::HashMap, mem};
 
 pub struct LoopManager {
     loops: HashMap<usize, Loop>,
@@ -30,8 +29,9 @@ impl LoopManager {
         self.recording_loop.as_mut()
     }
     pub fn next_sample(&mut self) -> Sample {
-        self.playing_loops.values_mut().filter_map(|l| l.next())
-            .fold(0., |a, b| a + b)
+        self.playing_loops.values_mut()
+            .filter_map(|l| l.next())
+            .sum()
     }
 }
 
