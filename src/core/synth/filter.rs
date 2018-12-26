@@ -4,12 +4,21 @@ use std::f64::consts::PI;
 
 const MAX_CUTOFF: Hz = 440. * 8.;
 const MAX_Q_FACTOR: f64 = 50.;
+const MIN_Q_FACTOR: f64 = 1.;
 
 #[derive(Clone, Copy)]
 pub enum Specs { LPF, HPF, BPF, Notch, }
 
 #[derive(Clone, Copy)]
 pub struct Params { pub cutoff: Hz, pub q_factor: f64 }
+impl Params {
+    pub fn new(cutoff: Hz, q_factor: f64) -> Params {
+        Params {
+            cutoff: cutoff.powi(2).max(0.).min(1.),
+            q_factor: q_factor.powi(2).max(0.).min(1.),
+        }
+    }
+}
 
 pub trait Filter {
     fn set_params(&mut self, params: Params);
@@ -44,9 +53,9 @@ impl Filter for BiquadFilter {
         let cutoff = params.cutoff;
         let q_factor = params.q_factor;
         assert!(cutoff >= 0. && cutoff <= 1., "cutoff was: {}", cutoff);
-        assert!(q_factor > 0. && q_factor <= 1., "q_factor was: {}", q_factor);
+        assert!(q_factor <= 1., "q_factor was: {}", q_factor);
         let scaled_cutoff = cutoff * MAX_CUTOFF;
-        let scaled_q_factor = q_factor * MAX_Q_FACTOR;
+        let scaled_q_factor = (q_factor * MAX_Q_FACTOR).max(MIN_Q_FACTOR);
         let w0 = 2. * PI * scaled_cutoff / self.sample_rate;
         let alpha = w0.sin() / (2. * scaled_q_factor);
         self.coefficients = (self.calculate)(w0, alpha);

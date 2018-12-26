@@ -2,23 +2,33 @@ use conrod::{event, input};
 use core::control::controller::Command;
 use core::music_theory::pitch::{Pitch, PitchClass::*};
 
-pub fn command_for(input: &event::Input) -> Vec<Command> {
-    match input {
-        event::Input::Press(input::Button::Keyboard(key)) =>
-            pitches(key).map(Command::NoteOn)
-                .or(patches(key))
-                .or(loop_rec(key))
-                .or(transpose(key))
-                .map_or(vec![], |v| vec![v]),
-        event::Input::Release(input::Button::Keyboard(key)) =>
-            pitches(key).map(Command::NoteOff)
-                .map_or(vec![], |v| vec![v]),
-        event::Input::Motion(input::Motion::MouseCursor {x, y}) => {
-            let norm_y = ((y + 100.0)/200.0).max(0.).min(1.); //TODO get from screen size
-            let norm_x = ((x + 200.0)/400.0).max(0.).min(1.); //TODO get from screen size
-            vec!(Command::ModXY(norm_x, norm_y))
+pub struct KeyMap { window_width: u32, window_height: u32 }
+impl KeyMap {
+    pub fn new(window_width: u32, window_height: u32) -> KeyMap {
+        KeyMap { window_width, window_height }
+    }
+    pub fn command_for(&self, input: &event::Input) -> Vec<Command> {
+        match input {
+            event::Input::Press(input::Button::Keyboard(key)) =>
+                pitches(key).map(Command::NoteOn)
+                    .or(patches(key))
+                    .or(loop_rec(key))
+                    .or(transpose(key))
+                    .map_or(vec![], |v| vec![v]),
+            event::Input::Release(input::Button::Keyboard(key)) =>
+                pitches(key).map(Command::NoteOff)
+                    .map_or(vec![], |v| vec![v]),
+            event::Input::Motion(input::Motion::MouseCursor {x, y}) => vec![self.mod_xy(*x, *y)],
+            _ => vec![],
         }
-        _ => vec![],
+    }
+
+    fn mod_xy(&self, x: f64, y: f64) -> Command {
+        let w = self.window_width as f64;
+        let h = self.window_height as f64;
+        let norm_y = ((y + h/2.)/h).max(0.).min(1.);
+        let norm_x = ((x + w/2.)/w).max(0.).min(1.);
+        Command::ModXY(norm_x, norm_y)
     }
 }
 

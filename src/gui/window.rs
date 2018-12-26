@@ -40,6 +40,8 @@ pub fn show(cmd_out: Sender<Command>) {
     // The image map describing each of our widget->image mappings (in our case, none).
     let image_map = conrod::image::Map::<glium::texture::Texture2d>::new();
 
+    let keymap = gui::keymap::KeyMap::new(WIDTH, HEIGHT);
+
     'render: loop {
         let mut events = framework.next(&mut events_loop);
 
@@ -60,7 +62,7 @@ pub fn show(cmd_out: Sender<Command>) {
                 },
             };
 
-            gui::keymap::command_for(&input)
+            keymap.command_for(&input)
                 .into_iter().map(|c| cmd_out.send(c))
                 .collect::<Result<Vec<_>, _>>().unwrap(); //TODO propagate up
 

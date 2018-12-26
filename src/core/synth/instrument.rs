@@ -59,7 +59,7 @@ impl Instrument {
     }
 
     pub fn set_params(&mut self, x: f64, y: f64) {
-        let params = filter::Params{cutoff: y, q_factor: x};
+        let params = filter::Params::new(x, y);
         self.filter.set_params(params)
     }
 
