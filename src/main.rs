@@ -10,6 +10,7 @@ use core::{
 
 mod audio_out;
 pub mod core;
+mod io;
 mod gui;
 
 fn main() {

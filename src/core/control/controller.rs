@@ -4,11 +4,14 @@ use core::{
     music_theory::{Hz, Semitones, pitch::{Pitch, PitchClass}, rhythm::Sequence, diatonic_scale::Key},
     synth::{Sample, instrument::{self, Instrument}, oscillator},
 };
+use io::wav;
 
 const PULSE: Millis = 100;
 
 pub fn run_forever(sample_rate: Hz, patches: Vec<Patch>, cmd_in: Receiver<Command>, signal_out: SyncSender<Sample>) {
     let mut state = State::new(sample_rate, patches);
+    let mut writer = wav::writer(sample_rate as u32, "debug_me.wav");
+    let mut count = 0;
     loop {
         match cmd_in.try_recv() {
             Ok(command) => state.interpret(command),
@@ -24,6 +27,12 @@ pub fn run_forever(sample_rate: Hz, patches: Vec<Patch>, cmd_in: Receiver<Comman
 
         if let Some(rec) = state.loops.get_recorder() {
             rec.write(new_sample)
+        }
+
+        writer.write_sample(new_sample as f32);
+        count = count + 1;
+        if count % sample_rate as i32 == 0 {
+            writer.flush();
         }
     }
 }
