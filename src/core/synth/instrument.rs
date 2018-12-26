@@ -43,20 +43,19 @@ impl Instrument {
 
     pub fn next_sample(&mut self) -> Sample {
         let oscillator = &self.oscillator;
-        let filter = &mut self.filter;
         let adsr = &self.adsr;
         self.voices.drop_finished_voices();
-        let mix: Sample = self.voices.voices.iter_mut()
-            .map(|voice| Instrument::next_sample_for_voice(voice, oscillator, filter, adsr))
+        let sample_mix: Sample = self.voices.voices.iter_mut()
+            .map(|voice| Instrument::next_sample_for_voice(voice, oscillator, adsr))
             .sum();
-        mix * self.amplify
+        let sample_filtered = self.filter.filter(sample_mix);
+        sample_filtered * self.amplify
     }
 
-    fn next_sample_for_voice (voice: &mut Voice, oscillator: &Box<Oscillator>, filter: &mut Box<Filter>, adsr: &Adsr) -> Sample {
+    fn next_sample_for_voice (voice: &mut Voice, oscillator: &Box<Oscillator>, adsr: &Adsr) -> Sample {
         let clock = voice.clock.tick();
-        let sample_raw = oscillator.next_sample(clock, voice.pitch.freq(), 0.);
-        let sample_filtered = filter.filter( sample_raw);
-        adsr.apply(voice.clock(), voice.released_clock().unwrap_or(0.), sample_filtered)
+        let sample = oscillator.next_sample(clock, voice.pitch.freq(), 0.);
+        adsr.apply(voice.clock(), voice.released_clock().unwrap_or(0.), sample)
     }
 
     pub fn set_params(&mut self, x: f64, y: f64) {

@@ -1,5 +1,3 @@
 FIX
 - crash on Key::transpose_to for some keys
 - crash when filter params are out of bounds
-- popping at the beginning of notes
-    - popping at the end of sustain when a second note is held simultaneously
