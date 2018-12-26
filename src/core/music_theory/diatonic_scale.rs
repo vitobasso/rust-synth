@@ -10,7 +10,7 @@ pub enum ScaleDegree {
 pub enum OctaveShift {
     Down3=-3, Down2=-2, Down1=-1, Same=0, Up1=1, Up2=2, Up3=3
 }
-pub type ScalePitch = (OctaveShift, ScaleDegree);
+pub type RelativePitch = (OctaveShift, ScaleDegree);
 
 impl Add<ScaleDegree> for ScaleDegree {
     type Output = Self;
@@ -31,7 +31,7 @@ impl Sub<ScaleDegree> for ScaleDegree {
 
 pub type Key = PitchClass;
 impl Key {
-    pub fn pitch_at(self, offset: Pitch, interval: ScalePitch) -> Option<Pitch> {
+    pub fn pitch_at(self, offset: Pitch, interval: RelativePitch) -> Option<Pitch> {
         self.degree_of(offset.class).and_then(|offset_degree: ScaleDegree| {
             let (octave_increment, degree_increment) = interval;
             let new_degree: ScaleDegree = offset_degree + degree_increment;
@@ -72,27 +72,21 @@ impl Key {
     }
 
     pub fn transpose_to(&self, other: Key, pitch: Pitch) -> Option<Pitch> {
-        self.transpose_class_to(other, pitch.class).map(|class| Pitch::new(class, pitch.octave))
+        self.transpose_class_to(other, pitch.class).map(|class| {
+            let carry_octave =
+                if pitch.class == PitchClass::C && class == PitchClass::B {-1} else {0};
+            Pitch::new(class, pitch.octave + carry_octave)
+        })
     }
 
     fn transpose_class_to(&self, other: Key, pitch_class: PitchClass) -> Option<PitchClass> {
-        match self.degree_of(other) {
-            Some(key_distance) =>
-                self.degree_of(pitch_class).map(|degree| {
-                    other.pitch_class_at(degree - key_distance)
-                }),
-            None => other.transpose_class_from(*self, pitch_class)
-        }
-    }
-
-    fn transpose_class_from(&self, other: Key, pitch_class: PitchClass) -> Option<PitchClass> {
-        match self.degree_of(other) {
-            Some(key_distance) =>
-                other.degree_of(pitch_class).map(|degree| {
-                    self.pitch_class_at(degree + key_distance)
-                }),
-            None => panic!("Fundamental of Key {:?} is not in the scale of Key {:?}.", other, self)
-        }
+        self.degree_of(pitch_class).map(|degree|
+            match (self.degree_of(other), other.degree_of(*self)) {
+                (Some(key_diff), _) => other.pitch_class_at(degree - key_diff),
+                (None, Some(reciprocal_key_diff)) => other.pitch_class_at(degree + reciprocal_key_diff),
+                (None, None) => if degree == I4 { pitch_class } else { pitch_class - 1 }
+            }
+        )
     }
 
     pub fn circle_of_fifths(&self, increment: Semitones) -> Key {
@@ -105,7 +99,7 @@ impl Key {
 #[cfg(test)]
 mod tests {
     use super::{PitchClass::{self, *}, Pitch, Key, Semitones,
-                ScaleDegree::{self, *}, OctaveShift::*, ScalePitch };
+                ScaleDegree::{self, *}, OctaveShift::*, RelativePitch};
 
     #[test]
     fn pitch_class_to_scale_degree() {
@@ -165,7 +159,7 @@ mod tests {
         let d4 = Pitch::new(D, 4);
         let a4 = Pitch::new(A, 4);
         let b4 = Pitch::new(B, 4);
-        let cases: &[(Key, Pitch, ScalePitch, Option<Pitch>)] = &[
+        let cases: &[(Key, Pitch, RelativePitch, Option<Pitch>)] = &[
             (C,  c4, (Same,  I1), Some(c4)),
             (C,  a4, (Same,  I1), Some(a4)),
             (C,  b4, (Same,  I1), Some(b4)),
@@ -230,12 +224,29 @@ mod tests {
             (C,  E,  B,  Some(B)),
             (C,  Bb, E,  Some(Eb)),
             (C,  C,  C,  Some(C)),
+            (C,  Gb, C,  Some(B)),
+            (C,  Gb, F,  Some(F)),
             (C,  G,  Db, None),
         ];
-        for (key, other_key, pitch_class, expected_result) in cases.iter() {
-            let actual_result = key.transpose_class_to(*other_key, *pitch_class);
+        for (source_key, target_key, pitch_class, expected_result) in cases.iter() {
+            let actual_result = source_key.transpose_class_to(*target_key, *pitch_class);
             assert_eq!(actual_result, *expected_result,
-                       "Input was: {:?}, {:?}, {:?}, {:?}", *key, *other_key, *pitch_class, *expected_result);
+                       "Input was: {:?}, {:?}, {:?}, {:?}", *source_key, *target_key, *pitch_class, *expected_result);
+        }
+    }
+
+
+    #[test]
+    fn transpose_to() {
+        let cases: &[(Key, Key, Pitch, Option<Pitch>)] = &[
+            (C,  G,   Pitch{class: C, octave: 4},  Some(Pitch{class: C, octave: 4})),
+            (C,  Gb,  Pitch{class: D, octave: 4},  Some(Pitch{class: Db, octave: 4})),
+            (C,  Gb,  Pitch{class: C, octave: 4},  Some(Pitch{class: B, octave: 3})),
+        ];
+        for (source_key, target_key, pitch, expected_result) in cases.iter() {
+            let actual_result = source_key.transpose_to(*target_key, *pitch);
+            assert_eq!(actual_result, *expected_result,
+                       "Input was: {:?}, {:?}, {:?}, {:?}", *source_key, *target_key, *pitch, *expected_result);
         }
     }
 

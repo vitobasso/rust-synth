@@ -1,4 +1,4 @@
-use super::diatonic_scale::ScalePitch;
+use super::diatonic_scale::RelativePitch;
 
 #[derive(Clone, Copy, Debug)]
 pub enum Duration {
@@ -7,7 +7,7 @@ pub enum Duration {
 
 #[derive(Clone, Copy, PartialEq, Debug)]
 pub enum Event {
-    Note(ScalePitch),
+    Note(RelativePitch),
     Rest,
     Keep,
 }
@@ -15,11 +15,11 @@ pub enum Event {
 #[derive(Clone, Copy, Debug)]
 pub struct Note {
     duration: Duration,
-    pitch: Option<ScalePitch>,
+    pitch: Option<RelativePitch>,
 }
 
 impl Note {
-    pub fn note(duration: Duration, pitch: ScalePitch) -> Note {
+    pub fn note(duration: Duration, pitch: RelativePitch) -> Note {
         Note { duration, pitch: Some(pitch) }
     }
     pub fn rest(duration: Duration) -> Note {
