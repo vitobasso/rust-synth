@@ -29,11 +29,11 @@ fn main() {
 fn patches() -> Vec<Patch> {
 
     let adsr_smooth = Adsr::new(0.05, 0.2, 0.9, 0.5);
-    let adsr_noop = Adsr::new(0., 0., 1., 0.);
-    let osc_supersaw = Supersaw {n_voices: 8, detune_amount: 3.};
+    let adsr_plucked = Adsr::new(0., 0.05, 0.8, 0.2);
+    let osc_supersaw = Supersaw { n_voices: 8, detune_amount: 3. };
     let sine = instrument::Specs { max_voices: 8, oscillator: Sine, filter: LPF, adsr: adsr_smooth, amplify: 1.2 };
     let saw = instrument::Specs { max_voices: 8, oscillator: Saw, filter: LPF, adsr: adsr_smooth, amplify: 1. };
-    let supersaw = instrument::Specs { max_voices: 8, oscillator: osc_supersaw, filter: LPF, adsr: adsr_noop, amplify: 0.4 };
+    let supersaw = instrument::Specs { max_voices: 8, oscillator: osc_supersaw, filter: LPF, adsr: adsr_plucked, amplify: 0.4 };
 
     let arp_1 = Sequence::new(1, vec![
         Note::note(Eight, (Down1, I1)),

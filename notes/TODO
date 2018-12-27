@@ -1,3 +1,2 @@
 FIX
-- crackling when playing 2-3 voices of supersaw
-- not able to play same note simultaneously (from different keyboard buttons)
+- crash when pitch too low: 'attempt to multiply with overflow', src/core/music_theory/pitch.rs:72:10

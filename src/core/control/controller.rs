@@ -28,8 +28,9 @@ pub fn run_forever(sample_rate: Hz, patches: Vec<Patch>, cmd_in: Receiver<Comman
     }
 }
 
+pub type Id = u32;
 pub enum Command {
-    NoteOn(Pitch), NoteOff(Pitch), ArpNoteOn(Pitch), ArpNoteOff(Pitch),
+    NoteOn(Pitch, Id), NoteOff(Pitch, Id), ArpNoteOn(Pitch), ArpNoteOff(Pitch),
     ModXY(f64, f64),
     SetPatch(usize),
     LoopPlaybackToggle(usize), LoopRecordingToggle(usize),
@@ -50,7 +51,7 @@ struct State {
     arpeggiator: Option<Arpeggiator>,
     patches: Vec<Patch>,
     key: Key, pitch_shift: Semitones,
-    holding_notes: HashMap<Pitch, Pitch>,
+    holding_notes: HashMap<(Pitch, Id), Pitch>,
     loops: LoopManager,
 }
 
@@ -69,8 +70,8 @@ impl State {
 
     fn interpret(&mut self, command: Command) {
         match command {
-            Command::NoteOn(pitch) => self.handle_note_on(pitch),
-            Command::NoteOff(pitch) => self.handle_note_off(pitch),
+            Command::NoteOn(pitch, id) => self.handle_note_on(pitch, id),
+            Command::NoteOff(pitch, id) => self.handle_note_off(pitch, id),
             Command::ArpNoteOn(pitch) => {
                 self.instrument.release_all();
                 let transposed_pitch = self.transpose(pitch);
@@ -96,20 +97,18 @@ impl State {
         }
     }
 
-    fn handle_note_on(&mut self, pitch: Pitch) {
-        let transposed_pitch = self.transpose(pitch);
-        self.holding_notes.insert(pitch, transposed_pitch);
-        match self.arpeggiator.as_mut() {
-            Some(arp) =>
-                if !arp.is_holding(transposed_pitch) {
-                    arp.start(transposed_pitch)
-                },
-            None => self.instrument.hold(transposed_pitch)
-        };
+    fn handle_note_on(&mut self, input_pitch: Pitch, id: Id) {
+        let transposed_pitch = self.transpose(input_pitch);
+        if let None = self.holding_notes.insert((input_pitch, id), transposed_pitch) {
+            match self.arpeggiator.as_mut() {
+                Some(arp) => arp.start(transposed_pitch),
+                None => self.instrument.hold(transposed_pitch)
+            }
+        }
     }
 
-    fn handle_note_off(&mut self, pitch: Pitch) {
-        self.holding_notes.remove(&pitch).map(|remembered_pitch|
+    fn handle_note_off(&mut self, input_pitch: Pitch, id: Id) {
+        if let Some(remembered_pitch) = self.holding_notes.remove(&(input_pitch, id)) {
             match self.arpeggiator.as_mut() {
                 Some(arp) =>
                     if arp.is_holding(remembered_pitch) {
@@ -118,7 +117,7 @@ impl State {
                     },
                 None => self.instrument.release(remembered_pitch)
             }
-        );
+        }
     }
 
     fn transpose(&self, pitch: Pitch) -> Pitch {

@@ -1,5 +1,5 @@
 use conrod::{event, input};
-use core::control::controller::Command;
+use core::control::controller::{Command, Id};
 use core::music_theory::pitch::{Pitch, PitchClass::*};
 
 pub struct KeyMap { window_width: u32, window_height: u32 }
@@ -10,13 +10,13 @@ impl KeyMap {
     pub fn command_for(&self, input: &event::Input) -> Vec<Command> {
         match input {
             event::Input::Press(input::Button::Keyboard(key)) =>
-                pitches(key).map(Command::NoteOn)
+                note_on(key)
                     .or(patches(key))
                     .or(loop_rec(key))
                     .or(transpose(key))
                     .map_or(vec![], |v| vec![v]),
             event::Input::Release(input::Button::Keyboard(key)) =>
-                pitches(key).map(Command::NoteOff)
+                note_off(key)
                     .map_or(vec![], |v| vec![v]),
             event::Input::Motion(input::Motion::MouseCursor {x, y}) => vec![self.mod_xy(*x, *y)],
             _ => vec![],
@@ -32,43 +32,51 @@ impl KeyMap {
     }
 }
 
-fn pitches(key: &input::Key) -> Option<Pitch> { //TODO shift => sharp pitches
+fn note_on(key: &input::Key) -> Option<Command> {
+    pitches(key).map(|(pitch, id)| Command::NoteOn(pitch,id))
+}
+
+fn note_off(key: &input::Key) -> Option<Command> {
+    pitches(key).map(|(pitch, id)| Command::NoteOff(pitch,id))
+}
+
+fn pitches(key: &input::Key) -> Option<(Pitch, Id)> { //TODO shift => sharp pitches
     match key {
         //top row
-        input::Key::Q =>         Some(Pitch::new(A, 4)),
-        input::Key::W =>         Some(Pitch::new(B, 4)),
-        input::Key::E =>         Some(Pitch::new(C, 5)),
-        input::Key::R =>         Some(Pitch::new(D, 5)),
-        input::Key::T =>         Some(Pitch::new(E, 5)),
-        input::Key::Y =>         Some(Pitch::new(F, 5)),
-        input::Key::U =>         Some(Pitch::new(G, 5)),
-        input::Key::I =>         Some(Pitch::new(A, 5)),
-        input::Key::O =>         Some(Pitch::new(B, 5)),
-        input::Key::P =>         Some(Pitch::new(C, 6)),
+        input::Key::Q =>         Some((Pitch::new(A, 4), 3)),
+        input::Key::W =>         Some((Pitch::new(B, 4), 3)),
+        input::Key::E =>         Some((Pitch::new(C, 5), 3)),
+        input::Key::R =>         Some((Pitch::new(D, 5), 3)),
+        input::Key::T =>         Some((Pitch::new(E, 5), 3)),
+        input::Key::Y =>         Some((Pitch::new(F, 5), 3)),
+        input::Key::U =>         Some((Pitch::new(G, 5), 3)),
+        input::Key::I =>         Some((Pitch::new(A, 5), 3)),
+        input::Key::O =>         Some((Pitch::new(B, 5), 3)),
+        input::Key::P =>         Some((Pitch::new(C, 6), 3)),
 
         //middle row
-        input::Key::A =>         Some(Pitch::new(A, 3)),
-        input::Key::S =>         Some(Pitch::new(B, 3)),
-        input::Key::D =>         Some(Pitch::new(C, 4)),
-        input::Key::F =>         Some(Pitch::new(D, 4)),
-        input::Key::G =>         Some(Pitch::new(E, 4)),
-        input::Key::H =>         Some(Pitch::new(F, 4)),
-        input::Key::J =>         Some(Pitch::new(G, 4)),
-        input::Key::K =>         Some(Pitch::new(A, 4)),
-        input::Key::L =>         Some(Pitch::new(B, 4)),
-        input::Key::Semicolon => Some(Pitch::new(C, 5)),
+        input::Key::A =>         Some((Pitch::new(A, 3), 2)),
+        input::Key::S =>         Some((Pitch::new(B, 3), 2)),
+        input::Key::D =>         Some((Pitch::new(C, 4), 2)),
+        input::Key::F =>         Some((Pitch::new(D, 4), 2)),
+        input::Key::G =>         Some((Pitch::new(E, 4), 2)),
+        input::Key::H =>         Some((Pitch::new(F, 4), 2)),
+        input::Key::J =>         Some((Pitch::new(G, 4), 2)),
+        input::Key::K =>         Some((Pitch::new(A, 4), 2)),
+        input::Key::L =>         Some((Pitch::new(B, 4), 2)),
+        input::Key::Semicolon => Some((Pitch::new(C, 5), 2)),
 
         //bottom row
-        input::Key::Z =>         Some(Pitch::new(A, 2)),
-        input::Key::X =>         Some(Pitch::new(B, 2)),
-        input::Key::C =>         Some(Pitch::new(C, 3)),
-        input::Key::V =>         Some(Pitch::new(D, 3)),
-        input::Key::B =>         Some(Pitch::new(E, 3)),
-        input::Key::N =>         Some(Pitch::new(F, 3)),
-        input::Key::M =>         Some(Pitch::new(G, 3)),
-        input::Key::Comma =>     Some(Pitch::new(A, 3)),
-        input::Key::Period =>    Some(Pitch::new(B, 3)),
-        input::Key::Slash =>     Some(Pitch::new(C, 4)),
+        input::Key::Z =>         Some((Pitch::new(A, 2), 1)),
+        input::Key::X =>         Some((Pitch::new(B, 2), 1)),
+        input::Key::C =>         Some((Pitch::new(C, 3), 1)),
+        input::Key::V =>         Some((Pitch::new(D, 3), 1)),
+        input::Key::B =>         Some((Pitch::new(E, 3), 1)),
+        input::Key::N =>         Some((Pitch::new(F, 3), 1)),
+        input::Key::M =>         Some((Pitch::new(G, 3), 1)),
+        input::Key::Comma =>     Some((Pitch::new(A, 3), 1)),
+        input::Key::Period =>    Some((Pitch::new(B, 3), 1)),
+        input::Key::Slash =>     Some((Pitch::new(C, 4), 1)),
 
         _ => None,
     }

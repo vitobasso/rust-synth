@@ -81,7 +81,7 @@ impl Voices {
     }
 
     fn hold(&mut self, pitch: Pitch) {
-        if self.find_holding_voice(pitch).is_none() && self.has_free_voice() {
+        if self.has_free_voice() {
             self.voices.push(Voice::new(self.sample_rate, pitch))
         }
     }
