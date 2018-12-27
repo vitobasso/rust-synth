@@ -1,13 +1,15 @@
 extern crate rand;
 
-use super::{Sample, Seconds};
+use super::{Sample, Seconds, ScaleRatio};
 use core::music_theory::Hz;
 use self::rand::{Rng, ThreadRng};
 use std::f64::consts::PI;
 
 #[derive(Clone, Copy)]
 pub enum Specs {
-    Sine, Saw, Supersaw{n_voices: u16, detune_amount: Hz}
+    Sine, Saw, Square,
+    Pulse(ScaleRatio),
+    Supersaw{n_voices: u16, detune_amount: Hz}
 }
 
 pub trait Oscillator {
@@ -17,6 +19,8 @@ impl Oscillator {
     pub fn new(spec: Specs) -> Box<Oscillator> {
         match spec {
             Specs::Sine => Box::new(Sine),
+            Specs::Square => Box::new(Square),
+            Specs::Pulse(d) => Box::new(Pulse{duty_cycle: d}),
             Specs::Saw => Box::new(Saw),
             Specs::Supersaw{n_voices: v, detune_amount: d} =>
                 Box::new(Mix::supersaw(v, d)),
@@ -28,6 +32,20 @@ pub struct Sine;
 impl Oscillator for Sine {
     fn next_sample(&self, clock: Seconds, freq: Hz, phase: Seconds) -> Sample {
         ((clock + phase) * freq * 2. * PI).sin()
+    }
+}
+
+pub struct Square;
+impl Oscillator for Square {
+    fn next_sample(&self, clock: Seconds, freq: Hz, phase: Seconds) -> Sample {
+        (((clock + phase) * freq ) % 1.).round() * 2. - 1.
+    }
+}
+
+pub struct Pulse { duty_cycle: ScaleRatio }
+impl Oscillator for Pulse {
+    fn next_sample(&self, clock: Seconds, freq: Hz, phase: Seconds) -> Sample {
+        if ((clock + phase) * freq) % 1. < self.duty_cycle {1.} else {-1.}
     }
 }
 

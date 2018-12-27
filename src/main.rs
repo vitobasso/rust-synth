@@ -33,6 +33,7 @@ fn patches() -> Vec<Patch> {
     let osc_supersaw = Supersaw { n_voices: 8, detune_amount: 3. };
     let sine = instrument::Specs { max_voices: 8, oscillator: Sine, filter: LPF, adsr: adsr_smooth, amplify: 1.2 };
     let saw = instrument::Specs { max_voices: 8, oscillator: Saw, filter: LPF, adsr: adsr_smooth, amplify: 1. };
+    let square = instrument::Specs { max_voices: 8, oscillator: Square, filter: LPF, adsr: adsr_smooth, amplify: 1. };
     let supersaw = instrument::Specs { max_voices: 8, oscillator: osc_supersaw, filter: LPF, adsr: adsr_plucked, amplify: 0.4 };
 
     let arp_1 = Sequence::new(1, vec![
@@ -67,9 +68,9 @@ fn patches() -> Vec<Patch> {
 
     vec![
         Patch::Instrument(sine),
+        Patch::Instrument(square),
         Patch::Instrument(saw),
         Patch::Instrument(supersaw),
-        Patch::Noop,
         Patch::Noop,
         Patch::Noop,
         Patch::Noop,

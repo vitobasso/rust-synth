@@ -1,5 +1,6 @@
 - [x] Oscillators
-    - Sine, Saw, Supersaw
+    - Sine, Saw, Square, Pulse, Supersaw
+    - [ ] Noise
 - [x] Filters
     - Biquad LPF, HPF, BPF, Notch
 - [x] Arpeggiator
@@ -12,7 +13,8 @@
     - [ ] Distortion
     - [ ] Delay
 - [x] Polyphony
-- [x] Loop recording
+- [x] Loop recorder
+- [ ] Set pulse. Use from Loop recorder, Arpeggiator.
 - [ ] GUI
 - [ ] Patch creation, storage
 - [ ] Talk to Midi controllers
