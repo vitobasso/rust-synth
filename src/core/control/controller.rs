@@ -81,7 +81,7 @@ impl State {
                 let transposed_pitch = self.transpose(pitch);
                 self.instrument.release(transposed_pitch)
             },
-            Command::ModXY(x, y) => self.instrument.set_params(x, y),
+            Command::ModXY(x, y) => self.instrument.set_xy_params(x, y),
             Command::ShiftPitch(n) => self.pitch_shift = self.pitch_shift + n,
             Command::ShiftKeyboard(n) => {
                 self.key = self.key + n;

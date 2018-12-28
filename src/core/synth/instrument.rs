@@ -8,25 +8,40 @@ pub struct Specs {
     pub oscillator: oscillator::Specs,
     pub filter: filter::Specs,
     pub adsr: Adsr,
-    pub amplify: ScaleRatio,
+    pub volume: ScaleRatio,
+    pub x_modulation: Modulation,
+    pub y_modulation: Modulation,
+}
+
+#[derive(Copy, Clone)]
+pub enum Modulation {
+    Noop, Volume,
+    Filter(filter::Modulation),
+    Oscillator(oscillator::Modulation),
 }
 
 pub struct Instrument {
     oscillator: Box<Oscillator>,
     filter: Box<Filter>,
     adsr: Adsr,
-    amplify: ScaleRatio,
+    volume: ScaleRatio,
     voices: Voices,
+    x_modulation: Modulation,
+    y_modulation: Modulation,
 }
 impl Instrument {
 
     pub fn new(specs: Specs, sample_rate: Hz) -> Instrument {
         let oscillator = Oscillator::new(specs.oscillator);
         let filter = Filter::new(specs.filter, sample_rate);
-        let adsr = specs.adsr;
-        let amplify = specs.amplify;
-        let voices = Voices::new(specs.max_voices, sample_rate, adsr.release);
-        Instrument { oscillator, filter, adsr, amplify, voices }
+        let voices = Voices::new(specs.max_voices, sample_rate, specs.adsr.release);
+        Instrument {
+            oscillator, filter, voices,
+            adsr: specs.adsr,
+            volume: specs.volume,
+            x_modulation: specs.x_modulation,
+            y_modulation: specs.y_modulation,
+        }
     }
 
     pub fn hold(&mut self, pitch: Pitch) {
@@ -49,7 +64,7 @@ impl Instrument {
             .map(|voice| Instrument::next_sample_for_voice(voice, oscillator, adsr))
             .sum();
         let sample_filtered = self.filter.filter(sample_mix);
-        sample_filtered * self.amplify
+        sample_filtered * self.volume
     }
 
     fn next_sample_for_voice (voice: &mut Voice, oscillator: &Box<Oscillator>, adsr: &Adsr) -> Sample {
@@ -58,13 +73,28 @@ impl Instrument {
         adsr.apply(voice.clock(), voice.released_clock().unwrap_or(0.), sample)
     }
 
-    pub fn set_params(&mut self, x: f64, y: f64) {
-        let params = filter::Params::new(x, y);
-        self.filter.set_params(params)
+    pub fn set_xy_params(&mut self, x: f64, y: f64) {
+        let x_wire = self.x_modulation;
+        let y_wire = self.y_modulation;
+        self.modulate(x_wire, x);
+        self.modulate(y_wire, y);
+    }
+
+    pub fn set_volume(&mut self, value: ScaleRatio) {
+        self.volume = value;
     }
 
     pub fn set_oscillator(&mut self, specs: oscillator::Specs) {
         self.oscillator = Oscillator::new(specs)
+    }
+
+    fn modulate(&mut self, modulation: Modulation, value: f64) {
+        match modulation {
+            Modulation::Noop => (),
+            Modulation::Volume => self.volume = value,
+            Modulation::Filter(m) => self.filter.modulate(m, value),
+            Modulation::Oscillator(m) => self.oscillator.modulate(m, value),
+        }
     }
 
 }

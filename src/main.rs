@@ -4,7 +4,8 @@
 use std::{thread, sync::mpsc::{channel, sync_channel}};
 use core::{
     music_theory::{Hz, rhythm::{*, Duration::*}, diatonic_scale::{ScaleDegree::*, OctaveShift::*}},
-    synth::{Sample, instrument, oscillator::Specs::*, filter::Specs::*, envelope::Adsr},
+    synth::{Sample, instrument::{self, Modulation::*}, oscillator::{Specs::*, Modulation::*},
+            filter::{Specs::*, Modulation::*}, envelope::Adsr},
     control::controller::{self, Patch, Command},
 };
 
@@ -31,10 +32,10 @@ fn patches() -> Vec<Patch> {
     let adsr_smooth = Adsr::new(0.05, 0.2, 0.9, 0.5);
     let adsr_plucked = Adsr::new(0., 0.05, 0.8, 0.2);
     let osc_supersaw = Supersaw { n_voices: 8, detune_amount: 3. };
-    let sine = instrument::Specs { max_voices: 8, oscillator: Sine, filter: LPF, adsr: adsr_smooth, amplify: 1.2 };
-    let saw = instrument::Specs { max_voices: 8, oscillator: Saw, filter: LPF, adsr: adsr_smooth, amplify: 1. };
-    let square = instrument::Specs { max_voices: 8, oscillator: Square, filter: LPF, adsr: adsr_smooth, amplify: 1. };
-    let supersaw = instrument::Specs { max_voices: 8, oscillator: osc_supersaw, filter: LPF, adsr: adsr_plucked, amplify: 0.4 };
+    let sine = instrument::Specs { max_voices: 8, oscillator: Sine, filter: LPF, adsr: adsr_smooth, volume: 1.2, x_modulation: Noop, y_modulation: Noop };
+    let saw = instrument::Specs { max_voices: 8, oscillator: Saw, filter: LPF, adsr: adsr_smooth, volume: 1., x_modulation: Noop, y_modulation: Noop };
+    let pulse = instrument::Specs { max_voices: 8, oscillator: Pulse(0.5), filter: LPF, adsr: adsr_smooth, volume: 1., x_modulation: Filter(Cutoff), y_modulation: Oscillator(PulseDuty) };
+    let supersaw = instrument::Specs { max_voices: 8, oscillator: osc_supersaw, filter: LPF, adsr: adsr_plucked, volume: 0.4, x_modulation: Filter(Cutoff), y_modulation: Filter(QFactor) };
 
     let arp_1 = Sequence::new(1, vec![
         Note::note(Eight, (Down1, I1)),
@@ -68,7 +69,7 @@ fn patches() -> Vec<Patch> {
 
     vec![
         Patch::Instrument(sine),
-        Patch::Instrument(square),
+        Patch::Instrument(pulse),
         Patch::Instrument(saw),
         Patch::Instrument(supersaw),
         Patch::Noop,

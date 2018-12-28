@@ -5,9 +5,10 @@
     - Biquad LPF, HPF, BPF, Notch
 - [x] Arpeggiator
 - Modulation
-    - [x] ADSR Envelope
+    - [x] ADSR
     - [ ] LFO's
-    - [ ] Wire modulation to parameters
+    - [x] Wire modulation to parameters
+        - [ ] Wire ADSR to filter
 - Effects
     - [ ] Compression
     - [ ] Distortion
