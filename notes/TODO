@@ -1,2 +1,0 @@
-FIX
-- crash when pitch too low: 'attempt to multiply with overflow', src/core/music_theory/pitch.rs:72:10

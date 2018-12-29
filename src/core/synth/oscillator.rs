@@ -8,7 +8,7 @@ use std::f64::consts::PI;
 #[derive(Clone, Copy)]
 pub enum Specs {
     Sine, Saw, Square, Pulse(ScaleRatio),
-    Supersaw{n_voices: u16, detune_amount: Hz}
+    Supersaw{ nvoices: u16, detune_amount: Hz }
 }
 
 #[derive(Copy, Clone)]
@@ -25,7 +25,7 @@ impl Oscillator {
             Specs::Square => Box::new(Square),
             Specs::Pulse(d) => Box::new(Pulse{duty_cycle: d}),
             Specs::Saw => Box::new(Saw),
-            Specs::Supersaw{n_voices: v, detune_amount: d} =>
+            Specs::Supersaw{nvoices: v, detune_amount: d} =>
                 Box::new(Mix::supersaw(v, d)),
         }
     }

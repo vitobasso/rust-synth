@@ -4,8 +4,7 @@
 use std::{thread, sync::mpsc::{channel, sync_channel}};
 use core::{
     music_theory::{Hz, rhythm::{*, Duration::*}, diatonic_scale::{ScaleDegree::*, OctaveShift::*}},
-    synth::{Sample, instrument::{self, Modulation::*}, oscillator::{Specs::*, Modulation::*},
-            filter::{Specs::*, Modulation::*}, envelope::Adsr},
+    synth::{Sample, builder::*, instrument::Modulation::*, oscillator::{Specs::*, Modulation::*}},
     control::controller::{self, Patch, Command},
 };
 
@@ -29,13 +28,10 @@ fn main() {
 
 fn patches() -> Vec<Patch> {
 
-    let adsr_smooth = Adsr::new(0.05, 0.2, 0.9, 0.5);
-    let adsr_plucked = Adsr::new(0., 0.05, 0.8, 0.2);
-    let osc_supersaw = Supersaw { n_voices: 8, detune_amount: 3. };
-    let sine = instrument::Specs { max_voices: 8, oscillator: Sine, filter: LPF, adsr: adsr_smooth, volume: 1.2, x_modulation: Noop, y_modulation: Noop };
-    let saw = instrument::Specs { max_voices: 8, oscillator: Saw, filter: LPF, adsr: adsr_smooth, volume: 1., x_modulation: Noop, y_modulation: Noop };
-    let pulse = instrument::Specs { max_voices: 8, oscillator: Pulse(0.5), filter: LPF, adsr: adsr_smooth, volume: 1., x_modulation: Filter(Cutoff), y_modulation: Oscillator(PulseDuty) };
-    let supersaw = instrument::Specs { max_voices: 8, oscillator: osc_supersaw, filter: LPF, adsr: adsr_plucked, volume: 0.4, x_modulation: Filter(Cutoff), y_modulation: Filter(QFactor) };
+    let sine = Builder::osc(Sine).mod_y(Volume).build();
+    let pulse = Builder::osc(Pulse(0.5)).mod_y(Oscillator(PulseDuty)).build();
+    let saw_pad = Builder::osc(Saw).adsr(0.25, 0., 1., 0.25).build();
+    let supersaw = Builder::osc(Supersaw { nvoices: 8, detune_amount: 3.}).build();
 
     let arp_1 = Sequence::new(1, vec![
         Note::note(Eight, (Down1, I1)),
@@ -68,10 +64,10 @@ fn patches() -> Vec<Patch> {
     ]).expect("Invalid sequence");
 
     vec![
-        Patch::Instrument(sine),
-        Patch::Instrument(pulse),
-        Patch::Instrument(saw),
         Patch::Instrument(supersaw),
+        Patch::Instrument(pulse),
+        Patch::Instrument(sine),
+        Patch::Instrument(saw_pad),
         Patch::Noop,
         Patch::Noop,
         Patch::Noop,

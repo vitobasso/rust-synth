@@ -9,8 +9,8 @@ pub struct Specs {
     pub filter: filter::Specs,
     pub adsr: Adsr,
     pub volume: ScaleRatio,
-    pub x_modulation: Modulation,
-    pub y_modulation: Modulation,
+    pub modulation_x: Modulation,
+    pub modulation_y: Modulation,
 }
 
 #[derive(Copy, Clone)]
@@ -26,8 +26,8 @@ pub struct Instrument {
     adsr: Adsr,
     volume: ScaleRatio,
     voices: Voices,
-    x_modulation: Modulation,
-    y_modulation: Modulation,
+    modulation_x: Modulation,
+    modulation_y: Modulation,
 }
 impl Instrument {
 
@@ -39,8 +39,8 @@ impl Instrument {
             oscillator, filter, voices,
             adsr: specs.adsr,
             volume: specs.volume,
-            x_modulation: specs.x_modulation,
-            y_modulation: specs.y_modulation,
+            modulation_x: specs.modulation_x,
+            modulation_y: specs.modulation_y,
         }
     }
 
@@ -74,8 +74,8 @@ impl Instrument {
     }
 
     pub fn set_xy_params(&mut self, x: f64, y: f64) {
-        let x_wire = self.x_modulation;
-        let y_wire = self.y_modulation;
+        let x_wire = self.modulation_x;
+        let y_wire = self.modulation_y;
         self.modulate(x_wire, x);
         self.modulate(y_wire, y);
     }
