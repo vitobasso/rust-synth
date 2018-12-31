@@ -1,11 +1,12 @@
 use std::{sync::mpsc::{Receiver, SyncSender}, collections::HashMap};
 use core::{
-    control::{Millis, arpeggiator::Arpeggiator, loop_recorder::*},
+    control::{Millis, arpeggiator::Arpeggiator, loop_recorder::*, duration_recorder::DurationRecorder},
     music_theory::{Hz, Semitones, pitch::{Pitch, PitchClass}, rhythm::Sequence, diatonic_scale::Key},
     synth::{Sample, instrument::{self, Instrument}, oscillator},
 };
 
-const PULSE: Millis = 100;
+const PULSES_PER_BEAT: u64 = 4;
+const DEFAULT_BEAT: Millis = 100 * PULSES_PER_BEAT;
 
 pub fn run_forever(sample_rate: Hz, patches: Vec<Patch>, cmd_in: Receiver<Command>, signal_out: SyncSender<Sample>) {
     let mut state = State::new(sample_rate, patches);
@@ -34,6 +35,7 @@ pub enum Command {
     ModXY(f64, f64),
     SetPatch(usize),
     LoopPlaybackToggle(usize), LoopRecordingToggle(usize),
+    PulseRecord,
     ShiftPitch(Semitones), ShiftKeyboard(Semitones), TransposeKey(Semitones),
 }
 
@@ -48,10 +50,11 @@ pub enum Patch {
 struct State {
     sample_rate: Hz,
     instrument: Instrument,
-    arpeggiator: Option<Arpeggiator>,
     patches: Vec<Patch>,
     key: Key, pitch_shift: Semitones,
     holding_notes: HashMap<(Pitch, Id), Pitch>,
+    beat: Millis, duration_recorder: DurationRecorder,
+    arpeggiator: Option<Arpeggiator>,
     loops: LoopManager,
 }
 
@@ -63,9 +66,16 @@ impl State {
                 _ => panic!("Default patch must be of type Instrument."),
             };
         let instrument = Instrument::new(default_instrument_specs, sample_rate);
-        State { sample_rate, instrument, arpeggiator: None, patches,
-                key: PitchClass::C, pitch_shift: 0, holding_notes: HashMap::new(),
-                loops: LoopManager::new() }
+        State {
+            sample_rate, instrument, patches,
+            key: PitchClass::C,
+            pitch_shift: 0,
+            holding_notes: HashMap::new(),
+            duration_recorder: DurationRecorder::new(),
+            beat: DEFAULT_BEAT,
+            arpeggiator: None,
+            loops: LoopManager::new(),
+        }
     }
 
     fn interpret(&mut self, command: Command) {
@@ -94,6 +104,7 @@ impl State {
             },
             Command::LoopRecordingToggle(i) => self.loops.toggle_recording(i),
             Command::LoopPlaybackToggle(i) => self.loops.toggle_playback(i),
+            Command::PulseRecord => self.record_beat(),
         }
     }
 
@@ -133,9 +144,25 @@ impl State {
             Patch::Oscillator(specs) =>
                 self.instrument.set_oscillator(specs),
             Patch::Arpeggiator(seq) =>
-                self.arpeggiator = seq.map(|s| Arpeggiator::new(PULSE, PitchClass::C, s)),
+                self.arpeggiator = seq.map(|s|
+                    Arpeggiator::new(self.get_pulse_millis(), PitchClass::C, s)),
             Patch::Noop => (),
         }
+    }
+
+    fn record_beat(&mut self) {
+        self.duration_recorder.record();
+        if let Some(duration) = self.duration_recorder.read() {
+            self.beat = duration;
+            let pulse = self.get_pulse_millis().clone();
+            if let Some(arp) = &mut self.arpeggiator {
+                arp.set_pulse(pulse)
+            }
+        }
+    }
+
+    fn get_pulse_millis(&self) -> Millis {
+        self.beat / PULSES_PER_BEAT
     }
 
 }

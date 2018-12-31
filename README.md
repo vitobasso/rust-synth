@@ -3,19 +3,20 @@
     - [ ] Noise
 - [x] Filters
     - Biquad LPF, HPF, BPF, Notch
-- [x] Arpeggiator
 - Modulation
     - [x] ADSR
+        - [ ] Filter ADSR
     - [ ] LFO's
     - [x] Wire modulation to parameters
-        - [ ] Wire ADSR to filter
 - Effects
     - [ ] Compression
     - [ ] Distortion
     - [ ] Delay
 - [x] Polyphony
+- [x] Arpeggiator
+    - [x] Set beat
 - [x] Loop recorder
-- [ ] Set pulse. Use from Loop recorder, Arpeggiator.
+    - [ ] Snap to measure
 - [ ] GUI
-- [ ] Patch creation, storage
-- [ ] Talk to Midi controllers
+- [ ] Patch save/select
+- [ ] Talk Midi

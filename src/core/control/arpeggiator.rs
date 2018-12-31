@@ -1,5 +1,5 @@
 use core::control::{Millis, pulse::Pulse, controller::Command};
-use core::music_theory::{pitch::Pitch, rhythm::*, diatonic_scale::Key};
+use core::music_theory::{pitch::Pitch, rhythm::{Sequence, Event}, diatonic_scale::Key};
 
 pub struct Arpeggiator {
     sequence: Sequence,
@@ -59,6 +59,10 @@ impl Arpeggiator {
             }
             _ => None,
         }
+    }
+
+    pub fn set_pulse(&mut self, period: Millis) {
+        self.pulse = Pulse::with_period_millis(period)
     }
 
 }

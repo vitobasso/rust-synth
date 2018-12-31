@@ -4,6 +4,7 @@ pub mod controller;
 pub mod pulse;
 pub mod arpeggiator;
 pub mod loop_recorder;
+pub mod duration_recorder;
 
 pub type Sample = f64;
 pub type Millis = u64;

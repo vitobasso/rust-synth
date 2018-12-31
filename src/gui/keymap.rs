@@ -13,6 +13,7 @@ impl KeyMap {
                 note_on(key)
                     .or(patches(key))
                     .or(loop_rec(key))
+                    .or(pulse_rec(key))
                     .or(transpose(key))
                     .map_or(vec![], |v| vec![v]),
             event::Input::Release(input::Button::Keyboard(key)) =>
@@ -110,6 +111,13 @@ fn loop_rec(key: &input::Key) -> Option<Command> {
         input::Key::F8 =>  Some(Command::LoopRecordingToggle(2)),
         input::Key::F9 =>  Some(Command::LoopRecordingToggle(3)),
         input::Key::F10 => Some(Command::LoopRecordingToggle(4)),
+        _ => None,
+    }
+}
+
+fn pulse_rec(key: &input::Key) -> Option<Command> {
+    match key {
+        input::Key::Space =>  Some(Command::PulseRecord),
         _ => None,
     }
 }

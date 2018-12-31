@@ -5,13 +5,17 @@ pub struct Pulse {
     period: Duration,
     latest: Instant,
 }
+
 impl Pulse {
+
     pub fn with_period_millis(period: Millis) -> Pulse {
         Pulse::with_period(Duration::from_millis(period))
     }
+
     pub fn with_period(period: Duration) -> Pulse {
         Pulse{ period, latest: Instant::now() }
     }
+
     pub fn read(&mut self) -> Option<Instant> {
         let should_trigger = self.latest.elapsed() >= self.period;
         if should_trigger {
@@ -20,4 +24,5 @@ impl Pulse {
             Some(current_pulse)
         } else { None }
     }
+
 }
