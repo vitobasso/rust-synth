@@ -1,6 +1,6 @@
 extern crate rand;
 
-use super::{Sample, Seconds, ScaleRatio};
+use super::{Sample, Seconds, ScaleRatio, modulated::*};
 use core::music_theory::Hz;
 use self::rand::{Rng, ThreadRng};
 use std::f64::consts::PI;
@@ -12,18 +12,17 @@ pub enum Specs {
 }
 
 #[derive(Copy, Clone)]
-pub enum Modulation { PulseDuty, MixThickness }
+pub enum ModTarget { PulseDuty, MixThickness }
 
-pub trait Oscillator {
+pub trait Oscillator: Modulated<ModTarget> {
     fn next_sample(&self, clock: Seconds, freq: Hz, phase: Seconds) -> Sample;
-    fn modulate(&mut self, modulation: Modulation, value: f64);
 }
 impl Oscillator {
     pub fn new(spec: Specs) -> Box<Oscillator> {
         match spec {
             Specs::Sine => Box::new(Sine),
             Specs::Square => Box::new(Square),
-            Specs::Pulse(d) => Box::new(Pulse{duty_cycle: d}),
+            Specs::Pulse(d) => Box::new(Pulse::new(d)),
             Specs::Saw => Box::new(Saw),
             Specs::Supersaw{nvoices: v, detune_amount: d} =>
                 Box::new(Mix::supersaw(v, d)),
@@ -36,7 +35,9 @@ impl Oscillator for Sine {
     fn next_sample(&self, clock: Seconds, freq: Hz, phase: Seconds) -> Sample {
         ((clock + phase) * freq * 2. * PI).sin()
     }
-    fn modulate(&mut self, _modulation: Modulation, _value: f64) {}
+}
+impl Modulated<ModTarget> for Sine {
+    fn mod_param(&mut self, _target: ModTarget) -> Option<&mut ModParam> { None }
 }
 
 pub struct Square;
@@ -44,24 +45,30 @@ impl Oscillator for Square {
     fn next_sample(&self, clock: Seconds, freq: Hz, phase: Seconds) -> Sample {
         (((clock + phase) * freq ) % 1.).round() * 2. - 1.
     }
-    fn modulate(&mut self, _modulation: Modulation, _value: f64) {}
+}
+impl Modulated<ModTarget> for Square {
+    fn mod_param(&mut self, _target: ModTarget) -> Option<&mut ModParam> { None }
 }
 
-pub struct Pulse { duty_cycle: ScaleRatio }
+pub struct Pulse {
+    duty_cycle: ModParam,
+}
 impl Pulse {
-    fn set_dutycycle(&mut self, value: f64) {
-        let normalized = value.max(0.).min(1.);
-        self.duty_cycle = normalized;
+    fn new(duty_cycle: ScaleRatio) -> Pulse {
+        Pulse { duty_cycle: ModParam::with_base(duty_cycle, 0., 1.) }
     }
 }
 impl Oscillator for Pulse {
     fn next_sample(&self, clock: Seconds, freq: Hz, phase: Seconds) -> Sample {
-        if ((clock + phase) * freq) % 1. < self.duty_cycle {1.} else {-1.}
+        let duty_cycle = self.duty_cycle.calculate();
+        if ((clock + phase) * freq) % 1. < duty_cycle {1.} else {-1.}
     }
-    fn modulate(&mut self, modulation: Modulation, value: f64) {
-        match modulation {
-            Modulation::PulseDuty => self.set_dutycycle(value),
-            _ => ()
+}
+impl Modulated<ModTarget> for Pulse {
+    fn mod_param(&mut self, target: ModTarget) -> Option<&mut ModParam> {
+        match target {
+            ModTarget::PulseDuty => Some(&mut self.duty_cycle),
+            _ => None
         }
     }
 }
@@ -71,7 +78,9 @@ impl Oscillator for Saw {
     fn next_sample(&self, clock: Seconds, freq: Hz, phase: Seconds) -> Sample {
         (((clock + phase) * freq) % 1.)
     }
-    fn modulate(&mut self, _modulation: Modulation, _value: f64) {}
+}
+impl Modulated<ModTarget> for Saw {
+    fn mod_param(&mut self, _target: ModTarget) -> Option<&mut ModParam> { None }
 }
 
 pub struct StatefulSaw { pub detune: f64 }
@@ -80,23 +89,22 @@ impl Oscillator for StatefulSaw {
         let final_freq = freq + self.detune;
         Saw.next_sample(clock, final_freq, phase)
     }
-    fn modulate(&mut self, _modulation: Modulation, _value: f64) {}
+}
+impl Modulated<ModTarget> for StatefulSaw {
+    fn mod_param(&mut self, _target: ModTarget) -> Option<&mut ModParam> { None }
 }
 
-pub struct Mix { pub voices: Vec<Box<Oscillator>> }
+pub struct Mix {
+    voices: Vec<Box<Oscillator>>,
+}
 impl Mix {
     fn supersaw(nvoices: u16, detune_amount: Hz) -> Mix {
-        Mix { voices: Mix::create_voicees(nvoices, detune_amount) }
+        Mix {
+            voices: Mix::create_voices(nvoices, detune_amount),
+        }
     }
 
-    fn set_nvoices(&mut self, value: f64) {
-        let bounded = value.max(0.).min(1.);
-        let nvoices = (bounded * 32.).ceil() as u16;
-        let detune = bounded * 9.;
-        self.voices = Mix::create_voicees(nvoices, detune);
-    }
-
-    fn create_voicees(nvoices: u16, detune_amount: Hz) -> Vec<Box<Oscillator>> {
+    fn create_voices(nvoices: u16, detune_amount: Hz) -> Vec<Box<Oscillator>> {
         let mut rng = rand::thread_rng();
         fn random_around_zero(rng: &mut ThreadRng, amount: Hz) -> Hz {
             rng.gen_range(-amount, amount)
@@ -109,6 +117,7 @@ impl Mix {
         }
         saws
     }
+
 }
 impl Oscillator for Mix {
     fn next_sample(&self, clock: Seconds, freq: Hz, phase: Seconds) -> Sample {
@@ -116,10 +125,7 @@ impl Oscillator for Mix {
             .map(|o| o.next_sample(clock, freq, phase))
             .sum()
     }
-    fn modulate(&mut self, modulation: Modulation, value: f64) {
-        match modulation {
-            Modulation::MixThickness => self.set_nvoices(value),
-            _ => ()
-        }
-    }
+}
+impl Modulated<ModTarget> for Mix {
+    fn mod_param(&mut self, _target: ModTarget) -> Option<&mut ModParam> { None }
 }

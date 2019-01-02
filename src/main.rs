@@ -4,7 +4,8 @@
 use std::{thread, sync::mpsc::{channel, sync_channel}};
 use core::{
     music_theory::{Hz, rhythm::{*, Duration::*}, diatonic_scale::{ScaleDegree::*, OctaveShift::*}},
-    synth::{Sample, builder::*, instrument::Modulation::*, oscillator::{Specs::*, Modulation::*}},
+    synth::{Sample, builder::*, instrument::ModTarget::*, oscillator::{Specs::*, ModTarget::*},
+            lfo, filter::{Specs::*, ModTarget::*}},
     control::controller::{self, Patch, Command},
 };
 
@@ -31,7 +32,8 @@ fn patches() -> Vec<Patch> {
     let sine = Builder::osc(Sine).mod_y(Volume).build();
     let pulse = Builder::osc(Pulse(0.5)).mod_y(Oscillator(PulseDuty)).build();
     let saw_pad = Builder::osc(Saw).adsr(0.25, 0., 1., 0.25).build();
-    let supersaw = Builder::osc(Supersaw { nvoices: 8, detune_amount: 3.}).build();
+    let supersaw = Builder::osc(Supersaw { nvoices: 8, detune_amount: 3.})
+        .lfo(lfo::Specs::simple(0.1), Filter(Cutoff), 0.8).build();
 
     let arp_1 = Sequence::new(1, vec![
         Note::note(Eight, (Down1, I1)),

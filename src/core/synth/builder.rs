@@ -1,37 +1,43 @@
-use super::{Seconds, ScaleRatio, instrument::{Specs, Modulation}, oscillator, filter, envelope::Adsr};
+use super::{Seconds, ScaleRatio, instrument::{self, ModTarget, ModSpecs}, oscillator, filter, envelope::Adsr, lfo};
 
 pub struct Builder {
     max_voices: u8,
     oscillator: oscillator::Specs,
     filter: filter::Specs,
+    lfo: Option<lfo::Specs>,
     adsr: Adsr,
     volume: ScaleRatio,
-    modulation_x: Modulation,
-    modulation_y: Modulation,
+    modulation_x: ModTarget,
+    modulation_y: ModTarget,
+    pub modulation_lfo: ModSpecs,
 }
 impl Builder {
 
     pub fn osc(oscillator: oscillator::Specs) -> Builder {
         Builder {
+            oscillator,
             max_voices: 8,
-            oscillator: oscillator,
             filter: filter::Specs::LPF,
+            lfo: None,
             adsr: Adsr::new(0., 0.05, 0.8, 0.2),
-            volume: 1.,
-            modulation_x: Modulation::Filter(filter::Modulation::Cutoff),
-            modulation_y: Modulation::Filter(filter::Modulation::QFactor),
+            volume: 0.2,
+            modulation_x: ModTarget::Filter(filter::ModTarget::Cutoff),
+            modulation_y: ModTarget::Filter(filter::ModTarget::QFactor),
+            modulation_lfo: ModSpecs{ target: ModTarget::Noop, amount: 1.},
         }
     }
 
-    pub fn build(self) -> Specs {
-        Specs {
+    pub fn build(self) -> instrument::Specs {
+        instrument::Specs {
             max_voices: self.max_voices,
             oscillator: self.oscillator,
             filter: self.filter,
+            lfo: self.lfo,
             adsr: self.adsr,
             volume: self.volume,
             modulation_x: self.modulation_x,
             modulation_y: self.modulation_y,
+            modulation_lfo: self.modulation_lfo,
         }
     }
 
@@ -55,6 +61,11 @@ impl Builder {
         self.adsr.release = value;
         self
     }
+    pub fn lfo(mut self, value: lfo::Specs, target: ModTarget, amount: ScaleRatio) -> Self {
+        self.lfo = Some(value);
+        self.modulation_lfo = ModSpecs{ target, amount };
+        self
+    }
     pub fn adsr(mut self, a: Seconds, d: Seconds, s: ScaleRatio, r: Seconds) -> Self {
         self.adsr = Adsr::new(a, d, s, r);
         self
@@ -63,12 +74,12 @@ impl Builder {
         self.volume = value;
         self
     }
-    pub fn mod_x(mut self, value: Modulation) -> Self {
-        self.modulation_x = value;
+    pub fn mod_x(mut self, target: ModTarget) -> Self {
+        self.modulation_x = target;
         self
     }
-    pub fn mod_y(mut self, value: Modulation) -> Self {
-        self.modulation_y = value;
+    pub fn mod_y(mut self, target: ModTarget) -> Self {
+        self.modulation_y = target;
         self
     }
 }

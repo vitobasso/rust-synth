@@ -1,20 +1,19 @@
-use super::Sample;
+use super::{Sample, modulated::*};
 use core::music_theory::Hz;
 
 const MAX_CUTOFF: Hz = 440. * 8.;
 const MAX_QFACTOR: f64 = 50.;
 const MIN_QFACTOR: f64 = 1.;
 
-pub trait Filter {
+pub trait Filter: Modulated<ModTarget> {
     fn filter(&mut self, input: Sample) -> Sample;
-    fn modulate(&mut self, modulation: Modulation, value: f64);
 }
 
 #[derive(Clone, Copy)]
 pub enum Specs { LPF, HPF, BPF, Notch, }
 
 #[derive(Copy, Clone)]
-pub enum Modulation { Cutoff, QFactor }
+pub enum ModTarget { Cutoff, QFactor }
 
 impl Filter {
     pub fn new(specs: Specs, sample_rate: Hz) -> Box<Filter> {
@@ -31,7 +30,10 @@ mod biquad {
 
     /// http://www.musicdsp.org/files/Audio-EQ-Cookbook.txt
     pub(super) struct BiquadFilter{
-        parameters: Parameters,
+        sample_rate: Hz,
+        cutoff: ModParam,
+        qfactor: ModParam,
+        filter_type: Box<FilterType>,
         input_history: [Sample;2],
         output_history: [Sample;2],
     }
@@ -46,28 +48,26 @@ mod biquad {
                 Specs::Notch => Box::new(Notch),
             };
             BiquadFilter {
-                parameters: Parameters::new(sample_rate, filter_type),
+                sample_rate, filter_type,
+                cutoff: ModParam::with_base(1., 0., MAX_CUTOFF),
+                qfactor: ModParam::with_base(0.05, MIN_QFACTOR, MAX_QFACTOR),
                 input_history: [0., 0.],
                 output_history: [0., 0.],
             }
         }
 
-        fn set_cutoff(&mut self, value: f64) {
-            let normalized = value.powi(2).max(0.).min(1.);
-            self.parameters.set_cutoff(normalized);
+        fn calculate_coefficients(&mut self) -> Coefficients {
+            let cutoff = self.cutoff.calculate();
+            let qfactor = self.qfactor.calculate();
+            let w0 = 2. * PI * cutoff / self.sample_rate;
+            let alpha = w0.sin() / (2. * qfactor);
+            self.filter_type.specific_coefficients(w0, alpha)
         }
-
-        fn set_qfactor(&mut self, value: f64) {
-            let normalized = value.powi(2).max(0.).min(1.);
-            self.parameters.set_qfactor(normalized);
-        }
-
     }
 
     impl Filter for BiquadFilter {
-
         fn filter(&mut self, input: Sample) -> Sample {
-            let coef = &self.parameters.coefficients;
+            let coef = &self.calculate_coefficients();
             let a0 = coef.a0;
             let output = (coef.b0/a0) * input
                 + (coef.b1/a0) * self.input_history[1]  + (coef.b2/a0) * self.input_history[0]
@@ -78,67 +78,28 @@ mod biquad {
 
             output
         }
-
-        fn modulate(&mut self, modulation: Modulation, value: f64) {
-            match modulation {
-                Modulation::Cutoff => self.set_cutoff(value),
-                Modulation::QFactor => self.set_qfactor(value),
-            }
-        }
     }
 
-    struct Parameters{
-        sample_rate: Hz,
-        cutoff: Hz,
-        qfactor: f64,
-        filter_type: Box<FilterType>,
-        coefficients: Coefficients,
+    impl Modulated<ModTarget> for BiquadFilter {
+        fn mod_param(&mut self, target: ModTarget) -> Option<&mut ModParam> {
+            match target {
+                ModTarget::Cutoff => Some(&mut self.cutoff),
+                ModTarget::QFactor => Some(&mut self.qfactor),
+            }
+        }
     }
 
     struct Coefficients {
         b0: f64, b1: f64, b2: f64, a0: f64, a1: f64, a2: f64,
     }
 
-    impl Parameters {
-
-        fn new(sample_rate: Hz, filter_type: Box<FilterType>) -> Parameters {
-            let cutoff = 1.;
-            let qfactor = 0.05;
-            let coefficients = calculate(sample_rate, cutoff, qfactor, &filter_type);
-            Parameters { sample_rate, cutoff, qfactor, filter_type, coefficients }
-        }
-
-        fn set_cutoff(&mut self, value: f64) {
-            self.cutoff = value;
-            self.recalculate();
-        }
-
-        fn set_qfactor(&mut self, value: f64) {
-            self.qfactor = value;
-            self.recalculate();
-        }
-
-        fn recalculate(&mut self) {
-            self.coefficients = calculate(self.sample_rate, self.cutoff, self.qfactor, &self.filter_type);
-        }
-
-    }
-
-    fn calculate(sample_rate: Hz, cutoff: Hz, qfactor: f64, filter_type: &Box<FilterType>) -> Coefficients {
-        let scaled_cutoff = cutoff * MAX_CUTOFF;
-        let scaled_qfactor = (qfactor * MAX_QFACTOR).max(MIN_QFACTOR);
-        let w0 = 2. * PI * scaled_cutoff / sample_rate;
-        let alpha = w0.sin() / (2. * scaled_qfactor);
-        filter_type.calculate_coefficients(w0, alpha)
-    }
-
     trait FilterType {
-        fn calculate_coefficients(&self, w0: f64, alpha: f64) -> Coefficients;
+        fn specific_coefficients(&self, w0: f64, alpha: f64) -> Coefficients;
     }
 
     struct LPF;
     impl FilterType for LPF {
-        fn calculate_coefficients(&self, w0: f64, alpha: f64) -> Coefficients {
+        fn specific_coefficients(&self, w0: f64, alpha: f64) -> Coefficients {
             let cos_w0 = w0.cos();
             Coefficients {
                 b0: (1. - cos_w0) / 2.,
@@ -153,7 +114,7 @@ mod biquad {
 
     struct HPF;
     impl FilterType for HPF {
-        fn calculate_coefficients(&self, w0: f64, alpha: f64) -> Coefficients {
+        fn specific_coefficients(&self, w0: f64, alpha: f64) -> Coefficients {
             let cos_w0 = w0.cos();
             Coefficients{
                 b0:  (1. + cos_w0)/2.,
@@ -168,7 +129,7 @@ mod biquad {
 
     struct BPF;
     impl FilterType for BPF {
-        fn calculate_coefficients(&self, w0: f64, alpha: f64) -> Coefficients {
+        fn specific_coefficients(&self, w0: f64, alpha: f64) -> Coefficients {
             let sin_w0 = w0.sin();
             let cos_w0 = w0.cos();
             Coefficients{
@@ -184,7 +145,7 @@ mod biquad {
 
     struct Notch;
     impl FilterType for Notch {
-        fn calculate_coefficients(&self, w0: f64, alpha: f64) -> Coefficients {
+        fn specific_coefficients(&self, w0: f64, alpha: f64) -> Coefficients {
             let cos_w0 = w0.cos();
             Coefficients{
                 b0:   1.,

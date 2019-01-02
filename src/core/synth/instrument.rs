@@ -1,5 +1,5 @@
-use super::{Sample, Seconds, ScaleRatio,
-            oscillator::{self, Oscillator}, filter::{self, Filter}, envelope::Adsr};
+use super::{Sample, Seconds, ScaleRatio, oscillator::{self, Oscillator},
+            filter::{self, Filter}, envelope::Adsr, lfo::{self, LFO}, modulated::*};
 use core::music_theory::{Hz, pitch::Pitch};
 
 #[derive(Clone, Copy)]
@@ -7,40 +7,53 @@ pub struct Specs {
     pub max_voices: u8,
     pub oscillator: oscillator::Specs,
     pub filter: filter::Specs,
+    pub lfo: Option<lfo::Specs>,
     pub adsr: Adsr,
     pub volume: ScaleRatio,
-    pub modulation_x: Modulation,
-    pub modulation_y: Modulation,
+    pub modulation_x: ModTarget,
+    pub modulation_y: ModTarget,
+    pub modulation_lfo: ModSpecs,
 }
 
 #[derive(Copy, Clone)]
-pub enum Modulation {
+pub enum ModTarget {
     Noop, Volume,
-    Filter(filter::Modulation),
-    Oscillator(oscillator::Modulation),
+    Filter(filter::ModTarget),
+    Oscillator(oscillator::ModTarget),
+}
+
+#[derive(Copy, Clone)]
+pub struct ModSpecs {
+    pub target: ModTarget,
+    pub amount: ScaleRatio,
 }
 
 pub struct Instrument {
     oscillator: Box<Oscillator>,
     filter: Box<Filter>,
+    lfo: Option<LFO>,
     adsr: Adsr,
-    volume: ScaleRatio,
+    volume: ModParam,
     voices: Voices,
-    modulation_x: Modulation,
-    modulation_y: Modulation,
+    modulation_x: ModTarget,
+    modulation_y: ModTarget,
+    modulation_lfo: ModSpecs,
+    clock: Clock,
 }
 impl Instrument {
 
     pub fn new(specs: Specs, sample_rate: Hz) -> Instrument {
-        let oscillator = Oscillator::new(specs.oscillator);
-        let filter = Filter::new(specs.filter, sample_rate);
-        let voices = Voices::new(specs.max_voices, sample_rate, specs.adsr.release);
         Instrument {
-            oscillator, filter, voices,
+            oscillator: Oscillator::new(specs.oscillator),
+            filter: Filter::new(specs.filter, sample_rate),
+            lfo: specs.lfo.map(LFO::new),
             adsr: specs.adsr,
-            volume: specs.volume,
+            volume: ModParam::with_base(specs.volume, 0., 1.),
             modulation_x: specs.modulation_x,
             modulation_y: specs.modulation_y,
+            modulation_lfo: specs.modulation_lfo,
+            clock: Clock::new(sample_rate),
+            voices: Voices::new(specs.max_voices, sample_rate, specs.adsr.release),
         }
     }
 
@@ -57,6 +70,7 @@ impl Instrument {
     }
 
     pub fn next_sample(&mut self) -> Sample {
+        self.run_next_lfo_modulation();
         let oscillator = &self.oscillator;
         let adsr = &self.adsr;
         self.voices.drop_finished_voices();
@@ -64,7 +78,7 @@ impl Instrument {
             .map(|voice| Instrument::next_sample_for_voice(voice, oscillator, adsr))
             .sum();
         let sample_filtered = self.filter.filter(sample_mix);
-        sample_filtered * self.volume
+        sample_filtered * self.volume.calculate()
     }
 
     fn next_sample_for_voice (voice: &mut Voice, oscillator: &Box<Oscillator>, adsr: &Adsr) -> Sample {
@@ -74,29 +88,43 @@ impl Instrument {
     }
 
     pub fn set_xy_params(&mut self, x: f64, y: f64) {
-        let x_wire = self.modulation_x;
-        let y_wire = self.modulation_y;
-        self.modulate(x_wire, x);
-        self.modulate(y_wire, y);
-    }
-
-    pub fn set_volume(&mut self, value: ScaleRatio) {
-        self.volume = value;
+        let x_target = self.modulation_x;
+        let y_target = self.modulation_y;
+        self.mod_param(x_target).map(|p| p.set_base(x));
+        self.mod_param(y_target).map(|p| p.set_base(y));
     }
 
     pub fn set_oscillator(&mut self, specs: oscillator::Specs) {
         self.oscillator = Oscillator::new(specs)
     }
 
-    fn modulate(&mut self, modulation: Modulation, value: f64) {
-        match modulation {
-            Modulation::Noop => (),
-            Modulation::Volume => self.volume = value,
-            Modulation::Filter(m) => self.filter.modulate(m, value),
-            Modulation::Oscillator(m) => self.oscillator.modulate(m, value),
+    fn run_next_lfo_modulation(&mut self) {
+        let maybe_lfo_sample = {
+            let clock_ref = &mut self.clock;
+            self.lfo.as_ref().map(|lfo| {
+                let clock = clock_ref.tick();
+                lfo.next(clock)
+            })
+        };
+        let specs = self.modulation_lfo.clone();
+        if let Some(lfo_sample) = maybe_lfo_sample {
+            let normalized = (lfo_sample + 1.) / 2.;
+            self.mod_param(specs.target)
+                .map(|p| p.set_signal(normalized * specs.amount));
         }
     }
 
+}
+
+impl Modulated<ModTarget> for Instrument {
+    fn mod_param(&mut self, target: ModTarget) -> Option<&mut ModParam> {
+        match target {
+            ModTarget::Noop => None,
+            ModTarget::Volume => Some(&mut self.volume),
+            ModTarget::Filter(m) => self.filter.mod_param(m),
+            ModTarget::Oscillator(m) => self.oscillator.mod_param(m),
+        }
+    }
 }
 
 struct Voices {

@@ -6,7 +6,7 @@
 - Modulation
     - [x] ADSR
         - [ ] Filter ADSR
-    - [ ] LFO's
+    - [x] LFO's
     - [x] Wire modulation to parameters
 - Effects
     - [ ] Compression
@@ -16,7 +16,7 @@
 - [x] Arpeggiator
     - [x] Set beat
 - [x] Loop recorder
-    - [ ] Snap to measure
+    - [ ] Snap to measures
 - [ ] GUI
 - [ ] Patch save/select
 - [ ] Talk Midi
