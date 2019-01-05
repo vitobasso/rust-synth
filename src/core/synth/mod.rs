@@ -10,4 +10,4 @@ pub mod modulated;
 
 pub type Sample = f64;
 pub type Seconds = f64;
-pub type ScaleRatio = f64;
+pub type Proportion = f64;

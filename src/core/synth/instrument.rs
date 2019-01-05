@@ -1,4 +1,4 @@
-use super::{Sample, Seconds, ScaleRatio, oscillator::{self, Oscillator},
+use super::{Sample, Seconds, Proportion, oscillator::{self, Oscillator},
             filter::{self, Filter}, envelope::Adsr, lfo::{self, LFO}, modulated::*};
 use core::music_theory::{Hz, pitch::Pitch};
 
@@ -9,7 +9,7 @@ pub struct Specs {
     pub filter: filter::Specs,
     pub lfo: Option<lfo::Specs>,
     pub adsr: Adsr,
-    pub volume: ScaleRatio,
+    pub volume: Proportion,
     pub modulation_x: ModTarget,
     pub modulation_y: ModTarget,
     pub modulation_lfo: ModSpecs,
@@ -25,7 +25,7 @@ pub enum ModTarget {
 #[derive(Copy, Clone)]
 pub struct ModSpecs {
     pub target: ModTarget,
-    pub amount: ScaleRatio,
+    pub amount: Proportion,
 }
 
 pub struct Instrument {

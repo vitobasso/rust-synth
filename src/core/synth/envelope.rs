@@ -1,14 +1,14 @@
-use super::{Sample, Seconds, ScaleRatio};
+use super::{Sample, Seconds, Proportion};
 
 #[derive(Clone, Copy)]
 pub struct Adsr {
     pub attack: Seconds,
     pub decay: Seconds,
-    pub sustain: ScaleRatio,
+    pub sustain: Proportion,
     pub release: Seconds,
 }
 impl Adsr {
-    pub fn new(attack: Seconds, decay: Seconds, sustain: ScaleRatio, release: Seconds) -> Adsr {
+    pub fn new(attack: Seconds, decay: Seconds, sustain: Proportion, release: Seconds) -> Adsr {
         assert!(attack >= 0., "attack was: {}", attack);
         assert!(decay >= 0., "decay was: {}", decay);
         assert!(sustain >= 0. && sustain <= 1., "sustain was: {}", sustain);
@@ -20,7 +20,7 @@ impl Adsr {
         sample * self.scale_ratio(elapsed, elapsed_since_release)
     }
 
-    fn scale_ratio(&self, elapsed: Seconds, elapsed_since_release: Seconds) -> ScaleRatio {
+    fn scale_ratio(&self, elapsed: Seconds, elapsed_since_release: Seconds) -> Proportion {
         if elapsed_since_release > 0. {
             let release_progress = elapsed_since_release / self.release;
             let release_scale = (1. - release_progress).max(0.);

@@ -1,4 +1,4 @@
-use super::{Seconds, ScaleRatio, instrument::{self, ModTarget, ModSpecs}, oscillator, filter, envelope::Adsr, lfo};
+use super::{Seconds, Proportion, instrument::{self, ModTarget, ModSpecs}, oscillator, filter, envelope::Adsr, lfo};
 
 pub struct Builder {
     max_voices: u8,
@@ -6,7 +6,7 @@ pub struct Builder {
     filter: filter::Specs,
     lfo: Option<lfo::Specs>,
     adsr: Adsr,
-    volume: ScaleRatio,
+    volume: Proportion,
     modulation_x: ModTarget,
     modulation_y: ModTarget,
     pub modulation_lfo: ModSpecs,
@@ -53,7 +53,7 @@ impl Builder {
         self.adsr.decay = value;
         self
     }
-    pub fn sustain(mut self, value: ScaleRatio) -> Self {
+    pub fn sustain(mut self, value: Proportion) -> Self {
         self.adsr.sustain = value;
         self
     }
@@ -61,16 +61,16 @@ impl Builder {
         self.adsr.release = value;
         self
     }
-    pub fn lfo(mut self, value: lfo::Specs, target: ModTarget, amount: ScaleRatio) -> Self {
+    pub fn lfo(mut self, value: lfo::Specs, target: ModTarget, amount: Proportion) -> Self {
         self.lfo = Some(value);
         self.modulation_lfo = ModSpecs{ target, amount };
         self
     }
-    pub fn adsr(mut self, a: Seconds, d: Seconds, s: ScaleRatio, r: Seconds) -> Self {
+    pub fn adsr(mut self, a: Seconds, d: Seconds, s: Proportion, r: Seconds) -> Self {
         self.adsr = Adsr::new(a, d, s, r);
         self
     }
-    pub fn volume(mut self, value: ScaleRatio) -> Self {
+    pub fn volume(mut self, value: Proportion) -> Self {
         self.volume = value;
         self
     }

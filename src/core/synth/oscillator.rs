@@ -1,13 +1,13 @@
 extern crate rand;
 
-use super::{Sample, Seconds, ScaleRatio, modulated::*};
+use super::{Sample, Seconds, Proportion, modulated::*};
 use core::music_theory::Hz;
 use self::rand::{Rng, ThreadRng};
 use std::f64::consts::PI;
 
 #[derive(Clone, Copy)]
 pub enum Specs {
-    Sine, Saw, Square, Pulse(ScaleRatio),
+    Sine, Saw, Square, Pulse(Proportion),
     Supersaw{ nvoices: u16, detune_amount: Hz }
 }
 
@@ -54,7 +54,7 @@ pub struct Pulse {
     duty_cycle: ModParam,
 }
 impl Pulse {
-    fn new(duty_cycle: ScaleRatio) -> Pulse {
+    fn new(duty_cycle: Proportion) -> Pulse {
         Pulse { duty_cycle: ModParam::with_base(duty_cycle, 0., 1.) }
     }
 }
