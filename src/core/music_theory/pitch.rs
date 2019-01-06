@@ -58,23 +58,28 @@ impl Pitch {
     /// f0 = the frequency of one fixed note which must be defined. A common choice is setting the A above middle C (A4) at f0 = 440 Hz.
     /// n = the number of half steps away from the fixed note you are. If you are at a higher note, n is positive. If you are on a lower note, n is negative.
     /// fn = the frequency of the note n half steps away.
-    /// a = (2)1/12 = the twelth root of 2 = the number which when multiplied by itself 12 times equals 2 = 1.059463094359...
+    /// a = (2)1/12 = the twelfth root of 2 = the number which when multiplied by itself 12 times equals 2 = 1.059463094359...
     ///
     /// Source: http://pages.mtu.edu/~suits/NoteFreqCalcs.html
     ///
     pub fn freq(&self) -> Hz {
-        let f0: Hz = 16.35_f64;
-        let a: f64 = 2_f64.powf(1_f64/12_f64);
-        (f0 * a.powf(self.index() as f64))
+        let f0: Hz = 440.;
+        let a: f64 = 2_f64.powf(1./12.);
+        let n: isize = self.index() as isize - 69;
+        (f0 * a.powf(n as f64))
     }
 
-    fn index(&self) -> usize{
-        (self.octave * 12 + self.class.clone() as i8) as usize
+    /// Follows the MIDI convention: the index for C4 is 60
+    /// https://newt.phys.unsw.edu.au/jw/notes.html
+    pub fn index(&self) -> usize{
+        ((self.octave + 1) * 12 + self.class.clone() as i8) as usize
     }
 
-    fn from_index(i: usize) -> Pitch {
+    /// Follows the MIDI convention: the index for C4 is 60
+    /// https://newt.phys.unsw.edu.au/jw/notes.html
+    pub fn from_index(i: usize) -> Pitch {
         Pitch {
-            octave: (i/12) as Octave,
+            octave: ((i/12) as Octave - 1),
             class: PitchClass::from_index(i%12)
                 .expect(format!("Failed to get PitchClass for i={}", i).as_str())
         }
@@ -111,6 +116,23 @@ mod tests {
         for (pitch, expected_freq) in cases.iter() {
             let err = expected_freq - pitch.freq();
             assert!(err.abs() < 1.0);
+        }
+    }
+
+    /// Follows the MIDI convention: the index for C4 is 60
+    /// https://newt.phys.unsw.edu.au/jw/notes.html
+    #[test]
+    fn should_convert_index_to_pitch() {
+        let cases: &[(usize, Pitch)] = &[
+            (21,        Pitch{ octave: 0, class: A }),
+            (60,        Pitch{ octave: 4, class: C }),
+            (69,        Pitch{ octave: 4, class: A }),
+            (60 - 4*12, Pitch{ octave: 0, class: C }),
+            (69 + 12,   Pitch{ octave: 5, class: A }),
+            (59 + 5*12, Pitch{ octave: 8, class: B }),
+        ];
+        for (index, expected_pitch) in cases.iter() {
+            assert_eq!(Pitch::from_index(*index), *expected_pitch);
         }
     }
 }
