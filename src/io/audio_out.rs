@@ -7,7 +7,7 @@ use audio_out::cpal::{
 use std::sync::mpsc::Receiver;
 
 type Sample = f64;
-pub fn run_forever(device: &Device, format: &Format, sig_in: Receiver<Sample>) {
+pub fn loop_forever(device: &Device, format: &Format, sig_in: Receiver<Sample>) {
 
     let channels = format.channels as usize;
     let event_loop = EventLoop::new();

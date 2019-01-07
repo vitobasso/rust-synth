@@ -18,12 +18,16 @@ pub struct State {
 
 impl State {
 
-    pub fn new(sample_rate: Hz) -> State {
+    pub fn new(specs: instrument::Specs, sample_rate: Hz) -> State {
         State {
             sample_rate,
-            instrument: Instrument::new(default_instrument_specs(), sample_rate),
+            instrument: Instrument::new(specs, sample_rate),
             holding_notes: HashMap::new(),
         }
+    }
+
+    pub fn with_default_specs(sample_rate: Hz) -> State {
+        State::new(default_instrument_specs(), sample_rate)
     }
 
     pub fn interpret(&mut self, command: Command) {

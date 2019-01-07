@@ -1,5 +1,5 @@
 use conrod::{event, input};
-use core::control::{controller::Command::{self, *}, instrument_player::{Command::*, Discriminator, id_discr},
+use core::control::{manual_controller::Command::{self, *}, instrument_player::{Command::*, Discriminator, id_discr},
                     loops::Command::*, transposer::Command::*};
 use core::music_theory::pitch::{Pitch, PitchClass::*};
 

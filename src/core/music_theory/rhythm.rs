@@ -19,12 +19,6 @@ pub struct Note {
 }
 
 impl Note {
-    pub fn note(duration: Duration, pitch: RelativePitch) -> Note {
-        Note { duration, pitch: Some(pitch) }
-    }
-    pub fn rest(duration: Duration) -> Note {
-        Note { duration, pitch: None }
-    }
     fn events(self) -> Vec<Event> {
         let head = match self.pitch {
             Some(pitch) => Event::Note(pitch),
@@ -35,6 +29,12 @@ impl Note {
 
         vec![head].into_iter().chain(tail).collect()
     }
+}
+pub fn note(duration: Duration, pitch: RelativePitch) -> Note {
+    Note { duration, pitch: Some(pitch) }
+}
+pub fn rest(duration: Duration) -> Note {
+    Note { duration, pitch: None }
 }
 
 #[derive(Clone)]
@@ -72,7 +72,7 @@ pub enum Invalid {
 
 #[cfg(test)]
 mod tests {
-    use super::{Sequence, Event::{self, *}, Note, Duration::*};
+    use super::{*, Event::*, Duration::*};
     use super::super::diatonic_scale::{OctaveShift::*, ScaleDegree::*};
 
     const W: Note = Note{duration: Whole,     pitch: None};
@@ -122,24 +122,24 @@ mod tests {
     #[test]
     fn sequence_a_phrase() {
         let phrase = &[
-            Note::note(Quarter, (Same, I1)),
-            Note::rest(Quarter),
-            Note::note(Quarter, (Same, I2)),
-            Note::note(Half,    (Same, I3)),
-            Note::rest(Quarter),
-            Note::note(Quarter, (Same, I2)),
-            Note::note(Quarter, (Same, I1)),
+            note(Quarter, (Same, I1)),
+            rest(Quarter),
+            note(Quarter, (Same, I2)),
+            note(Half,    (Same, I3)),
+            rest(Quarter),
+            note(Quarter, (Same, I2)),
+            note(Quarter, (Same, I1)),
         ];
         let sequence = Sequence::new(2, phrase.to_vec())
             .expect("Expected a valid Sequence");
         let expected_events = &[
-            Event::Note((Same, I1)), Keep, Keep, Keep,
+            Note((Same, I1)), Keep, Keep, Keep,
             Rest, Keep, Keep, Keep,
-            Event::Note((Same, I2)), Keep, Keep, Keep,
-            Event::Note((Same, I3)), Keep, Keep, Keep, Keep, Keep, Keep, Keep,
+            Note((Same, I2)), Keep, Keep, Keep,
+            Note((Same, I3)), Keep, Keep, Keep, Keep, Keep, Keep, Keep,
             Rest, Keep, Keep, Keep,
-            Event::Note((Same, I2)), Keep, Keep, Keep,
-            Event::Note((Same, I1)), Keep, Keep, Keep,
+            Note((Same, I2)), Keep, Keep, Keep,
+            Note((Same, I1)), Keep, Keep, Keep,
         ];
         let actual_result = sequence.events;
         assert_eq!(actual_result, expected_events.to_vec(),

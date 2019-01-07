@@ -17,6 +17,7 @@
     - [x] Set beat
 - [x] Loop recorder
     - [ ] Snap to measures
+- [ ] Drums
 - [ ] GUI
 - [ ] Patch save/select
-- [ ] Talk Midi
+- [x] Read Midi

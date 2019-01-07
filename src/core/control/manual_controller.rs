@@ -6,11 +6,8 @@ use core::{
     synth::{Sample, instrument, oscillator},
 };
 
-const PULSES_PER_BEAT: u64 = 4;
-const DEFAULT_BEAT: Millis = 100 * PULSES_PER_BEAT;
-
-pub fn run_forever(sample_rate: Hz, patches: Vec<Patch>, cmd_in: Receiver<Command>, signal_out: SyncSender<Sample>) {
-    let mut state = State::new(sample_rate, patches);
+pub fn loop_forever(sample_rate: Hz, presets: Vec<Patch>, cmd_in: Receiver<Command>, signal_out: SyncSender<Sample>) {
+    let mut state = State::new(sample_rate, presets);
     loop {
         match cmd_in.try_recv() {
             Ok(command) => state.interpret(command),
@@ -30,7 +27,9 @@ pub fn run_forever(sample_rate: Hz, patches: Vec<Patch>, cmd_in: Receiver<Comman
     }
 }
 
-pub type Id = u32;
+const PULSES_PER_BEAT: u64 = 4;
+const DEFAULT_BEAT: Millis = 100 * PULSES_PER_BEAT;
+
 pub enum Command {
     Instrument(player::Command),
     Transposer(transposer::Command),
@@ -58,10 +57,10 @@ struct State {
 }
 
 impl State {
-    pub fn new(sample_rate: Hz, patches: Vec<Patch>) -> State {
+    fn new(sample_rate: Hz, patches: Vec<Patch>) -> State {
         State {
             patches,
-            player: player::State::new(sample_rate),
+            player: player::State::with_default_specs(sample_rate),
             transposer: transposer::State::new(PitchClass::C),
             duration_recorder: DurationRecorder::new(),
             beat: DEFAULT_BEAT,

@@ -35,7 +35,7 @@ impl DurationRecorder {
     }
 }
 
-fn duration_as_millis(duration: Duration) -> Millis {
+pub fn duration_as_millis(duration: Duration) -> Millis {
     let secs = duration.as_secs();
     let millis = duration.subsec_millis();
     secs * 1_000 + millis as u64
