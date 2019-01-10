@@ -1,5 +1,6 @@
 use conrod::{event, input};
-use core::control::controller::{Command, Id};
+use core::control::{controller::Command::{self, *}, instrument_player::{Command::*, Id},
+                    loops::Command::*};
 use core::music_theory::pitch::{Pitch, PitchClass::*};
 
 pub struct KeyMap { window_width: u32, window_height: u32 }
@@ -29,16 +30,16 @@ impl KeyMap {
         let h = self.window_height as f64;
         let norm_y = ((y + h/2.)/h).max(0.).min(1.);
         let norm_x = ((x + w/2.)/w).max(0.).min(1.);
-        Command::ModXY(norm_x, norm_y)
+        Instrument(ModXY(norm_x, norm_y))
     }
 }
 
 fn note_on(key: &input::Key) -> Option<Command> {
-    pitches(key).map(|(pitch, id)| Command::NoteOn(pitch,id))
+    pitches(key).map(|(pitch, id)| Instrument(NoteOn(pitch,id)))
 }
 
 fn note_off(key: &input::Key) -> Option<Command> {
-    pitches(key).map(|(pitch, id)| Command::NoteOff(pitch,id))
+    pitches(key).map(|(pitch, id)| Instrument(NoteOff(pitch,id)))
 }
 
 fn pitches(key: &input::Key) -> Option<(Pitch, Id)> { //TODO shift => sharp pitches
@@ -85,53 +86,53 @@ fn pitches(key: &input::Key) -> Option<(Pitch, Id)> { //TODO shift => sharp pitc
 
 fn patches(key: &input::Key) -> Option<Command> {
     match key {
-        input::Key::D1 => Some(Command::SetPatch(0)),
-        input::Key::D2 => Some(Command::SetPatch(1)),
-        input::Key::D3 => Some(Command::SetPatch(2)),
-        input::Key::D4 => Some(Command::SetPatch(3)),
-        input::Key::D5 => Some(Command::SetPatch(4)),
-        input::Key::D6 => Some(Command::SetPatch(5)),
-        input::Key::D7 => Some(Command::SetPatch(6)),
-        input::Key::D8 => Some(Command::SetPatch(7)),
-        input::Key::D9 => Some(Command::SetPatch(8)),
-        input::Key::D0 => Some(Command::SetPatch(9)),
+        input::Key::D1 => Some(SetPatch(0)),
+        input::Key::D2 => Some(SetPatch(1)),
+        input::Key::D3 => Some(SetPatch(2)),
+        input::Key::D4 => Some(SetPatch(3)),
+        input::Key::D5 => Some(SetPatch(4)),
+        input::Key::D6 => Some(SetPatch(5)),
+        input::Key::D7 => Some(SetPatch(6)),
+        input::Key::D8 => Some(SetPatch(7)),
+        input::Key::D9 => Some(SetPatch(8)),
+        input::Key::D0 => Some(SetPatch(9)),
         _ => None,
     }
 }
 
 fn loop_rec(key: &input::Key) -> Option<Command> {
     match key {
-        input::Key::F1 =>  Some(Command::LoopPlaybackToggle(0)),
-        input::Key::F2 =>  Some(Command::LoopPlaybackToggle(1)),
-        input::Key::F3 =>  Some(Command::LoopPlaybackToggle(2)),
-        input::Key::F4 =>  Some(Command::LoopPlaybackToggle(3)),
-        input::Key::F5 =>  Some(Command::LoopPlaybackToggle(4)),
-        input::Key::F6 =>  Some(Command::LoopRecordingToggle(0)),
-        input::Key::F7 =>  Some(Command::LoopRecordingToggle(1)),
-        input::Key::F8 =>  Some(Command::LoopRecordingToggle(2)),
-        input::Key::F9 =>  Some(Command::LoopRecordingToggle(3)),
-        input::Key::F10 => Some(Command::LoopRecordingToggle(4)),
+        input::Key::F1 =>  Some(Loop(TogglePlayback(0))),
+        input::Key::F2 =>  Some(Loop(TogglePlayback(1))),
+        input::Key::F3 =>  Some(Loop(TogglePlayback(2))),
+        input::Key::F4 =>  Some(Loop(TogglePlayback(3))),
+        input::Key::F5 =>  Some(Loop(TogglePlayback(4))),
+        input::Key::F6 =>  Some(Loop(ToggleRecording(0))),
+        input::Key::F7 =>  Some(Loop(ToggleRecording(1))),
+        input::Key::F8 =>  Some(Loop(ToggleRecording(2))),
+        input::Key::F9 =>  Some(Loop(ToggleRecording(3))),
+        input::Key::F10 => Some(Loop(ToggleRecording(4))),
         _ => None,
     }
 }
 
 fn pulse_rec(key: &input::Key) -> Option<Command> {
     match key {
-        input::Key::Space =>  Some(Command::PulseRecord),
+        input::Key::Space =>  Some(PulseRecord),
         _ => None,
     }
 }
 
 fn transpose(key: &input::Key) -> Option<Command> {
     match key {
-        input::Key::Down =>         Some(Command::ShiftPitch(-12)),
-        input::Key::Up =>           Some(Command::ShiftPitch(12)),
-        input::Key::Left =>         Some(Command::ShiftKeyboard(-1)),
-        input::Key::Right =>        Some(Command::ShiftKeyboard(1)),
-        input::Key::Minus =>        Some(Command::ShiftPitch(-1)),
-        input::Key::Equals =>       Some(Command::ShiftPitch(1)),
-        input::Key::LeftBracket =>  Some(Command::TransposeKey(-1)),
-        input::Key::RightBracket => Some(Command::TransposeKey(1)),
+        input::Key::Down =>         Some(Instrument(ShiftPitch(-12))),
+        input::Key::Up =>           Some(Instrument(ShiftPitch(12))),
+        input::Key::Left =>         Some(Instrument(ShiftKeyboard(-1))),
+        input::Key::Right =>        Some(Instrument(ShiftKeyboard(1))),
+        input::Key::Minus =>        Some(Instrument(ShiftPitch(-1))),
+        input::Key::Equals =>       Some(Instrument(ShiftPitch(1))),
+        input::Key::LeftBracket =>  Some(Instrument(TransposeKey(-1))),
+        input::Key::RightBracket => Some(Instrument(TransposeKey(1))),
         _ => None,
     }
 }
