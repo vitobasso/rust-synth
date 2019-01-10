@@ -1,4 +1,4 @@
-use std::ops::{Add, Sub};
+use std::ops::{Add, Sub, AddAssign};
 use super::{Hz, Semitones, Octave, num_traits::FromPrimitive};
 
 #[derive(Clone, Copy, PartialEq, Eq, Hash, FromPrimitive, Debug)]
@@ -35,6 +35,11 @@ impl Sub<PitchClass> for PitchClass {
     type Output = Self;
     fn sub(self, rhs: PitchClass) -> Self {
         self - rhs as Semitones
+    }
+}
+impl AddAssign<Semitones> for PitchClass {
+    fn add_assign(&mut self, rhs: i8) {
+        *self = *self + rhs
     }
 }
 

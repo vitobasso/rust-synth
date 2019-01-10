@@ -1,6 +1,6 @@
 use conrod::{event, input};
-use core::control::{controller::Command::{self, *}, instrument_player::{Command::*, Id},
-                    loops::Command::*};
+use core::control::{controller::Command::{self, *}, instrument_player::{Command::*, Discriminator, id_discr},
+                    loops::Command::*, transposer::Command::*};
 use core::music_theory::pitch::{Pitch, PitchClass::*};
 
 pub struct KeyMap { window_width: u32, window_height: u32 }
@@ -35,14 +35,16 @@ impl KeyMap {
 }
 
 fn note_on(key: &input::Key) -> Option<Command> {
-    pitches(key).map(|(pitch, id)| Instrument(NoteOn(pitch,id)))
+    pitches(key).map(|(pitch, discr)|
+        Instrument(NoteOn(pitch, id_discr(pitch, discr))))
 }
 
 fn note_off(key: &input::Key) -> Option<Command> {
-    pitches(key).map(|(pitch, id)| Instrument(NoteOff(pitch,id)))
+    pitches(key).map(|(pitch, discr)|
+        Instrument(NoteOff(id_discr(pitch, discr))))
 }
 
-fn pitches(key: &input::Key) -> Option<(Pitch, Id)> { //TODO shift => sharp pitches
+fn pitches(key: &input::Key) -> Option<(Pitch, Discriminator)> { //TODO shift => sharp pitches
     match key {
         //top row
         input::Key::Q =>         Some((Pitch::new(A, 4), 3)),
@@ -125,14 +127,14 @@ fn pulse_rec(key: &input::Key) -> Option<Command> {
 
 fn transpose(key: &input::Key) -> Option<Command> {
     match key {
-        input::Key::Down =>         Some(Instrument(ShiftPitch(-12))),
-        input::Key::Up =>           Some(Instrument(ShiftPitch(12))),
-        input::Key::Left =>         Some(Instrument(ShiftKeyboard(-1))),
-        input::Key::Right =>        Some(Instrument(ShiftKeyboard(1))),
-        input::Key::Minus =>        Some(Instrument(ShiftPitch(-1))),
-        input::Key::Equals =>       Some(Instrument(ShiftPitch(1))),
-        input::Key::LeftBracket =>  Some(Instrument(TransposeKey(-1))),
-        input::Key::RightBracket => Some(Instrument(TransposeKey(1))),
+        input::Key::Down =>         Some(Transposer(ShiftPitch(-12))),
+        input::Key::Up =>           Some(Transposer(ShiftPitch(12))),
+        input::Key::Left =>         Some(Transposer(ShiftKeyboard(-1))),
+        input::Key::Right =>        Some(Transposer(ShiftKeyboard(1))),
+        input::Key::Minus =>        Some(Transposer(ShiftPitch(-1))),
+        input::Key::Equals =>       Some(Transposer(ShiftPitch(1))),
+        input::Key::LeftBracket =>  Some(Transposer(TransposeKey(-1))),
+        input::Key::RightBracket => Some(Transposer(TransposeKey(1))),
         _ => None,
     }
 }

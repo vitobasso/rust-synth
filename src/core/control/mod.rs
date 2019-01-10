@@ -6,6 +6,7 @@ pub mod arpeggiator;
 pub mod loops;
 pub mod duration_recorder;
 pub mod instrument_player;
+pub mod transposer;
 
 pub type Sample = f64;
 pub type Millis = u64;

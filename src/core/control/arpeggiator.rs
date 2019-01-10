@@ -1,4 +1,4 @@
-use core::control::{Millis, pulse::Pulse, instrument_player::Command};
+use core::control::{Millis, pulse::Pulse, instrument_player::{Command, Id, id}};
 use core::music_theory::{pitch::Pitch, rhythm::{Sequence, Event}, diatonic_scale::*};
 use std::mem;
 
@@ -7,12 +7,10 @@ pub struct Arpeggiator {
     index: usize,
     pulse: Pulse,
     key: Key,
-    holding: Option<Pitch>,
-    playing: Option<Pitch>,
-    pending: Option<Command>,
+    holding_pitch: Option<Pitch>,
+    playing_pitch: Option<Pitch>,
+    pending_command: Option<Command>,
 }
-
-const NOTE_ID: u32 = 10;
 
 impl Arpeggiator {
 
@@ -21,38 +19,38 @@ impl Arpeggiator {
             sequence, key,
             index: 0,
             pulse: Pulse::with_period_millis(pulse_period),
-            holding: None,
-            playing: None,
-            pending: None,
+            holding_pitch: None,
+            playing_pitch: None,
+            pending_command: None,
         }
     }
 
     pub fn interpret(&mut self, command: Command) {
         match command {
             Command::NoteOn(pitch, _) => self.start(pitch),
-            Command::NoteOff(pitch, _) => self.stop(pitch),
+            Command::NoteOff(id) => self.stop(id),
             other => panic!("Can't interpret command: {:?}", other)
         }
     }
 
     fn start(&mut self, pitch: Pitch) {
-        self.holding = Some(pitch);
+        self.holding_pitch = Some(pitch);
     }
 
-    fn stop(&mut self, pitch: Pitch) {
-        if self.is_holding(pitch) {
-            self.pending = self.playing.map(|p| Command::NoteOff(p, NOTE_ID));
-            self.holding = None;
-            self.playing = None;
+    fn stop(&mut self, id: Id) {
+        if self.is_holding(id) {
+            self.pending_command = self.playing_pitch.map(note_off);
+            self.holding_pitch = None;
+            self.playing_pitch = None;
         }
     }
 
-    fn is_holding(&self, pitch: Pitch) -> bool {
-        self.holding.map(|p| p == pitch).unwrap_or(false)
+    fn is_holding(&self, id: Id) -> bool {
+        self.holding_pitch.map(|p| p == id.pitch).unwrap_or(false)
     }
 
     pub fn next(&mut self) -> Vec<Command> {
-        match mem::replace(&mut self.pending, None) {
+        match mem::replace(&mut self.pending_command, None) {
             Some(pending) => vec![pending],
             None => self.pulse.read()
                         .and_then(|_| self.next_event())
@@ -68,7 +66,7 @@ impl Arpeggiator {
     }
 
     fn update_and_command(&mut self, event: Event) -> Vec<Command> {
-        match (event, self.holding, self.playing) {
+        match (event, self.holding_pitch, self.playing_pitch) {
             (Event::Note(relative_pitch), Some(holding), None) =>
                 self.update_note_on(relative_pitch, holding).into_iter().collect(),
             (Event::Note(relative_pitch), Some(holding), Some(playing)) =>
@@ -76,7 +74,7 @@ impl Arpeggiator {
                       self.update_note_on(relative_pitch, holding),
                 ].into_iter().flatten().collect(),
             (Event::Rest, None, Some(playing)) => {
-                self.playing = None;
+                self.playing_pitch = None;
                 vec![note_off(playing)]
             }
             _ => vec![],
@@ -85,7 +83,7 @@ impl Arpeggiator {
 
     fn update_note_on(&mut self, relative_pitch: RelativePitch, holding: Pitch) -> Option<Command> {
         let next_pitch = self.key.pitch_at(holding, relative_pitch);
-        self.playing = next_pitch;
+        self.playing_pitch = next_pitch;
         next_pitch.map(note_on)
     }
 
@@ -96,9 +94,9 @@ impl Arpeggiator {
 }
 
 fn note_on(pitch: Pitch) -> Command {
-    Command::NoteOn(pitch, NOTE_ID)
+    Command::NoteOn(pitch, id(pitch))
 }
 
 fn note_off(pitch: Pitch) -> Command {
-    Command::NoteOff(pitch, NOTE_ID)
+    Command::NoteOff(id(pitch))
 }
