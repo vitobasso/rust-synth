@@ -13,7 +13,7 @@ pub fn loop_forever(sample_rate: Hz, presets: Vec<Specs>, song_specs: Song, sign
         song.next().iter()
             .for_each(|(cmd, instrument_id)| {
                 let cyclic_instrument_id: usize = *instrument_id as usize % players.len();
-                players.get_mut(cyclic_instrument_id).unwrap().interpret(*cmd)
+                players[cyclic_instrument_id].interpret(*cmd)
             });
 
         let mix_sample = players.iter_mut()

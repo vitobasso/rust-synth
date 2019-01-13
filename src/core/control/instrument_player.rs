@@ -43,7 +43,7 @@ impl State {
     }
 
     fn handle_note_on(&mut self, pitch: Pitch, id: Id) {
-        if let None = self.holding_notes.insert(id, pitch) {
+        if self.holding_notes.insert(id, pitch).is_none() {
             self.instrument.hold(pitch)
         }
     }

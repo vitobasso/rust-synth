@@ -55,14 +55,14 @@ impl Arpeggiator {
             None => self.pulse.read()
                         .and_then(|_| self.next_event())
                         .map(|e| self.update_and_command(e))
-                        .unwrap_or(vec![]),
+                        .unwrap_or_else(|| vec!()),
         }
     }
 
     fn next_event(&mut self) -> Option<Event> {
         let events = &self.sequence.events;
         self.index = (self.index + 1) % events.len();
-        events.iter().nth(self.index).cloned()
+        events.get(self.index).cloned()
     }
 
     fn update_and_command(&mut self, event: Event) -> Vec<Command> {

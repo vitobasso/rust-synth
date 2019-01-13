@@ -62,7 +62,7 @@ impl PlayingTrack {
         let begin = self.current_position;
         let result: Vec<Command> = self.track.events.iter()
             .skip(begin).take_while(|(_, t)| *t <= elapsed_time)
-            .map(|(cmd, _)| cmd.clone())
+            .map(|(cmd, _)| *cmd)
             .collect();
         self.current_position += result.len();
         result

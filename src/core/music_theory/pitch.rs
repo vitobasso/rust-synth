@@ -16,7 +16,7 @@ impl Add<Semitones> for PitchClass {
     type Output = Self;
     fn add(self, rhs: Semitones) -> Self {
         let i = ((((self as Semitones + rhs) % 12) + 12) % 12) as usize;
-        PitchClass::from_index(i).expect(format!("Failed to get PitchClass for i={}", i).as_str())
+        PitchClass::from_index(i).unwrap_or_else(|| panic!("Failed to get PitchClass for i={}", i))
     }
 }
 impl Add<PitchClass> for PitchClass {
@@ -67,7 +67,7 @@ impl Pitch {
     ///
     /// Source: http://pages.mtu.edu/~suits/NoteFreqCalcs.html
     ///
-    pub fn freq(&self) -> Hz {
+    pub fn freq(self) -> Hz {
         let f0: Hz = 440.;
         let a: f64 = 2_f64.powf(1./12.);
         let n: isize = self.index() as isize - 69;
@@ -76,8 +76,8 @@ impl Pitch {
 
     /// Follows the MIDI convention: the index for C4 is 60
     /// https://newt.phys.unsw.edu.au/jw/notes.html
-    pub fn index(&self) -> usize{
-        ((self.octave + 1) * 12 + self.class.clone() as i8) as usize
+    pub fn index(self) -> usize{
+        ((self.octave + 1) * 12 + self.class as i8) as usize
     }
 
     /// Follows the MIDI convention: the index for C4 is 60
@@ -86,7 +86,7 @@ impl Pitch {
         Pitch {
             octave: ((i/12) as Octave - 1),
             class: PitchClass::from_index(i%12)
-                .expect(format!("Failed to get PitchClass for i={}", i).as_str())
+                .unwrap_or_else(|| panic!("Failed to get PitchClass for i={}", i))
         }
     }
 

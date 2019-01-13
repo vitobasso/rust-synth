@@ -11,14 +11,14 @@ impl KeyMap {
     pub fn command_for(&self, input: &event::Input) -> Vec<Command> {
         match input {
             event::Input::Press(input::Button::Keyboard(key)) =>
-                note_on(key)
-                    .or(patches(key))
-                    .or(loop_rec(key))
-                    .or(pulse_rec(key))
-                    .or(transpose(key))
+                note_on(*key)
+                    .or_else(|| patches(*key))
+                    .or_else(|| loop_rec(*key))
+                    .or_else(|| pulse_rec(*key))
+                    .or_else(|| transpose(*key))
                     .map_or(vec![], |v| vec![v]),
             event::Input::Release(input::Button::Keyboard(key)) =>
-                note_off(key)
+                note_off(*key)
                     .map_or(vec![], |v| vec![v]),
             event::Input::Motion(input::Motion::MouseCursor {x, y}) => vec![self.mod_xy(*x, *y)],
             _ => vec![],
@@ -26,25 +26,25 @@ impl KeyMap {
     }
 
     fn mod_xy(&self, x: f64, y: f64) -> Command {
-        let w = self.window_width as f64;
-        let h = self.window_height as f64;
+        let w = f64::from(self.window_width);
+        let h = f64::from(self.window_height);
         let norm_y = ((y + h/2.)/h).max(0.).min(1.);
         let norm_x = ((x + w/2.)/w).max(0.).min(1.);
         Instrument(ModXY(norm_x, norm_y))
     }
 }
 
-fn note_on(key: &input::Key) -> Option<Command> {
+fn note_on(key: input::Key) -> Option<Command> {
     pitches(key).map(|(pitch, discr)|
         Instrument(NoteOn(pitch, id_discr(pitch, discr))))
 }
 
-fn note_off(key: &input::Key) -> Option<Command> {
+fn note_off(key: input::Key) -> Option<Command> {
     pitches(key).map(|(pitch, discr)|
         Instrument(NoteOff(id_discr(pitch, discr))))
 }
 
-fn pitches(key: &input::Key) -> Option<(Pitch, Discriminator)> { //TODO shift => sharp pitches
+fn pitches(key: input::Key) -> Option<(Pitch, Discriminator)> { //TODO shift => sharp pitches
     match key {
         //top row
         input::Key::Q =>         Some((Pitch::new(A, 4), 3)),
@@ -86,7 +86,7 @@ fn pitches(key: &input::Key) -> Option<(Pitch, Discriminator)> { //TODO shift =>
     }
 }
 
-fn patches(key: &input::Key) -> Option<Command> {
+fn patches(key: input::Key) -> Option<Command> {
     match key {
         input::Key::D1 => Some(SetPatch(0)),
         input::Key::D2 => Some(SetPatch(1)),
@@ -102,7 +102,7 @@ fn patches(key: &input::Key) -> Option<Command> {
     }
 }
 
-fn loop_rec(key: &input::Key) -> Option<Command> {
+fn loop_rec(key: input::Key) -> Option<Command> {
     match key {
         input::Key::F1 =>  Some(Loop(TogglePlayback(0))),
         input::Key::F2 =>  Some(Loop(TogglePlayback(1))),
@@ -118,14 +118,14 @@ fn loop_rec(key: &input::Key) -> Option<Command> {
     }
 }
 
-fn pulse_rec(key: &input::Key) -> Option<Command> {
+fn pulse_rec(key: input::Key) -> Option<Command> {
     match key {
         input::Key::Space =>  Some(PulseRecord),
         _ => None,
     }
 }
 
-fn transpose(key: &input::Key) -> Option<Command> {
+fn transpose(key: input::Key) -> Option<Command> {
     match key {
         input::Key::Down =>         Some(Transposer(ShiftPitch(-12))),
         input::Key::Up =>           Some(Transposer(ShiftPitch(12))),

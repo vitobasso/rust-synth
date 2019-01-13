@@ -10,9 +10,6 @@ pub struct ModParam {
     range: f64,
 }
 impl ModParam {
-    pub fn new() -> ModParam {
-        ModParam { base: 1., mod_signal: 0., min: 0., range: 1. }
-    }
     pub fn with_bounds(min: f64, max: f64) -> ModParam {
         let range = max - min;
         ModParam { base: 1., mod_signal: 0., min, range }
@@ -31,6 +28,11 @@ impl ModParam {
     pub fn calculate(&self) -> f64 {
         let normalized = (1. - self.mod_signal) * self.base;
         normalized * self.range + self.min
+    }
+}
+impl Default for ModParam {
+    fn default() -> Self {
+        ModParam { base: 1., mod_signal: 0., min: 0., range: 1. }
     }
 }
 

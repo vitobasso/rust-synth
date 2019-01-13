@@ -23,14 +23,14 @@ pub fn show(cmd_out: Sender<Command>) {
     let display = glium::Display::new(window, context, &events_loop).unwrap();
 
     // construct our `Ui`.
-    let mut ui = conrod::UiBuilder::new([WIDTH as f64, HEIGHT as f64]).build();
+    let mut ui = conrod::UiBuilder::new([f64::from(WIDTH), f64::from(HEIGHT)]).build();
 
     // Generate the widget identifiers.
     widget_ids!(struct Ids { text });
     let ids = Ids::new(ui.widget_id_generator());
 
     // Add a `Font` to the `Ui`'s `font::Map` from file.
-    const FONT_PATH: &'static str = concat!(env!("CARGO_MANIFEST_DIR"), "/assets/fonts/VT323-Regular.ttf");
+    const FONT_PATH: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/assets/fonts/VT323-Regular.ttf");
     ui.fonts.insert_from_file(FONT_PATH).unwrap();
 
     // A type used for converting `conrod::render::Primitives` into `Command`s that can be used

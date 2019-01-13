@@ -1,16 +1,13 @@
 use std::time::{Duration, Instant};
 use super::Millis;
 
+#[derive(Default)]
 pub struct DurationRecorder {
     begin: Option<Instant>,
     end: Option<Instant>,
 }
 
 impl DurationRecorder {
-
-    pub fn new() -> DurationRecorder {
-        DurationRecorder { begin: None, end: None }
-    }
 
     pub fn record(&mut self) {
         let now = Instant::now();
@@ -38,5 +35,5 @@ impl DurationRecorder {
 pub fn duration_as_millis(duration: Duration) -> Millis {
     let secs = duration.as_secs();
     let millis = duration.subsec_millis();
-    secs * 1_000 + millis as u64
+    secs * 1_000 + u64::from(millis)
 }

@@ -48,11 +48,11 @@ impl SampleFromF64 for f32 {
 }
 impl SampleFromF64 for i16 {
     fn from_f64(value: f64) -> i16 {
-        (value * std::i16::MAX as f64) as i16
+        (value * f64::from(std::i16::MAX)) as i16
     }
 }
 impl SampleFromF64 for u16 {
     fn from_f64(value: f64) -> u16 {
-        ((value * 0.5 + 0.5) * std::u16::MAX as f64) as u16
+        ((value * 0.5 + 0.5) * f64::from(std::u16::MAX)) as u16
     }
 }

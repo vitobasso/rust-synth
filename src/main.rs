@@ -14,7 +14,7 @@ use crate::io::audio_out;
 fn main() {
     let device = cpal::default_output_device().expect("Failed to get default output device");
     let format = device.default_output_format().expect("Failed to get default output format");
-    let sample_rate = format.sample_rate.0 as Hz;
+    let sample_rate = Hz::from(format.sample_rate.0);
     let buffer_size = sample_rate as usize / 250;
 
     let (cmd_out, cmd_in) = channel::<Command>();
@@ -34,5 +34,5 @@ use std::env::{args,Args};
 fn read_midi_file() -> Option<Song> {
     let mut args: Args = args();
     args.next();
-    args.next().and_then(|path| io::midi::read_file(path))
+    args.next().and_then(|file_name| io::midi::read_file(file_name.as_str()))
 }

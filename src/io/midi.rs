@@ -7,7 +7,7 @@ use std::collections::HashMap;
 use crate::core::control::{song::*, instrument_player::{Command, id}};
 use crate::core::music_theory::pitch::*;
 
-pub fn read_file(file_path: String) -> Option<Song> {
+pub fn read_file(file_path: &str) -> Option<Song> {
     println!("Reading midi file: {}", file_path);
     match SMF::from_file(&Path::new(&file_path[..])) {
         Ok(smf) =>
@@ -40,7 +40,7 @@ fn decode_tracks(track: &RimdTrack) -> Vec<Track> {
 
     let events_by_channel: HashMap<Channel, Vec<ScheduledCommand>> = mixed_events.iter()
         .fold(HashMap::new(), |mut grouped, (cmd, channel)|{
-            grouped.entry(*channel).or_insert(vec!()).push(*cmd);
+            grouped.entry(*channel).or_insert_with(|| vec!()).push(*cmd);
             grouped
         });
 

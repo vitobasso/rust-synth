@@ -9,13 +9,12 @@ use crate::core::{
 pub fn loop_forever(sample_rate: Hz, presets: Vec<Patch>, cmd_in: Receiver<Command>, signal_out: SyncSender<Sample>) {
     let mut state = State::new(sample_rate, presets);
     loop {
-        match cmd_in.try_recv() {
-            Ok(command) => state.interpret(command),
-            _ => (),
+        if let Ok(command) = cmd_in.try_recv() {
+            state.interpret(command);
         }
 
         state.arpeggiator.as_mut()
-            .map( |arp| arp.next()).unwrap_or(vec!())
+            .map( |arp| arp.next()).unwrap_or_else(|| vec!())
             .into_iter().for_each(|cmd|
                 state.play_transposed(cmd));
 
@@ -30,6 +29,7 @@ pub fn loop_forever(sample_rate: Hz, presets: Vec<Patch>, cmd_in: Receiver<Comma
 const PULSES_PER_BEAT: u64 = 4;
 const DEFAULT_BEAT: Millis = 100 * PULSES_PER_BEAT;
 
+#[derive(Clone, Copy)]
 pub enum Command {
     Instrument(player::Command),
     Transposer(transposer::Command),
@@ -62,10 +62,10 @@ impl State {
             patches,
             player: player::State::with_default_specs(sample_rate),
             transposer: transposer::State::new(PitchClass::C),
-            duration_recorder: DurationRecorder::new(),
+            duration_recorder: Default::default(),
             beat: DEFAULT_BEAT,
             arpeggiator: None,
-            loops: loops::Manager::new(),
+            loops: Default::default(),
         }
     }
 
@@ -119,7 +119,7 @@ impl State {
         self.duration_recorder.record();
         if let Some(duration) = self.duration_recorder.read() {
             self.beat = duration;
-            let pulse = self.get_pulse_millis().clone();
+            let pulse = self.get_pulse_millis();
             if let Some(arp) = &mut self.arpeggiator {
                 arp.set_pulse(pulse)
             }

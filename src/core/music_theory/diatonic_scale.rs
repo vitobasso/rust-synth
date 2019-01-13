@@ -17,7 +17,7 @@ impl Add<ScaleDegree> for ScaleDegree {
     fn add(self, rhs: ScaleDegree) -> Self {
         let i = (self as u8 + rhs as u8) % 7;
         FromPrimitive::from_u8(i)
-            .expect(&format!("Failed to get ScaleDegree for i={}", i))
+            .unwrap_or_else(|| panic!("Failed to get ScaleDegree for i={}", i))
     }
 }
 impl Sub<ScaleDegree> for ScaleDegree {
@@ -25,7 +25,7 @@ impl Sub<ScaleDegree> for ScaleDegree {
     fn sub(self, rhs: ScaleDegree) -> Self {
         let i = ((((self as i8 - rhs as i8) % 7) + 7) % 7) as u8;
         FromPrimitive::from_u8(i)
-            .expect(&format!("Failed to get ScaleDegree for i={}", i))
+            .unwrap_or_else(|| panic!("Failed to get ScaleDegree for i={}", i))
     }
 }
 
@@ -71,7 +71,7 @@ impl Key {
         self + relative_pitch
     }
 
-    pub fn transpose_to(&self, other: Key, pitch: Pitch) -> Option<Pitch> {
+    pub fn transpose_to(self, other: Key, pitch: Pitch) -> Option<Pitch> {
         self.transpose_class_to(other, pitch.class).map(|class| {
             let carry_octave =
                 if pitch.class == PitchClass::C && class == PitchClass::B {-1} else {0};
@@ -79,9 +79,9 @@ impl Key {
         })
     }
 
-    fn transpose_class_to(&self, other: Key, pitch_class: PitchClass) -> Option<PitchClass> {
+    fn transpose_class_to(self, other: Key, pitch_class: PitchClass) -> Option<PitchClass> {
         self.degree_of(pitch_class).map(|degree|
-            match (self.degree_of(other), other.degree_of(*self)) {
+            match (self.degree_of(other), other.degree_of(self)) {
                 (Some(key_diff), _) => other.pitch_class_at(degree - key_diff),
                 (None, Some(reciprocal_key_diff)) => other.pitch_class_at(degree + reciprocal_key_diff),
                 (None, None) => if degree == I4 { pitch_class } else { pitch_class - 1 }
@@ -89,8 +89,8 @@ impl Key {
         )
     }
 
-    pub fn circle_of_fifths(&self, increment: Semitones) -> Key {
-        *self + (7 * increment) % 12
+    pub fn circle_of_fifths(self, increment: Semitones) -> Key {
+        self + (7 * increment) % 12
     }
 
 }

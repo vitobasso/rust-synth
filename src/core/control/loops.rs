@@ -1,8 +1,10 @@
 use crate::core::synth::Sample;
 use std::{collections::HashMap, mem};
 
+#[derive(Clone, Copy)]
 pub enum Command { TogglePlayback(usize), ToggleRecording(usize) }
 
+#[derive(Default)]
 pub struct Manager {
     loops: HashMap<usize, Loop>,
     playing_loops: HashMap<usize, Playback>,
@@ -10,10 +12,6 @@ pub struct Manager {
 }
 
 impl Manager {
-
-    pub fn new() -> Manager {
-        Manager { loops: HashMap::new(), playing_loops: HashMap::new(), recording_loop: None }
-    }
 
     pub fn interpret(&mut self, command: Command) {
         match command {

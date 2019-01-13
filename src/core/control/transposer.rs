@@ -26,7 +26,7 @@ impl State {
     pub fn interpret(&mut self, command: Command) {
         match command {
             Command::TransposeKey(n) => self.transposed_key = self.transposed_key.circle_of_fifths(n),
-            Command::ShiftPitch(n) => self.pitch_shift = self.pitch_shift + n,
+            Command::ShiftPitch(n) => self.pitch_shift += n,
             Command::ShiftKeyboard(n) => {
                 self.transposed_key += n;
                 self.pitch_shift -= n;
@@ -36,7 +36,7 @@ impl State {
 
     pub fn transpose(&self, pitch: Pitch) -> Pitch {
         let transposed = self.input_key.transpose_to(self.transposed_key, pitch)
-            .expect(&format!("Failed to transpose: {:?}", pitch));
+            .unwrap_or_else(|| panic!("Failed to transpose: {:?}", pitch));
         transposed + self.pitch_shift
     }
 

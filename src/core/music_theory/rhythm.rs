@@ -48,10 +48,10 @@ impl Sequence {
     pub fn new(measures: u32, notes: Vec<Note>) -> Result<Sequence, Invalid> {
         let events = notes.iter().flat_map(|note| note.events()).collect();
         let seq = Sequence { measures, events };
-        seq.validate(notes).map(|_| seq)
+        seq.validate(&notes).map(|_| seq)
     }
 
-    fn validate(&self, notes: Vec<Note>) -> Result<(), Invalid> {
+    fn validate(&self, notes: &[Note]) -> Result<(), Invalid> {
         let total_duration = notes.iter()
             .fold(0, |acc, note| acc + note.duration as u32);
         let expected_total = self.measures * 16;

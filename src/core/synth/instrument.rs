@@ -90,8 +90,12 @@ impl Instrument {
     pub fn set_xy_params(&mut self, x: f64, y: f64) {
         let x_target = self.modulation_x;
         let y_target = self.modulation_y;
-        self.mod_param(x_target).map(|p| p.set_base(x));
-        self.mod_param(y_target).map(|p| p.set_base(y));
+        if let Some(param) = self.mod_param(x_target){
+            param.set_base(x);
+        }
+        if let Some(param) = self.mod_param(y_target){
+            param.set_base(y);
+        }
     }
 
     pub fn set_oscillator(&mut self, specs: oscillator::Specs) {
@@ -106,11 +110,12 @@ impl Instrument {
                 lfo.next(clock)
             })
         };
-        let specs = self.modulation_lfo.clone();
+        let specs = self.modulation_lfo;
         if let Some(lfo_sample) = maybe_lfo_sample {
             let normalized = (lfo_sample + 1.) / 2.;
-            self.mod_param(specs.target)
-                .map(|p| p.set_signal(normalized * specs.amount));
+            if let Some(param) = self.mod_param(specs.target) {
+                param.set_signal(normalized * specs.amount);
+            }
         }
     }
 
@@ -145,8 +150,9 @@ impl Voices {
     }
 
     fn release(&mut self, pitch: Pitch) {
-        self.find_holding_voice(pitch)
-            .map(|v| v.release());
+        if let Some(voice) = self.find_holding_voice(pitch) {
+            voice.release();
+        }
     }
 
     fn release_all(&mut self) {
@@ -220,7 +226,7 @@ impl Clock {
     }
 
     fn tick(&mut self) -> Seconds {
-        self.clock = self.clock + 1.0;
+        self.clock += 1.0;
         self.get()
     }
 
