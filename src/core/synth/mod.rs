@@ -1,4 +1,3 @@
-extern crate num_traits;
 
 pub mod instrument;
 pub mod oscillator;

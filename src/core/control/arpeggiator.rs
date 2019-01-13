@@ -1,5 +1,5 @@
-use core::control::{Millis, pulse::Pulse, instrument_player::{Command, Id, id}};
-use core::music_theory::{pitch::Pitch, rhythm::{Sequence, Event}, diatonic_scale::*};
+use crate::core::control::{Millis, pulse::Pulse, instrument_player::{Command, Id, id}};
+use crate::core::music_theory::{pitch::Pitch, rhythm::{Sequence, Event}, diatonic_scale::*};
 use std::mem;
 
 pub struct Arpeggiator {

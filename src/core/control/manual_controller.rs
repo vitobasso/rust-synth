@@ -1,5 +1,5 @@
 use std::sync::mpsc::{Receiver, SyncSender};
-use core::{
+use crate::core::{
     control::{Millis, arpeggiator::Arpeggiator, loops, duration_recorder::DurationRecorder,
               instrument_player::{self as player, Command::*}, transposer},
     music_theory::{Hz, pitch::PitchClass, rhythm::Sequence},
@@ -84,8 +84,7 @@ impl State {
             NoteOn(_, _) | NoteOff(_) =>  {
                 if let Some(arp) = &mut self.arpeggiator {
                     arp.interpret(command);
-                }
-                if self.arpeggiator.is_none() {
+                } else {
                     self.play_transposed(command);
                 }
             },

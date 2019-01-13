@@ -1,5 +1,5 @@
 use std::collections::HashMap;
-use core::{
+use crate::core::{
     music_theory::{Hz, pitch::Pitch},
     synth::{Sample, instrument::{self, Instrument}, oscillator},
 };
@@ -63,7 +63,7 @@ impl State {
     }
 }
 
-use core::synth::{
+use crate::core::synth::{
     instrument::ModTarget::*, oscillator::Specs::*, filter::ModTarget::*,
     lfo, builder::Builder,
 };

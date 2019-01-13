@@ -1,7 +1,7 @@
-extern crate rand;
+use rand;
 
 use super::{Sample, Seconds, Proportion, modulated::*};
-use core::music_theory::Hz;
+use crate::core::music_theory::Hz;
 use self::rand::{Rng, ThreadRng};
 use std::f64::consts::PI;
 
@@ -17,8 +17,8 @@ pub enum ModTarget { PulseDuty, MixThickness }
 pub trait Oscillator: Modulated<ModTarget> {
     fn next_sample(&self, clock: Seconds, freq: Hz, phase: Seconds) -> Sample;
 }
-impl Oscillator {
-    pub fn new(spec: Specs) -> Box<Oscillator> {
+impl dyn Oscillator {
+    pub fn new(spec: Specs) -> Box<dyn Oscillator> {
         match spec {
             Specs::Sine => Box::new(Sine),
             Specs::Square => Box::new(Square),
@@ -95,7 +95,7 @@ impl Modulated<ModTarget> for StatefulSaw {
 }
 
 pub struct Mix {
-    voices: Vec<Box<Oscillator>>,
+    voices: Vec<Box<dyn Oscillator>>,
 }
 impl Mix {
     fn supersaw(nvoices: u16, detune_amount: Hz) -> Mix {
@@ -104,13 +104,13 @@ impl Mix {
         }
     }
 
-    fn create_voices(nvoices: u16, detune_amount: Hz) -> Vec<Box<Oscillator>> {
+    fn create_voices(nvoices: u16, detune_amount: Hz) -> Vec<Box<dyn Oscillator>> {
         let mut rng = rand::thread_rng();
         fn random_around_zero(rng: &mut ThreadRng, amount: Hz) -> Hz {
             rng.gen_range(-amount, amount)
         }
 
-        let mut saws: Vec<Box<Oscillator>> = Vec::new();
+        let mut saws: Vec<Box<dyn Oscillator>> = Vec::new();
         for _ in 0..nvoices {
             let saw = StatefulSaw { detune: random_around_zero(&mut rng, detune_amount) };
             saws.push(Box::new(saw))

@@ -1,4 +1,4 @@
-extern crate num_traits;
+use num_traits;
 
 pub mod pitch;
 pub mod diatonic_scale;

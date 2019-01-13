@@ -1,7 +1,5 @@
 #![allow(dead_code)]
 
-extern crate rand;
-
 use std;
 #[cfg(feature="glium")] use conrod::backend::glium::glium;
 

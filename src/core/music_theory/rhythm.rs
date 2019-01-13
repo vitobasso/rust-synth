@@ -72,7 +72,7 @@ pub enum Invalid {
 
 #[cfg(test)]
 mod tests {
-    use super::{*, Event::*, Duration::*};
+    use super::{*, Event::{Note as N, Keep as K, Rest as R}, Duration::*};
     use super::super::diatonic_scale::{OctaveShift::*, ScaleDegree::*};
 
     const W: Note = Note{duration: Whole,     pitch: None};
@@ -105,10 +105,10 @@ mod tests {
     #[test]
     fn sequence_rest_events() {
         let cases: &[(&[Note], &[Event])] = &[
-            (&[W],              &[Rest, Keep, Keep, Keep, Keep, Keep, Keep, Keep, Keep, Keep, Keep, Keep, Keep, Keep, Keep, Keep]),
-            (&[H, H],           &[Rest, Keep, Keep, Keep, Keep, Keep, Keep, Keep, Rest, Keep, Keep, Keep, Keep, Keep, Keep, Keep]),
-            (&[H, Q, Q],        &[Rest, Keep, Keep, Keep, Keep, Keep, Keep, Keep, Rest, Keep, Keep, Keep, Rest, Keep, Keep, Keep]),
-            (&[H, Q, E, S, S],  &[Rest, Keep, Keep, Keep, Keep, Keep, Keep, Keep, Rest, Keep, Keep, Keep, Rest, Keep, Rest, Rest]),
+            (&[W],              &[R, K, K, K, K, K, K, K, K, K, K, K, K, K, K, K]),
+            (&[H, H],           &[R, K, K, K, K, K, K, K, R, K, K, K, K, K, K, K]),
+            (&[H, Q, Q],        &[R, K, K, K, K, K, K, K, R, K, K, K, R, K, K, K]),
+            (&[H, Q, E, S, S],  &[R, K, K, K, K, K, K, K, R, K, K, K, R, K, R, R]),
         ];
         for (notes, expected_events) in cases.iter() {
             let sequence = Sequence::new(1, notes.to_vec())
@@ -133,13 +133,13 @@ mod tests {
         let sequence = Sequence::new(2, phrase.to_vec())
             .expect("Expected a valid Sequence");
         let expected_events = &[
-            Note((Same, I1)), Keep, Keep, Keep,
-            Rest, Keep, Keep, Keep,
-            Note((Same, I2)), Keep, Keep, Keep,
-            Note((Same, I3)), Keep, Keep, Keep, Keep, Keep, Keep, Keep,
-            Rest, Keep, Keep, Keep,
-            Note((Same, I2)), Keep, Keep, Keep,
-            Note((Same, I1)), Keep, Keep, Keep,
+            N((Same, I1)), K, K, K,
+            R, K, K, K,
+            N((Same, I2)), K, K, K,
+            N((Same, I3)), K, K, K, K, K, K, K,
+            R, K, K, K,
+            N((Same, I2)), K, K, K,
+            N((Same, I1)), K, K, K,
         ];
         let actual_result = sequence.events;
         assert_eq!(actual_result, expected_events.to_vec(),

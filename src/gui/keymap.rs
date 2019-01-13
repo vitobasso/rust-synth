@@ -1,7 +1,7 @@
 use conrod::{event, input};
-use core::control::{manual_controller::Command::{self, *}, instrument_player::{Command::*, Discriminator, id_discr},
+use crate::core::control::{manual_controller::Command::{self, *}, instrument_player::{Command::*, Discriminator, id_discr},
                     loops::Command::*, transposer::Command::*};
-use core::music_theory::pitch::{Pitch, PitchClass::*};
+use crate::core::music_theory::pitch::{Pitch, PitchClass::*};
 
 pub struct KeyMap { window_width: u32, window_height: u32 }
 impl KeyMap {

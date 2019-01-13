@@ -1,6 +1,6 @@
 use super::oscillator::{self, Oscillator};
-use core::synth::{Seconds};
-use core::music_theory::Hz;
+use crate::core::synth::{Seconds};
+use crate::core::music_theory::Hz;
 
 #[derive(Copy, Clone)]
 pub struct Specs {
@@ -15,7 +15,7 @@ impl Specs {
 }
 
 pub struct LFO {
-    oscillator: Box<Oscillator>,
+    oscillator: Box<dyn Oscillator>,
     freq: Hz,
     phase: Seconds,
 }

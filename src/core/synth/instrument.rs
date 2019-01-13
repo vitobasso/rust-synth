@@ -1,6 +1,6 @@
 use super::{Sample, Seconds, Proportion, oscillator::{self, Oscillator},
             filter::{self, Filter}, envelope::Adsr, lfo::{self, LFO}, modulated::*};
-use core::music_theory::{Hz, pitch::Pitch};
+use crate::core::music_theory::{Hz, pitch::Pitch};
 
 #[derive(Clone, Copy)]
 pub struct Specs {
@@ -29,8 +29,8 @@ pub struct ModSpecs {
 }
 
 pub struct Instrument {
-    oscillator: Box<Oscillator>,
-    filter: Box<Filter>,
+    oscillator: Box<dyn Oscillator>,
+    filter: Box<dyn Filter>,
     lfo: Option<LFO>,
     adsr: Adsr,
     volume: ModParam,
@@ -81,7 +81,7 @@ impl Instrument {
         sample_filtered * self.volume.calculate()
     }
 
-    fn next_sample_for_voice (voice: &mut Voice, oscillator: &Box<Oscillator>, adsr: &Adsr) -> Sample {
+    fn next_sample_for_voice (voice: &mut Voice, oscillator: &Box<dyn Oscillator>, adsr: &Adsr) -> Sample {
         let clock = voice.clock.tick();
         let sample = oscillator.next_sample(clock, voice.pitch.freq(), 0.);
         adsr.apply(voice.clock(), voice.released_clock().unwrap_or(0.), sample)

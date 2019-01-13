@@ -1,4 +1,4 @@
-use core::{
+use crate::core::{
     music_theory::{
         rhythm::{Sequence, Duration::*, note},
         diatonic_scale::{ScaleDegree::*, OctaveShift::*}

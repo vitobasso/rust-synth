@@ -3,9 +3,9 @@
 
 use conrod::{widget, Colorable, Positionable, Widget};
 use conrod::backend::glium::glium::{self, Surface};
-use gui;
+use crate::gui;
 use std::sync::mpsc::Sender;
-use core::control::manual_controller::Command;
+use crate::core::control::manual_controller::Command;
 
 pub fn show(cmd_out: Sender<Command>) {
     const WIDTH: u32 = 400;

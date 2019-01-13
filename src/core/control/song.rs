@@ -1,4 +1,4 @@
-use core::control::{Millis, instrument_player::Command, duration_recorder::duration_as_millis};
+use crate::core::control::{Millis, instrument_player::Command, duration_recorder::duration_as_millis};
 use std::time::Instant;
 
 pub struct Song {

@@ -1,5 +1,5 @@
 use super::{Sample, modulated::*};
-use core::music_theory::Hz;
+use crate::core::music_theory::Hz;
 
 const MAX_CUTOFF: Hz = 440. * 8.;
 const MAX_QFACTOR: f64 = 50.;
@@ -15,8 +15,8 @@ pub enum Specs { LPF, HPF, BPF, Notch, }
 #[derive(Copy, Clone)]
 pub enum ModTarget { Cutoff, QFactor }
 
-impl Filter {
-    pub fn new(specs: Specs, sample_rate: Hz) -> Box<Filter> {
+impl dyn Filter {
+    pub fn new(specs: Specs, sample_rate: Hz) -> Box<dyn Filter> {
         let filter = biquad::BiquadFilter::new(sample_rate, specs);
         Box::new(filter)
     }
@@ -25,7 +25,7 @@ impl Filter {
 mod biquad {
 
     use super::*;
-    use core::{synth::Sample, music_theory::Hz};
+    use crate::core::{synth::Sample, music_theory::Hz};
     use std::f64::consts::PI;
 
     /// http://www.musicdsp.org/files/Audio-EQ-Cookbook.txt
@@ -33,7 +33,7 @@ mod biquad {
         sample_rate: Hz,
         cutoff: ModParam,
         qfactor: ModParam,
-        filter_type: Box<FilterType>,
+        filter_type: Box<dyn FilterType>,
         input_history: [Sample;2],
         output_history: [Sample;2],
     }
@@ -41,7 +41,7 @@ mod biquad {
     impl BiquadFilter {
         pub(super) fn new(sample_rate: Hz, specs: Specs) -> BiquadFilter {
             assert!(sample_rate > 0., "sample_rate was: {}", sample_rate);
-            let filter_type: Box<FilterType> = match specs {
+            let filter_type: Box<dyn FilterType> = match specs {
                 Specs::LPF => Box::new(LPF),
                 Specs::HPF => Box::new(HPF),
                 Specs::BPF => Box::new(BPF),

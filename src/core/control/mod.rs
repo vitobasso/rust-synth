@@ -1,4 +1,3 @@
-extern crate num_traits;
 
 pub mod manual_controller;
 pub mod instrument_player;

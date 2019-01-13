@@ -1,4 +1,4 @@
-use core::music_theory::{Semitones, pitch::Pitch, diatonic_scale::Key};
+use crate::core::music_theory::{Semitones, pitch::Pitch, diatonic_scale::Key};
 
 #[derive(Clone, Copy, Debug)]
 pub enum Command {

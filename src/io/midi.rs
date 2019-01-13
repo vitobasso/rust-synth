@@ -1,11 +1,11 @@
-extern crate rimd;
+use rimd;
 
 use self::rimd::{SMF,SMFError, MidiMessage, Event, Status,
                  TrackEvent as RimdTrackEvent, Track as RimdTrack};
 use std::path::Path;
 use std::collections::HashMap;
-use core::control::{song::*, instrument_player::{Command, id}};
-use core::music_theory::pitch::*;
+use crate::core::control::{song::*, instrument_player::{Command, id}};
+use crate::core::music_theory::pitch::*;
 
 pub fn read_file(file_path: String) -> Option<Song> {
     println!("Reading midi file: {}", file_path);

@@ -1,5 +1,5 @@
 use std::sync::mpsc::SyncSender;
-use core::{
+use crate::core::{
     control::{instrument_player::{self as player}, song::*},
     music_theory::Hz, synth::Sample,
     synth::instrument::Specs,

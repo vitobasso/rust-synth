@@ -1,4 +1,4 @@
-use core::synth::Sample;
+use crate::core::synth::Sample;
 use std::{collections::HashMap, mem};
 
 pub enum Command { TogglePlayback(usize), ToggleRecording(usize) }

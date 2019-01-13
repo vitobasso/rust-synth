@@ -1,5 +1,5 @@
-extern crate cpal;
-use audio_out::cpal::{
+use cpal;
+use crate::audio_out::cpal::{
     UnknownTypeOutputBuffer::{F32, I16, U16},
     StreamData::Output,
     OutputBuffer, Device, Format, EventLoop
@@ -24,7 +24,7 @@ pub fn loop_forever(device: &Device, format: &Format, sig_in: Receiver<Sample>) 
     });
 }
 
-fn feed_buffer<T: SampleFromF64>(mut buffer: OutputBuffer<T>, sig_in: &Receiver<Sample>, channels: usize) {
+fn feed_buffer<T: SampleFromF64>(mut buffer: OutputBuffer<'_, T>, sig_in: &Receiver<Sample>, channels: usize) {
     for buff_chunks in buffer.chunks_mut(channels) {
         match sig_in.recv() {
             Ok(sample) =>
