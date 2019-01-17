@@ -8,3 +8,6 @@
 - [TonicAudio](https://github.com/TonicAudio/Tonic). C++ lib.
     - Api design: controllers, generators, proccessors
     - combine oscillators with +, *, ...
+
+# TODO
+rename arpeggiator Sequence to rhythm::Pattern

@@ -3,8 +3,8 @@
 
 mod io;
 pub mod core;
+pub mod preset;
 mod gui;
-mod preset;
 
 use std::{thread, sync::mpsc::{channel, sync_channel}};
 use crate::core::{music_theory::Hz, synth::Sample,
@@ -22,7 +22,7 @@ fn main() {
 
     thread::spawn(move || audio_out::loop_forever(&device, &format, sig_in));
     match read_midi_file() {
-        Some(song) => thread::spawn(move || playback_controller::loop_forever(sample_rate, preset::instruments(), song, sig_out)),
+        Some(song) => thread::spawn(move || playback_controller::loop_forever(sample_rate, song, sig_out)),
         None       => thread::spawn(move || manual_controller::loop_forever(sample_rate, preset::patches(), cmd_in, sig_out)),
     };
 

@@ -1,11 +1,17 @@
 use rimd;
 
-use self::rimd::{SMF,SMFError, MidiMessage, Event, Status,
+use self::rimd::{SMF, SMFError, MidiMessage, Event, Status,
                  TrackEvent as RimdTrackEvent, Track as RimdTrack};
 use std::path::Path;
 use std::collections::HashMap;
-use crate::core::control::{song::*, instrument_player::{Command, id}};
+use crate::core::control::{
+    song::*,
+    instrument_player::{id, Command::*},
+    playback_controller::{Command, Command::*},
+};
 use crate::core::music_theory::pitch::*;
+
+mod patch;
 
 pub fn read_file(file_path: &str) -> Option<Song> {
     println!("Reading midi file: {}", file_path);
@@ -39,7 +45,7 @@ fn decode_tracks(track: &RimdTrack) -> Vec<Track> {
         .collect();
 
     let events_by_channel: HashMap<Channel, Vec<ScheduledCommand>> = mixed_events.iter()
-        .fold(HashMap::new(), |mut grouped, (cmd, channel)|{
+        .fold(HashMap::new(), |mut grouped, (cmd, channel)| {
             grouped.entry(*channel).or_insert_with(|| vec!()).push(*cmd);
             grouped
         });
@@ -58,7 +64,7 @@ fn decode_track_event(event: &RimdTrackEvent) -> Option<(ScheduledCommand, Chann
                 decode_note_event(message)
                     .map(|cmd| ((cmd, event.vtime), channel))
             ),
-        _ => None,
+        _ => None
     }
 }
 
@@ -67,15 +73,21 @@ fn decode_note_event(msg: &MidiMessage) -> Option<Command> {
         [_, pitch_byte, velocity_byte] => {
             let pitch = Pitch::from_index(*pitch_byte as usize);
             let velocity = *velocity_byte;
-            let note_on = Command::NoteOn(pitch, id(pitch));
-            let note_off = Command::NoteOff(id(pitch));
+            let note_on = Instrument(NoteOn(pitch, id(pitch)));
+            let note_off = Instrument(NoteOff(id(pitch)));
             match (msg.status(), velocity) {
                 (Status::NoteOn, 0) => Some(note_off),
                 (Status::NoteOn, _) => Some(note_on),
                 (Status::NoteOff, _) => Some(note_off),
-                _ => None,
+                _ => None
             }
-        },
-        _ => None,
+        }
+        [_, byte] => {
+            match msg.status() {
+                Status::ProgramChange => patch::decode(*byte).map(SetPatch),
+                _ => None
+            }
+        }
+        _ => None
     }
 }

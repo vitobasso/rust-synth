@@ -235,3 +235,32 @@ impl Clock {
     }
 
 }
+
+impl Default for Specs {
+    fn default() -> Self {
+        Specs {
+            max_voices: 8,
+            oscillator: oscillator::Specs::default(),
+            filter: filter::Specs::default(),
+            lfo: None,
+            adsr: Adsr::default(),
+            volume: 1.,
+            modulation_x: ModTarget::default(),
+            modulation_y: ModTarget::default(),
+            modulation_lfo: ModSpecs::default(),
+        }
+    }
+}
+
+impl Default for ModTarget {
+    fn default() -> Self {
+        ModTarget::Noop
+    }
+}
+
+impl Default for ModSpecs {
+    fn default() -> Self {
+        ModSpecs { target: ModTarget::Noop, amount: 1. }
+    }
+}
+

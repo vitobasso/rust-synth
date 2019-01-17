@@ -27,7 +27,7 @@ impl State {
     }
 
     pub fn with_default_specs(sample_rate: Hz) -> State {
-        State::new(default_instrument_specs(), sample_rate)
+        State::new(instrument::Specs::default(), sample_rate)
     }
 
     pub fn interpret(&mut self, command: Command) {
@@ -61,15 +61,6 @@ impl State {
     pub fn set_oscillator(&mut self, specs: oscillator::Specs) {
         self.instrument.set_oscillator(specs);
     }
-}
-
-use crate::core::synth::{
-    instrument::ModTarget::*, oscillator::Specs::*, filter::ModTarget::*,
-    lfo, builder::Builder,
-};
-fn default_instrument_specs() -> instrument::Specs {
-    Builder::osc(Supersaw { nvoices: 8, detune_amount: 3.})
-        .lfo(lfo::Specs::simple(0.1), Filter(Cutoff), 0.8).build()
 }
 
 pub type Discriminator = u8;

@@ -159,3 +159,9 @@ mod biquad {
     }
 
 }
+
+impl Default for Specs {
+    fn default() -> Self {
+        Specs::LPF
+    }
+}

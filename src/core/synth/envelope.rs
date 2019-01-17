@@ -37,6 +37,17 @@ impl Adsr {
     }
 }
 
+impl Default for Adsr {
+    fn default() -> Self {
+        Adsr {
+            attack: 0.,
+            decay: 0.,
+            sustain: 1.,
+            release: 0.
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::Adsr;

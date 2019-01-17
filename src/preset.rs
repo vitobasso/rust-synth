@@ -44,19 +44,19 @@ pub fn patches() -> Vec<Patch> {
     )
 }
 
-fn sine() -> instrument::Specs {
+pub fn sine() -> instrument::Specs {
     Builder::osc(Sine).mod_y(Volume).build()
 }
 
-fn pulse() -> instrument::Specs {
+pub fn pulse() -> instrument::Specs {
     Builder::osc(Pulse(0.5)).mod_y(Oscillator(PulseDuty)).build()
 }
 
-fn saw_pad() -> instrument::Specs {
+pub fn saw_pad() -> instrument::Specs {
     Builder::osc(Saw).adsr(0.25, 0., 1., 0.25).build()
 }
 
-fn supersaw() -> instrument::Specs {
+pub fn supersaw() -> instrument::Specs {
     Builder::osc(Supersaw { nvoices: 8, detune_amount: 3.})
             .lfo(lfo::Specs::simple(0.1), Filter(Cutoff), 0.8).build()
 }

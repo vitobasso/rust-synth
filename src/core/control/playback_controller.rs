@@ -1,41 +1,60 @@
 use std::sync::mpsc::SyncSender;
+use std::collections::HashMap;
 use crate::core::{
-    control::{instrument_player::{self as player}, song::*},
+    control::{instrument_player::self as player, song::*},
     music_theory::Hz, synth::Sample,
     synth::instrument::Specs,
 };
 
-pub fn loop_forever(sample_rate: Hz, presets: Vec<Specs>, song_specs: Song, signal_out: SyncSender<Sample>) {
-    let mut state = State::new(sample_rate, presets, song_specs);
+pub fn loop_forever(sample_rate: Hz, song_specs: Song, signal_out: SyncSender<Sample>) {
+    let mut state = State::new(sample_rate, song_specs);
     loop {
-        let players = &mut state.players;
-        let song = &mut state.song;
-        song.next().iter()
-            .for_each(|(cmd, instrument_id)| {
-                let cyclic_instrument_id: usize = *instrument_id as usize % players.len();
-                players[cyclic_instrument_id].interpret(*cmd)
-            });
-
-        let mix_sample = players.iter_mut()
-            .map(|i| i.next_sample())
-            .sum();
-        signal_out.send(mix_sample).expect("Failed to send a sample");
+        state.tick_song();
+        let sample = state.next_sample();
+        signal_out.send(sample).expect("Failed to send a sample");
     }
 }
 
+#[derive(Clone, Copy)]
+pub enum Command {
+    Instrument(player::Command),
+    SetPatch(Specs),
+}
+
 struct State {
-    players: Vec<player::State>,
+    players: HashMap<ChannelId, player::State>,
     song: PlayingSong,
 }
 
 impl State {
-    fn new(sample_rate: Hz, patches: Vec<Specs>, song_specs: Song) -> State {
-        let players = patches.into_iter()
-            .map(|patch| player::State::new(patch, sample_rate))
-            .collect();
+    fn new(sample_rate: Hz, song_specs: Song) -> State {
         State {
-            players,
+            players: song_specs.tracks.iter()
+                .map(|track| (track.instrument_id, player::State::with_default_specs(sample_rate)))
+                .collect(),
             song: PlayingSong::new(song_specs),
         }
+    }
+
+    fn interpret(&mut self, (command, channel): TargetedCommand) {
+        if let Some(player) = self.players.get_mut(&channel) {
+            match command {
+                Command::Instrument(cmd) => player.interpret(cmd),
+                Command::SetPatch(specs) => player.set_instrument(specs),
+            }
+        } else {
+            eprintln!("Player not found for channel: {}", channel)
+        }
+    }
+
+    fn tick_song(&mut self) {
+        self.song.next().into_iter()
+            .for_each(|cmd| self.interpret(cmd));
+    }
+
+    fn next_sample(&mut self) -> Sample {
+        self.players.values_mut()
+            .map(|i| i.next_sample())
+            .sum()
     }
 }

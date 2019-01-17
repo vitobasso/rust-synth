@@ -129,3 +129,9 @@ impl Oscillator for Mix {
 impl Modulated<ModTarget> for Mix {
     fn mod_param(&mut self, _target: ModTarget) -> Option<&mut ModParam> { None }
 }
+
+impl Default for Specs {
+    fn default() -> Self {
+        Specs::Sine
+    }
+}

@@ -12,16 +12,10 @@ pub fn loop_forever(sample_rate: Hz, presets: Vec<Patch>, cmd_in: Receiver<Comma
         if let Ok(command) = cmd_in.try_recv() {
             state.interpret(command);
         }
+        state.tick_arpeggiator();
 
-        state.arpeggiator.as_mut()
-            .map( |arp| arp.next()).unwrap_or_else(|| vec!())
-            .into_iter().for_each(|cmd|
-                state.play_transposed(cmd));
-
-        let new_sample = state.player.next_sample();
-        let mix_sample = state.loops.next_sample() + new_sample;
-        signal_out.send(mix_sample).expect("Failed to send a sample");
-
+        let new_sample = state.next_sample();
+        signal_out.send(new_sample).expect("Failed to send a sample");
         state.loops.write(new_sample);
     }
 }
@@ -128,6 +122,18 @@ impl State {
 
     fn get_pulse_millis(&self) -> Millis {
         self.beat / PULSES_PER_BEAT
+    }
+
+    fn tick_arpeggiator(&mut self) {
+        self.arpeggiator.as_mut()
+            .map( |arp| arp.next()).unwrap_or_else(|| vec!())
+            .into_iter().for_each(|cmd| self.play_transposed(cmd));
+    }
+
+    fn next_sample(&mut self) -> Sample {
+        let new_sample = self.player.next_sample();
+        let loop_sample = self.loops.next_sample();
+        loop_sample + new_sample
     }
 
 }
