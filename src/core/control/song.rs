@@ -1,66 +1,72 @@
 use crate::core::control::{Millis, instrument_player::Command, duration_recorder::duration_as_millis};
+use crate::core::music_theory::pitch::PitchClass;
 use std::time::Instant;
 
 pub struct Song {
-    pub tracks: Vec<Track>
+    pub title: String,
+    pub key: PitchClass,
+    pub voices: Vec<Voice>,
+    pub tempo: Vec<Tempo>,
+    pub end: Time,
 }
 
-pub struct Track {
+pub struct Voice {
     events: Vec<ScheduledCommand>,
     pub instrument_id: ChannelId,
 }
-impl Track {
+impl Voice {
     pub fn new(events: Vec<ScheduledCommand>, instrument_id: ChannelId) -> Self {
-        Track { events, instrument_id }
+        Voice { events, instrument_id }
     }
 }
 
+pub type Tempo = u32;
 pub type Time = u64;
 pub type ScheduledCommand = (Command, Time);
 pub type ChannelId = u8;
 pub type TargetedCommand = (Command, ChannelId);
 
 pub struct PlayingSong {
-    tracks: Vec<PlayingTrack>,
+    voices: Vec<PlayingVoice>,
     begin: Instant,
 }
 impl PlayingSong {
 
     pub fn new(song: Song) -> Self {
         PlayingSong {
-            tracks: song.tracks.into_iter().map(PlayingTrack::new).collect(),
+            voices: song.voices.into_iter().map(PlayingVoice::new).collect(),
             begin: Instant::now(),
         }
     }
 
     pub fn next(&mut self) -> Vec<TargetedCommand> {
         let elapsed_time = duration_as_millis(Instant::now() - self.begin);
-        self.tracks.iter_mut()
+        self.voices.iter_mut()
             .flat_map(|t| t.next_targeted(elapsed_time))
             .collect()
     }
 
 }
 
-struct PlayingTrack {
-    track: Track,
+struct PlayingVoice {
+    voice: Voice,
     current_position: usize,
 }
-impl PlayingTrack {
+impl PlayingVoice {
 
-    fn new(track: Track) -> Self {
-        PlayingTrack { track, current_position: 0 }
+    fn new(voice: Voice) -> Self {
+        PlayingVoice { voice, current_position: 0 }
     }
 
     fn next_targeted(&mut self, elapsed_time: Millis) -> Vec<TargetedCommand> {
         self.next(elapsed_time).into_iter()
-            .map(|c| (c, self.track.instrument_id))
+            .map(|c| (c, self.voice.instrument_id))
             .collect()
     }
 
     fn next(&mut self, elapsed_time: Millis) -> Vec<Command> {
         let begin = self.current_position;
-        let result: Vec<Command> = self.track.events.iter()
+        let result: Vec<Command> = self.voice.events.iter()
             .skip(begin).take_while(|(_, t)| *t <= elapsed_time)
             .map(|(cmd, _)| *cmd)
             .collect();

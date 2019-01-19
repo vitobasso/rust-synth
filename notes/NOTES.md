@@ -3,6 +3,8 @@
 
 # LINKS
 - https://freemidi.org/
+- Midi programs: https://en.wikipedia.org/wiki/General_MIDI#Percussion
+- Midi meta events: https://www.csie.ntu.edu.tw/~r92092/ref/midi/
 
 # INSPIRATION
 - [TonicAudio](https://github.com/TonicAudio/Tonic). C++ lib.

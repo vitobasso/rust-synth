@@ -21,7 +21,7 @@ struct State {
 impl State {
     fn new(sample_rate: Hz, song_specs: Song) -> State {
         State {
-            players: song_specs.tracks.iter()
+            players: song_specs.voices.iter()
                 .map(|track| (track.instrument_id, player::State::with_default_specs(sample_rate)))
                 .collect(),
             song: PlayingSong::new(song_specs),
