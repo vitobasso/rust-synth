@@ -1,6 +1,6 @@
 use super::{Sample, Seconds, Proportion};
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 pub struct Adsr {
     pub attack: Seconds,
     pub decay: Seconds,

@@ -1,9 +1,7 @@
 use std::sync::mpsc::SyncSender;
 use std::collections::HashMap;
 use crate::core::{
-    control::{instrument_player::self as player, song::*},
-    music_theory::Hz, synth::Sample,
-    synth::instrument::Specs,
+    control::{instrument_player as player, song::*}, music_theory::Hz, synth::Sample,
 };
 
 pub fn loop_forever(sample_rate: Hz, song_specs: Song, signal_out: SyncSender<Sample>) {
@@ -13,12 +11,6 @@ pub fn loop_forever(sample_rate: Hz, song_specs: Song, signal_out: SyncSender<Sa
         let sample = state.next_sample();
         signal_out.send(sample).expect("Failed to send a sample");
     }
-}
-
-#[derive(Clone, Copy)]
-pub enum Command {
-    Instrument(player::Command),
-    SetPatch(Specs),
 }
 
 struct State {
@@ -37,13 +29,9 @@ impl State {
     }
 
     fn interpret(&mut self, (command, channel): TargetedCommand) {
-        if let Some(player) = self.players.get_mut(&channel) {
-            match command {
-                Command::Instrument(cmd) => player.interpret(cmd),
-                Command::SetPatch(specs) => player.set_instrument(specs),
-            }
-        } else {
-            eprintln!("Player not found for channel: {}", channel)
+        match self.players.get_mut(&channel) {
+            Some(player) => player.interpret(command),
+            None => eprintln!("Player not found for channel: {}", channel),
         }
     }
 

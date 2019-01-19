@@ -8,6 +8,7 @@ use crate::core::{
 pub enum Command {
     NoteOn(Pitch, Id), NoteOff(Id),
     ModXY(f64, f64),
+    SetPatch(instrument::Specs),
 }
 
 pub struct State {
@@ -35,6 +36,7 @@ impl State {
             Command::NoteOn(pitch, id) => self.handle_note_on(pitch, id),
             Command::NoteOff(id) => self.handle_note_off(id),
             Command::ModXY(x, y) => self.instrument.set_xy_params(x, y),
+            Command::SetPatch(specs) => self.set_instrument(specs),
         }
     }
 
@@ -54,7 +56,7 @@ impl State {
         }
     }
 
-    pub fn set_instrument(&mut self, specs: instrument::Specs) {
+    fn set_instrument(&mut self, specs: instrument::Specs) {
         self.instrument = Instrument::new(specs, self.sample_rate);
     }
 

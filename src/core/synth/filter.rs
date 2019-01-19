@@ -9,10 +9,10 @@ pub trait Filter: Modulated<ModTarget> {
     fn filter(&mut self, input: Sample) -> Sample;
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 pub enum Specs { LPF, HPF, BPF, Notch, }
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Debug)]
 pub enum ModTarget { Cutoff, QFactor }
 
 impl dyn Filter {

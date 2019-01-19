@@ -88,16 +88,16 @@ fn pitches(key: input::Key) -> Option<(Pitch, Discriminator)> { //TODO shift => 
 
 fn patches(key: input::Key) -> Option<Command> {
     match key {
-        input::Key::D1 => Some(SetPatch(0)),
-        input::Key::D2 => Some(SetPatch(1)),
-        input::Key::D3 => Some(SetPatch(2)),
-        input::Key::D4 => Some(SetPatch(3)),
-        input::Key::D5 => Some(SetPatch(4)),
-        input::Key::D6 => Some(SetPatch(5)),
-        input::Key::D7 => Some(SetPatch(6)),
-        input::Key::D8 => Some(SetPatch(7)),
-        input::Key::D9 => Some(SetPatch(8)),
-        input::Key::D0 => Some(SetPatch(9)),
+        input::Key::D1 => Some(SetPatchNo(0)),
+        input::Key::D2 => Some(SetPatchNo(1)),
+        input::Key::D3 => Some(SetPatchNo(2)),
+        input::Key::D4 => Some(SetPatchNo(3)),
+        input::Key::D5 => Some(SetPatchNo(4)),
+        input::Key::D6 => Some(SetPatchNo(5)),
+        input::Key::D7 => Some(SetPatchNo(6)),
+        input::Key::D8 => Some(SetPatchNo(7)),
+        input::Key::D9 => Some(SetPatchNo(8)),
+        input::Key::D0 => Some(SetPatchNo(9)),
         _ => None,
     }
 }

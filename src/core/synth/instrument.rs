@@ -2,7 +2,7 @@ use super::{Sample, Seconds, Proportion, oscillator::{self, Oscillator},
             filter::{self, Filter}, envelope::Adsr, lfo::{self, LFO}, modulated::*};
 use crate::core::music_theory::{Hz, pitch::Pitch};
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 pub struct Specs {
     pub max_voices: u8,
     pub oscillator: oscillator::Specs,
@@ -15,14 +15,14 @@ pub struct Specs {
     pub modulation_lfo: ModSpecs,
 }
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Debug)]
 pub enum ModTarget {
     Noop, Volume,
     Filter(filter::ModTarget),
     Oscillator(oscillator::ModTarget),
 }
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Debug)]
 pub struct ModSpecs {
     pub target: ModTarget,
     pub amount: Proportion,

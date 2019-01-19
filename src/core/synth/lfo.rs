@@ -2,7 +2,7 @@ use super::oscillator::{self, Oscillator};
 use crate::core::synth::{Seconds};
 use crate::core::music_theory::Hz;
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Debug)]
 pub struct Specs {
     oscillator: oscillator::Specs,
     freq: Hz,

@@ -6,8 +6,7 @@ use std::path::Path;
 use std::collections::HashMap;
 use crate::core::control::{
     song::*,
-    instrument_player::{id, Command::*},
-    playback_controller::{Command, Command::*},
+    instrument_player::{id, Command, Command::*},
 };
 use crate::core::music_theory::pitch::*;
 
@@ -73,8 +72,8 @@ fn decode_note_event(msg: &MidiMessage) -> Option<Command> {
         [_, pitch_byte, velocity_byte] => {
             let pitch = Pitch::from_index(*pitch_byte as usize);
             let velocity = *velocity_byte;
-            let note_on = Instrument(NoteOn(pitch, id(pitch)));
-            let note_off = Instrument(NoteOff(id(pitch)));
+            let note_on = NoteOn(pitch, id(pitch));
+            let note_off = NoteOff(id(pitch));
             match (msg.status(), velocity) {
                 (Status::NoteOn, 0) => Some(note_off),
                 (Status::NoteOn, _) => Some(note_on),

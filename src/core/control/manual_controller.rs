@@ -27,7 +27,7 @@ const DEFAULT_BEAT: Millis = 100 * PULSES_PER_BEAT;
 pub enum Command {
     Instrument(player::Command),
     Transposer(transposer::Command),
-    SetPatch(usize),
+    SetPatchNo(usize),
     Loop(loops::Command),
     PulseRecord,
 }
@@ -67,7 +67,7 @@ impl State {
         match command {
             Command::Instrument(cmd) => self.play_or_arpeggiate(cmd),
             Command::Transposer(cmd) => self.transposer.interpret(cmd),
-            Command::SetPatch(i) => self.set_patch(i),
+            Command::SetPatchNo(i) => self.set_patch(i),
             Command::Loop(cmd) => self.loops.interpret(cmd),
             Command::PulseRecord => self.record_beat(),
         }
@@ -97,7 +97,7 @@ impl State {
     fn set_patch(&mut self, i: usize) {
         let patch: Patch = self.patches.get(i).cloned().unwrap_or(Patch::Noop);
         match patch {
-            Patch::Instrument(specs) => self.player.set_instrument(specs),
+            Patch::Instrument(specs) => self.player.interpret(player::Command::SetPatch(specs)),
             Patch::Oscillator(specs) => self.player.set_oscillator(specs),
             Patch::Arpeggiator(seq) => self.set_arpeggiator(seq),
             Patch::Noop => (),
