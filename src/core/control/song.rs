@@ -30,6 +30,18 @@ pub type ScheduledCommand = (Command, Tick);
 pub type ChannelId = u8;
 pub type TargetedCommand = (Command, ChannelId);
 
+impl Default for Song {
+    fn default() -> Self {
+        Song {
+            title: String::from("Unnamed"),
+            key: PitchClass::C,
+            voices: vec![],
+            tempo: DEFAULT_TEMPO,
+            end: 0
+        }
+    }
+}
+
 pub struct PlayingSong {
     voices: Vec<PlayingVoice>,
     tempo: Tempo,

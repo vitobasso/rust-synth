@@ -1,24 +1,22 @@
 use rimd;
 
+use std::{ path::Path, collections::HashMap, mem };
+use crate::core::{
+    control::{ song::*, instrument_player::{id, Command, Command::*} },
+    music_theory::pitch::*,
+};
+use self::meta_events::Meta;
 use self::rimd::{SMF, SMFError, MidiMessage, Status,
                  Event as RimdEvent, TrackEvent as RimdTrackEvent, Track as RimdTrack};
-use std::path::Path;
-use std::collections::HashMap;
-use crate::core::control::{
-    song::*,
-    instrument_player::{id, Command, Command::*},
-};
-use crate::core::music_theory::pitch::*;
-use self::meta_events::Meta;
 
 mod patch;
 mod meta_events;
 
-pub fn read_file(file_path: &str) -> Vec<Song> {
+pub fn read_file(file_path: &str) -> Option<Song> {
     println!("MIDI: Reading file: {}", file_path);
     match SMF::from_file(&Path::new(&file_path[..])) {
         Ok(smf) =>
-            decode_midi_file(&smf)
+            Some(decode_midi_file(&smf))
         ,
         Err(e) => {
             match e {
@@ -27,15 +25,31 @@ pub fn read_file(file_path: &str) -> Vec<Song> {
                 SMFError::MidiError(e) => println!("Midi Error: {}", e),
                 SMFError::MetaError(_) => println!("Meta Error"),
             };
-            vec!()
+            None
         }
     }
 }
 
-fn decode_midi_file(midi_file: &SMF) -> Vec<Song> {
+fn decode_midi_file(midi_file: &SMF) -> Song {
     assert!(midi_file.division > 0, "MIDI: Unsupported format. Header has negative division.");
     let ticks_per_beat: u16 = midi_file.division as u16;
-    midi_file.tracks.iter().map(|track| decode_track(track, ticks_per_beat)).collect()
+    midi_file.tracks.iter()
+        .map(|track| decode_track(track, ticks_per_beat))
+        .fold(Song::default(), |merged, track| merge_tracks(merged, track))
+}
+
+fn merge_tracks(mut left: Song, mut right: Song) -> Song {
+    let mut left_voices = mem::replace(&mut left.voices, vec!());
+    let mut right_voices = mem::replace(&mut right.voices, vec!());
+    left_voices.append(&mut right_voices);
+    let default_song = Song::default();
+    Song {
+        title: if left.title != default_song.title {left.title} else {right.title},
+        key: if left.key != default_song.key {left.key} else {right.key},
+        tempo: if left.tempo != default_song.tempo {left.tempo} else {right.tempo},
+        end: if left.end > right.end {left.end} else {right.end},
+        voices: left_voices,
+    }
 }
 
 fn decode_track(track: &RimdTrack, ticks_per_beat: u16) -> Song {
@@ -50,20 +64,17 @@ fn decode_track(track: &RimdTrack, ticks_per_beat: u16) -> Song {
 }
 
 fn group_meta_events(events: Vec<ScheduledMeta>) -> Song {
-    let mut title: String = String::from("Unnamed");
-    let mut tempo: Tempo = DEFAULT_TEMPO;
-    let mut end = 0;
-    let mut key = PitchClass::C;
+    let mut song = Song::default();
     for (meta, time) in events.into_iter() {
         match meta {
-            Meta::TrackName(name) => title = name,
-            Meta::KeySignature { sharps, minor } => key = convert_key_signature(sharps, minor),
-            Meta::TempoSetting(t) => tempo = t,
-            Meta::EndOfTrack => end = time,
+            Meta::TrackName(name) => song.title = name,
+            Meta::KeySignature { sharps, minor } => song.key = convert_key_signature(sharps, minor),
+            Meta::TempoSetting(t) => song.tempo = t,
+            Meta::EndOfTrack => song.end = time,
             _ => (),
         }
     }
-    Song { title, key, tempo, end, voices: vec!() }
+    song
 }
 
 fn convert_key_signature(sharps: i8, minor: bool) -> PitchClass {
