@@ -1,12 +1,12 @@
 use std::collections::HashMap;
 use crate::core::{
     music_theory::{Hz, pitch::Pitch},
-    synth::{Sample, instrument::{self, Instrument}, oscillator},
+    synth::{Sample, Velocity, instrument::{self, Instrument}, oscillator},
 };
 
 #[derive(Clone, Copy, Debug)]
 pub enum Command {
-    NoteOn(Pitch, Id), NoteOff(Id),
+    NoteOn(Pitch, Velocity, Id), NoteOff(Id),
     ModXY(f64, f64),
     SetPatch(instrument::Specs),
 }
@@ -33,7 +33,7 @@ impl State {
 
     pub fn interpret(&mut self, command: Command) {
         match command {
-            Command::NoteOn(pitch, id) => self.handle_note_on(pitch, id),
+            Command::NoteOn(pitch, velocity, id) => self.handle_note_on(pitch, velocity, id),
             Command::NoteOff(id) => self.handle_note_off(id),
             Command::ModXY(x, y) => self.instrument.set_xy_params(x, y),
             Command::SetPatch(specs) => self.set_instrument(specs),
@@ -44,9 +44,9 @@ impl State {
         self.instrument.next_sample()
     }
 
-    fn handle_note_on(&mut self, pitch: Pitch, id: Id) {
+    fn handle_note_on(&mut self, pitch: Pitch, velocity: Velocity, id: Id) {
         if self.holding_notes.insert(id, pitch).is_none() {
-            self.instrument.hold(pitch)
+            self.instrument.hold(pitch, velocity)
         }
     }
 

@@ -27,7 +27,7 @@ impl Arpeggiator {
 
     pub fn interpret(&mut self, command: Command) {
         match command {
-            Command::NoteOn(pitch, _) => self.start(pitch),
+            Command::NoteOn(pitch, _, _) => self.start(pitch),
             Command::NoteOff(id) => self.stop(id),
             other => panic!("Can't interpret command: {:?}", other)
         }
@@ -94,7 +94,7 @@ impl Arpeggiator {
 }
 
 fn note_on(pitch: Pitch) -> Command {
-    Command::NoteOn(pitch, id(pitch))
+    Command::NoteOn(pitch, 1., id(pitch))
 }
 
 fn note_off(pitch: Pitch) -> Command {

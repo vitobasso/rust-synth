@@ -36,7 +36,7 @@ impl KeyMap {
 
 fn note_on(key: input::Key) -> Option<Command> {
     pitches(key).map(|(pitch, discr)|
-        Instrument(NoteOn(pitch, id_discr(pitch, discr))))
+        Instrument(NoteOn(pitch, 1., id_discr(pitch, discr))))
 }
 
 fn note_off(key: input::Key) -> Option<Command> {

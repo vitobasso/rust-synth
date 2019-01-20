@@ -75,7 +75,7 @@ impl State {
 
     fn play_or_arpeggiate(&mut self, command: player::Command) {
         match command {
-            NoteOn(_, _) | NoteOff(_) =>  {
+            NoteOn(_, _, _) | NoteOff(_) =>  {
                 if let Some(arp) = &mut self.arpeggiator {
                     arp.interpret(command);
                 } else {
@@ -88,7 +88,7 @@ impl State {
 
     fn play_transposed(&mut self, command: player::Command) {
         let changed_command = match command {
-            NoteOn(pitch, id) => NoteOn(self.transposer.transpose(pitch), id),
+            NoteOn(pitch, velocity, id) => NoteOn(self.transposer.transpose(pitch), velocity, id),
             other => other,
         };
         self.player.interpret(changed_command)

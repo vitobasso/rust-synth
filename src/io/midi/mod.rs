@@ -1,6 +1,6 @@
 use rimd;
 
-use std::{ path::Path, collections::HashMap, mem };
+use std::{ path::Path, collections::HashMap, mem, u8 };
 use crate::core::{
     control::{ song::*, instrument_player::{id, Command, Command::*} },
     music_theory::pitch::*,
@@ -82,8 +82,8 @@ fn convert_key_signature(sharps: i8, minor: bool) -> PitchClass {
     offset.circle_of_fifths(sharps)
 }
 
-fn group_track_events(events: Vec<Event>) -> (HashMap<Channel, Vec<ScheduledCommand>>, Vec<ScheduledMeta>) {
-    let mut commands_by_channel: HashMap<Channel, Vec<ScheduledCommand>> = HashMap::default();
+fn group_track_events(events: Vec<Event>) -> (HashMap<ChannelId, Vec<ScheduledCommand>>, Vec<ScheduledMeta>) {
+    let mut commands_by_channel: HashMap<ChannelId, Vec<ScheduledCommand>> = HashMap::default();
     let mut meta_events: Vec<ScheduledMeta> = Vec::default();
     for event in events.into_iter() {
         match event {
@@ -118,10 +118,9 @@ fn accumulate_time(events: Vec<Event>, ticks_per_beat: u16) -> Vec<Event> {
         }).collect()
 }
 
-type Channel = u8;
 type ScheduledMeta = (Meta, Tick);
 enum Event {
-    Midi(ScheduledCommand, Channel),
+    Midi(ScheduledCommand, ChannelId),
     Meta(ScheduledMeta)
 }
 
@@ -143,10 +142,10 @@ fn decode_note_event(msg: &MidiMessage) -> Option<Command> {
     match msg.data.as_slice() {
         [_, pitch_byte, velocity_byte] => {
             let pitch = Pitch::from_index(*pitch_byte as usize);
-            let velocity = *velocity_byte;
-            let note_on = NoteOn(pitch, id(pitch));
+            let velocity: f64 = *velocity_byte as f64 / u8::MAX as f64;
+            let note_on = NoteOn(pitch, velocity, id(pitch));
             let note_off = NoteOff(id(pitch));
-            match (msg.status(), velocity) {
+            match (msg.status(), *velocity_byte) {
                 (Status::NoteOn, 0) => Some(note_off),
                 (Status::NoteOn, _) => Some(note_on),
                 (Status::NoteOff, _) => Some(note_off),

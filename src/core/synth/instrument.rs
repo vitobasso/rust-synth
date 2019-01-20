@@ -1,4 +1,4 @@
-use super::{Sample, Seconds, Proportion, oscillator::{self, Oscillator},
+use super::{Sample, Seconds, Proportion, Velocity, oscillator::{self, Oscillator},
             filter::{self, Filter}, envelope::Adsr, lfo::{self, LFO}, modulated::*};
 use crate::core::music_theory::{Hz, pitch::Pitch};
 
@@ -57,8 +57,8 @@ impl Instrument {
         }
     }
 
-    pub fn hold(&mut self, pitch: Pitch) {
-        self.voices.hold(pitch)
+    pub fn hold(&mut self, pitch: Pitch, velocity: Velocity) {
+        self.voices.hold(pitch, velocity)
     }
 
     pub fn release(&mut self, pitch: Pitch) {
@@ -83,7 +83,7 @@ impl Instrument {
 
     fn next_sample_for_voice (voice: &mut Voice, oscillator: &Box<dyn Oscillator>, adsr: &Adsr) -> Sample {
         let clock = voice.clock.tick();
-        let sample = oscillator.next_sample(clock, voice.pitch.freq(), 0.);
+        let sample = oscillator.next_sample(clock, voice.pitch.freq(), 0.) * voice.velocity;
         adsr.apply(voice.clock(), voice.released_clock().unwrap_or(0.), sample)
     }
 
@@ -143,9 +143,9 @@ impl Voices {
         Voices{ max_voices, voices: vec![], sample_rate, release }
     }
 
-    fn hold(&mut self, pitch: Pitch) {
+    fn hold(&mut self, pitch: Pitch, velocity: Velocity) {
         if self.has_free_voice() {
-            self.voices.push(Voice::new(self.sample_rate, pitch))
+            self.voices.push(Voice::new(self.sample_rate, pitch, velocity))
         }
     }
 
@@ -177,14 +177,15 @@ impl Voices {
 
 struct Voice {
     pitch: Pitch,
+    velocity: Velocity,
     released_at: Option<Seconds>,
     clock: Clock,
 }
 impl Voice {
 
-    fn new(sample_rate: Hz, pitch: Pitch) -> Voice {
+    fn new(sample_rate: Hz, pitch: Pitch, velocity: Velocity) -> Voice {
         Voice {
-            pitch,
+            pitch, velocity,
             released_at: None,
             clock: Clock::new(sample_rate)
         }
