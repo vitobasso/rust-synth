@@ -14,11 +14,11 @@ use self::meta_events::Meta;
 mod patch;
 mod meta_events;
 
-pub fn read_file(file_path: &str) -> Option<Song> {
+pub fn read_file(file_path: &str) -> Vec<Song> {
     println!("MIDI: Reading file: {}", file_path);
     match SMF::from_file(&Path::new(&file_path[..])) {
         Ok(smf) =>
-            decode_tracks(&smf).into_iter().nth(0)
+            decode_midi_file(&smf)
         ,
         Err(e) => {
             match e {
@@ -27,17 +27,19 @@ pub fn read_file(file_path: &str) -> Option<Song> {
                 SMFError::MidiError(e) => println!("Midi Error: {}", e),
                 SMFError::MetaError(_) => println!("Meta Error"),
             };
-            None
+            vec!()
         }
     }
 }
 
-fn decode_tracks(midi_file: &SMF) -> Vec<Song> {
-    midi_file.tracks.iter().map(decode_track).collect()
+fn decode_midi_file(midi_file: &SMF) -> Vec<Song> {
+    assert!(midi_file.division > 0, "MIDI: Unsupported format. Header has negative division.");
+    let ticks_per_beat: u16 = midi_file.division as u16;
+    midi_file.tracks.iter().map(|track| decode_track(track, ticks_per_beat)).collect()
 }
 
-fn decode_track(track: &RimdTrack) -> Song {
-    let mixed_events: Vec<Event> = decode_track_events(track);
+fn decode_track(track: &RimdTrack, ticks_per_beat: u16) -> Song {
+    let mixed_events: Vec<Event> = decode_track_events(track, ticks_per_beat);
     let (commands_by_channel, meta_events) = group_track_events(mixed_events);
 
     let mut song = group_meta_events(meta_events);
@@ -49,14 +51,14 @@ fn decode_track(track: &RimdTrack) -> Song {
 
 fn group_meta_events(events: Vec<ScheduledMeta>) -> Song {
     let mut title: String = String::from("Unnamed");
-    let mut tempo: Vec<Tempo> = vec!();
+    let mut tempo: Tempo = DEFAULT_TEMPO;
     let mut end = 0;
     let mut key = PitchClass::C;
     for (meta, time) in events.into_iter() {
         match meta {
             Meta::TrackName(name) => title = name,
             Meta::KeySignature { sharps, minor } => key = convert_key_signature(sharps, minor),
-            Meta::TempoSetting(t) => tempo.push(t),
+            Meta::TempoSetting(t) => tempo = t,
             Meta::EndOfTrack => end = time,
             _ => (),
         }
@@ -83,24 +85,30 @@ fn group_track_events(events: Vec<Event>) -> (HashMap<Channel, Vec<ScheduledComm
     (commands_by_channel, meta_events)
 }
 
-fn decode_track_events(track: &RimdTrack) -> Vec<Event> {
-    track.events.iter()
+fn decode_track_events(track: &RimdTrack, ticks_per_beat: u16) -> Vec<Event> {
+    let events = track.events.iter()
         .filter_map(decode_track_event)
+        .collect();
+    accumulate_time(events, ticks_per_beat)
+}
+
+fn accumulate_time(events: Vec<Event>, ticks_per_beat: u16) -> Vec<Event> {
+    let time_stretch = DEFAULT_TICKS_PER_BEAT as f64 / ticks_per_beat as f64;
+    events.into_iter()
         .scan(0, |accumulated_time, event| match event {
             Event::Midi((cmd, time), channel) => {
-                *accumulated_time += time;
+                *accumulated_time += (time as f64 * time_stretch) as u64;
                 Some(Event::Midi((cmd, *accumulated_time), channel))
             },
             Event::Meta((cmd, time)) => {
-                *accumulated_time += time;
+                *accumulated_time += (time as f64 * time_stretch) as u64;
                 Some(Event::Meta((cmd, *accumulated_time)))
             }
-        })
-        .collect()
+        }).collect()
 }
 
 type Channel = u8;
-type ScheduledMeta = (Meta, Time);
+type ScheduledMeta = (Meta, Tick);
 enum Event {
     Midi(ScheduledCommand, Channel),
     Meta(ScheduledMeta)

@@ -34,5 +34,5 @@ use std::env::{args,Args};
 fn read_midi_file() -> Option<Song> {
     let mut args: Args = args();
     args.next();
-    args.next().and_then(|file_name| io::midi::read_file(file_name.as_str()))
+    args.next().and_then(|file_name| io::midi::read_file(file_name.as_str()).into_iter().nth(0))
 }
