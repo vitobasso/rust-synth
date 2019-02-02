@@ -9,7 +9,7 @@ mod gui;
 use std::{thread, sync::mpsc::{channel, sync_channel}};
 use crate::core::{music_theory::Hz, synth::Sample,
            control::{manual_controller::{self, Command}, playback_controller}};
-use crate::io::audio_out;
+use crate::io::{audio_out, midi};
 
 fn main() {
     let device = cpal::default_output_device().expect("Failed to get default output device");
@@ -34,5 +34,5 @@ use std::env::{args,Args};
 fn read_midi_file() -> Option<Song> {
     let mut args: Args = args();
     args.next();
-    args.next().and_then(|file_name| io::midi::read_file(file_name.as_str()))
+    args.next().and_then(|file_name| midi::read_file(file_name.as_str()))
 }

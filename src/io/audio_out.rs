@@ -1,5 +1,5 @@
 use cpal;
-use crate::audio_out::cpal::{
+use crate::io::audio_out::cpal::{
     UnknownTypeOutputBuffer::{F32, I16, U16},
     StreamData::Output,
     OutputBuffer, Device, Format, EventLoop
