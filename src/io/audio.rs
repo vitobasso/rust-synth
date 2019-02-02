@@ -1,13 +1,44 @@
 use cpal;
-use crate::io::audio_out::cpal::{
+use self::cpal::{
     UnknownTypeOutputBuffer::{F32, I16, U16},
     StreamData::Output,
     OutputBuffer, Device, Format, EventLoop
 };
 use std::sync::mpsc::Receiver;
+use crate::core::{music_theory::Hz, synth::Sample, control::Millis};
 
-type Sample = f64;
-pub fn loop_forever(device: &Device, format: &Format, sig_in: Receiver<Sample>) {
+const LATENCY: Millis = 250;
+
+pub struct Out {
+    device: Device,
+    format: Format,
+}
+
+impl Out {
+    pub fn initialize() -> Result<Self, String> {
+        match cpal::default_output_device() {
+            Some(device) =>
+                device.default_output_format()
+                    .map_err(|e| format!("Failed to get default output format. {:?}", e))
+                    .map(|format| Out { device, format }),
+            None => Err("Failed to get default output device".to_string()),
+        }
+    }
+
+    pub fn sample_rate(&self) -> Hz {
+        Hz::from(self.format.sample_rate.0)
+    }
+
+    pub fn buffer_size(&self) -> usize {
+        self.sample_rate() as usize / LATENCY as usize
+    }
+
+    pub fn loop_forever(&self, sig_in: Receiver<Sample>) {
+        loop_forever(&self.device, &self.format, sig_in)
+    }
+}
+
+fn loop_forever(device: &Device, format: &Format, sig_in: Receiver<Sample>) {
 
     let channels = format.channels as usize;
     let event_loop = EventLoop::new();

@@ -6,7 +6,7 @@ use crate::core::{
     synth::{builder::*, lfo,
             instrument::{self, ModTarget::*},
             oscillator::{Specs::*, ModTarget::*},
-            filter::{Specs::*, ModTarget::*}
+            filter::ModTarget::*
     },
     control::manual_controller::Patch,
 };

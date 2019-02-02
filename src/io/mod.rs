@@ -1,2 +1,2 @@
 pub mod midi;
-pub mod audio_out;
+pub mod audio;
