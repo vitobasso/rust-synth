@@ -14,4 +14,6 @@
     - combine oscillators with +, *, ...
 
 # TODO
-rename arpeggiator Sequence to rhythm::Pattern
+- rename arpeggiator Sequence to rhythm::Pattern
+- move midi -> preset mapping out of rust-synth
+- From(usize) for PitchClass, Pitch

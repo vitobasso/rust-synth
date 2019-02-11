@@ -7,3 +7,8 @@ pub mod rhythm;
 pub type Semitones = i8;
 pub type Octave = i8;
 pub type Hz = f64;
+
+#[derive(Copy, Clone, Debug)]
+pub enum Modality {
+    MAJOR, MINOR
+}

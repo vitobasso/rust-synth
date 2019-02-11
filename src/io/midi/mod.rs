@@ -33,9 +33,10 @@ pub fn read_file(file_path: &str) -> Option<Song> {
 fn decode_midi_file(midi_file: &SMF) -> Song {
     assert!(midi_file.division > 0, "MIDI: Unsupported format. Header has negative division.");
     let ticks_per_beat: u16 = midi_file.division as u16;
+    let new_song = Song { ticks_per_beat, ..Default::default() };
     midi_file.tracks.iter()
         .map(|track| decode_track(track, ticks_per_beat))
-        .fold(Song::default(), |merged, track| merge_tracks(merged, track))
+        .fold(new_song, |merged, track| merge_tracks(merged, track))
 }
 
 fn merge_tracks(mut left: Song, mut right: Song) -> Song {
@@ -46,6 +47,7 @@ fn merge_tracks(mut left: Song, mut right: Song) -> Song {
     Song {
         title: if left.title != default_song.title {left.title} else {right.title},
         key: if left.key != default_song.key {left.key} else {right.key},
+        ticks_per_beat: if left.ticks_per_beat != default_song.ticks_per_beat {left.ticks_per_beat} else {right.ticks_per_beat},
         tempo: if left.tempo != default_song.tempo {left.tempo} else {right.tempo},
         end: if left.end > right.end {left.end} else {right.end},
         voices: left_voices,

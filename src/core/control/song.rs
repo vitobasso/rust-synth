@@ -11,11 +11,12 @@ pub struct Song {
     pub key: PitchClass,
     pub voices: Vec<Voice>,
     pub tempo: Tempo,
+    pub ticks_per_beat: u16,
     pub end: Tick,
 }
 
 pub struct Voice {
-    events: Vec<ScheduledCommand>,
+    pub events: Vec<ScheduledCommand>,
     pub instrument_id: ChannelId,
 }
 impl Voice {
@@ -37,6 +38,7 @@ impl Default for Song {
             key: PitchClass::C,
             voices: vec![],
             tempo: DEFAULT_TEMPO,
+            ticks_per_beat: 96,
             end: 0
         }
     }
@@ -44,7 +46,8 @@ impl Default for Song {
 
 pub struct PlayingSong {
     voices: Vec<PlayingVoice>,
-    tempo: Tempo,
+    pub key: PitchClass,
+    pub tempo: Tempo,
     begin: Instant,
     end: Instant,
 }
@@ -55,6 +58,7 @@ impl PlayingSong {
         let song_duration = Duration::from_millis(to_absolute_time(song.end, song.tempo));
         PlayingSong {
             voices: song.voices.into_iter().map(PlayingVoice::new).collect(),
+            key: song.key,
             tempo: song.tempo,
             begin,
             end: begin + song_duration,

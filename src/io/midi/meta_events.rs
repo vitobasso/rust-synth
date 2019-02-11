@@ -6,9 +6,14 @@ use std::mem;
 pub enum Meta {
     TrackName(String),
     InstrumentName(String),
-    TimeSignature { numerator: u8, denominator: u8, clocks_per_tick: u8, num_32notes_per_24clocks: u8 },
+    TimeSignature {
+        numerator: u8, //beats per measure
+        denominator: u8, //quarter notes per beat
+        metronome_period: u8, //MIDI ticks per metronome quarter. Default: 24
+        rate_32ths: u8 //32th notes per MIDI quarter note. Default: 8
+    },
     KeySignature { sharps: i8, minor: bool },
-    TempoSetting(Tempo),
+    TempoSetting(Tempo), // microseconds per quarter note
     EndOfTrack,
 }
 
@@ -59,6 +64,7 @@ fn decode_key_signature(data: &[u8]) -> Option<Meta> {
     }
 }
 
+/// http://www.deluge.co/?q=midi-tempo-bpm
 fn decode_time_signature(data: &[u8]) -> Option<Meta> {
     match data {
         [byte1, byte2, byte3, byte4] => {
@@ -66,8 +72,8 @@ fn decode_time_signature(data: &[u8]) -> Option<Meta> {
             let meta = Meta::TimeSignature {
                 numerator: unsafe { mem::transmute(*byte1) },
                 denominator: 2_u8.pow(denom_power as u32),
-                clocks_per_tick: unsafe { mem::transmute(*byte3) },
-                num_32notes_per_24clocks: unsafe { mem::transmute(*byte4) },
+                metronome_period: unsafe { mem::transmute(*byte3) },
+                rate_32ths: unsafe { mem::transmute(*byte4) },
             };
             Some(meta)
         }
