@@ -32,7 +32,8 @@ impl DurationRecorder {
     }
 }
 
-pub fn duration_as_millis(duration: Duration) -> Millis {
+//TODO replace with Duration.as_millis after rust 1.33
+fn duration_as_millis(duration: Duration) -> Millis {
     let secs = duration.as_secs();
     let millis = duration.subsec_millis();
     secs * 1_000 + u64::from(millis)

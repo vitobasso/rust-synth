@@ -6,7 +6,7 @@ pub struct Arpeggiator {
     sequence: Sequence,
     index: usize,
     pulse: Pulse,
-    key: Key,
+    pub key: Key,
     holding_pitch: Option<Pitch>,
     playing_pitch: Option<Pitch>,
     pending_command: Option<Command>,

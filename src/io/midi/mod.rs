@@ -5,7 +5,7 @@ use crate::core::{
     control::{ song::*, instrument_player::{id, Command, Command::*} },
     music_theory::pitch::*,
 };
-use self::meta_events::Meta;
+use self::meta_events::{ScheduledMeta, decode_meta_event, collect_meta_events};
 use self::rimd::{SMF, SMFError, MidiMessage, Status,
                  Event as RimdEvent, TrackEvent as RimdTrackEvent, Track as RimdTrack};
 
@@ -46,45 +46,29 @@ fn merge_tracks(mut left: Song, mut right: Song) -> Song {
     let default_song = Song::default();
     Song {
         title: if left.title != default_song.title {left.title} else {right.title},
-        key: if left.key != default_song.key {left.key} else {right.key},
+        sections: if left.sections != default_song.sections {left.sections} else {right.sections},
         ticks_per_beat: if left.ticks_per_beat != default_song.ticks_per_beat {left.ticks_per_beat} else {right.ticks_per_beat},
-        tempo: if left.tempo != default_song.tempo {left.tempo} else {right.tempo},
         end: if left.end > right.end {left.end} else {right.end},
         voices: left_voices,
     }
 }
 
 fn decode_track(track: &RimdTrack, ticks_per_beat: u16) -> Song {
-    let mixed_events: Vec<Event> = decode_track_events(track, ticks_per_beat);
-    let (commands_by_channel, meta_events) = group_track_events(mixed_events);
+    let mixed_events: Vec<Event> = decode_events(track);
+    let (commands_by_channel, meta_events) = organize_events(mixed_events);
 
-    let mut song = group_meta_events(meta_events);
-    song.voices = commands_by_channel.into_iter()
+    let mut song = collect_meta_events(meta_events, ticks_per_beat);
+    song.voices = collect_note_events(commands_by_channel);
+    song
+}
+
+fn collect_note_events(commands_by_channel: HashMap<ChannelId, Vec<ScheduledCommand>>) -> Vec<Voice> {
+    commands_by_channel.into_iter()
         .map(|(channel, events)| Voice::new(events, channel))
-        .collect();
-    song
+        .collect()
 }
 
-fn group_meta_events(events: Vec<ScheduledMeta>) -> Song {
-    let mut song = Song::default();
-    for (meta, time) in events.into_iter() {
-        match meta {
-            Meta::TrackName(name) => song.title = name,
-            Meta::KeySignature { sharps, minor } => song.key = convert_key_signature(sharps, minor),
-            Meta::TempoSetting(t) => song.tempo = t,
-            Meta::EndOfTrack => song.end = time,
-            _ => (),
-        }
-    }
-    song
-}
-
-fn convert_key_signature(sharps: i8, minor: bool) -> PitchClass {
-    let offset = if minor { PitchClass::A } else { PitchClass::C };
-    offset.circle_of_fifths(sharps)
-}
-
-fn group_track_events(events: Vec<Event>) -> (HashMap<ChannelId, Vec<ScheduledCommand>>, Vec<ScheduledMeta>) {
+fn organize_events(events: Vec<Event>) -> (HashMap<ChannelId, Vec<ScheduledCommand>>, Vec<ScheduledMeta>) {
     let mut commands_by_channel: HashMap<ChannelId, Vec<ScheduledCommand>> = HashMap::default();
     let mut meta_events: Vec<ScheduledMeta> = Vec::default();
     for event in events.into_iter() {
@@ -98,35 +82,33 @@ fn group_track_events(events: Vec<Event>) -> (HashMap<ChannelId, Vec<ScheduledCo
     (commands_by_channel, meta_events)
 }
 
-fn decode_track_events(track: &RimdTrack, ticks_per_beat: u16) -> Vec<Event> {
+fn decode_events(track: &RimdTrack) -> Vec<Event> {
     let events = track.events.iter()
-        .filter_map(decode_track_event)
+        .filter_map(decode_event)
         .collect();
-    accumulate_time(events, ticks_per_beat)
+    accumulate_time(events)
 }
 
-fn accumulate_time(events: Vec<Event>, ticks_per_beat: u16) -> Vec<Event> {
-    let time_stretch = DEFAULT_TICKS_PER_BEAT as f64 / ticks_per_beat as f64;
+fn accumulate_time(events: Vec<Event>) -> Vec<Event> {
     events.into_iter()
         .scan(0, |accumulated_time, event| match event {
             Event::Midi((cmd, time), channel) => {
-                *accumulated_time += (time as f64 * time_stretch) as u64;
+                *accumulated_time += time;
                 Some(Event::Midi((cmd, *accumulated_time), channel))
             },
             Event::Meta((cmd, time)) => {
-                *accumulated_time += (time as f64 * time_stretch) as u64;
+                *accumulated_time += time;
                 Some(Event::Meta((cmd, *accumulated_time)))
             }
         }).collect()
 }
 
-type ScheduledMeta = (Meta, Tick);
 enum Event {
     Midi(ScheduledCommand, ChannelId),
     Meta(ScheduledMeta)
 }
 
-fn decode_track_event(event: &RimdTrackEvent) -> Option<Event> {
+fn decode_event(event: &RimdTrackEvent) -> Option<Event> {
     match event.event {
         RimdEvent::Midi(ref message) =>
             message.channel().and_then(|channel|
@@ -134,7 +116,7 @@ fn decode_track_event(event: &RimdTrackEvent) -> Option<Event> {
                     .map(|cmd| ((cmd, event.vtime), channel))
             ).map(|(cmd, channel)|Event::Midi(cmd, channel)),
         RimdEvent::Meta(ref meta) => {
-            meta_events::decode(meta).map(|meta| Event::Meta((meta, event.vtime)))
+            decode_meta_event(meta).map(|meta| Event::Meta((meta, event.vtime)))
         },
 
     }
