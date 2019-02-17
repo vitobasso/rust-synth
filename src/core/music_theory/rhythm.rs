@@ -1,149 +1,110 @@
-use super::diatonic_scale::RelativePitch;
+use super::diatonic_scale::{RelativePitch, OctaveShift, ScaleDegree};
+use crate::util::reckless_float::RecklessFloat;
+use std::collections::BTreeMap;
 
-#[derive(Clone, Copy, Debug)]
-pub enum Duration {
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+pub enum NoteDuration {
     Whole=16, Half=8, Quarter=4, Eight=2, Sixteenth=1
 }
 
-#[derive(Clone, Copy, PartialEq, Debug)]
-pub enum Event {
-    Note(RelativePitch),
-    Rest,
-    Keep,
-}
-
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub struct Note {
-    duration: Duration,
-    pitch: Option<RelativePitch>,
+    pub duration: NoteDuration,
+    pub pitch: RelativePitch,
 }
 
 impl Note {
-    fn events(self) -> Vec<Event> {
-        let head = match self.pitch {
-            Some(pitch) => Event::Note(pitch),
-            None => Event::Rest,
-        };
-        let len = self.duration as u32;
-        let tail: Vec<Event> = (1..len).map(|_| Event::Keep).collect();
-
-        vec![head].into_iter().chain(tail).collect()
+    pub fn new(duration: NoteDuration, octave: OctaveShift, degree: ScaleDegree) -> Self {
+        Note { duration, pitch: (octave, degree) }
     }
-}
-pub fn note(duration: Duration, pitch: RelativePitch) -> Note {
-    Note { duration, pitch: Some(pitch) }
-}
-pub fn rest(duration: Duration) -> Note {
-    Note { duration, pitch: None }
 }
 
 #[derive(Clone)]
-pub struct Sequence {
-    measures: u32,
-    pub events: Vec<Event>,
+pub struct Phrase {
+    notes: BTreeMap<RecklessFloat, Note>,
 }
 
-impl Sequence {
-
-    pub fn new(measures: u32, notes: Vec<Note>) -> Result<Sequence, Invalid> {
-        let events = notes.iter().flat_map(|note| note.events()).collect();
-        let seq = Sequence { measures, events };
-        seq.validate(&notes).map(|_| seq)
+impl Phrase {
+    pub fn new(notes: &[Note]) -> Self {
+        let total_duration: u32 = notes.iter().map(|n| n.duration as u32).sum();
+        let map: BTreeMap<RecklessFloat, Note> = notes.iter()
+            .scan(0., |progress, note| {
+                let index = RecklessFloat(*progress);
+                *progress += note.duration as u32 as f64 / total_duration as f64;
+                Some((index, *note))
+            }).collect();
+        Phrase { notes: map }
     }
 
-    fn validate(&self, notes: &[Note]) -> Result<(), Invalid> {
-        let total_duration = notes.iter()
-            .fold(0, |acc, note| acc + note.duration as u32);
-        let expected_total = self.measures * 16;
-        if total_duration == expected_total {
-            Ok(())
+    /// `from` and `to` are expected to be between 0 and 1. TODO restrictive newtype
+    /// Values outside this range will result in an empty `Vec`.
+    pub fn range(&self, from: f64, to: f64) -> Vec<Note> {
+        if from <= to {
+            self.notes
+                .range(RecklessFloat(from)..RecklessFloat(to))
+                .map(|(_, v)| *v).collect()
         } else {
-            Err(Invalid::IncompleteSeq { expected: expected_total, actual: total_duration })
+            let first_half = self.notes
+                .range(RecklessFloat(from)..)
+                .map(|(_, v)| *v);
+            let second_half = self.notes
+                .range(..RecklessFloat(to))
+                .map(|(_, v)| *v);
+            first_half.chain(second_half).collect()
         }
     }
 }
-
-#[derive(Debug)]
-pub enum Invalid {
-    IncompleteSeq{ expected: u32, actual: u32 }
-}
-
-
 
 #[cfg(test)]
 mod tests {
-    use super::{*, Event::{Note as N, Keep as K, Rest as R}, Duration::*};
-    use super::super::diatonic_scale::{OctaveShift::*, ScaleDegree::*};
+    use super::*;
+    use super::NoteDuration::*;
+    use super::super::diatonic_scale::{ScaleDegree::*, OctaveShift::*};
 
-    const W: Note = Note{duration: Whole,     pitch: None};
-    const H: Note = Note{duration: Half,      pitch: None};
-    const Q: Note = Note{duration: Quarter,   pitch: None};
-    const E: Note = Note{duration: Eight,     pitch: None};
-    const S: Note = Note{duration: Sixteenth, pitch: None};
+    const A: Note = Note { duration: Half,    pitch: (Same, I1) };
+    const B: Note = Note { duration: Quarter, pitch: (Same, I2) };
+    const C: Note = Note { duration: Quarter, pitch: (Same, I3) };
 
     #[test]
-    fn sequence_validation() {
-        let cases: &[(u32, Vec<Note>, bool)] = &[
-            (1, vec![W],          true),
-            (1, vec![H, H],       true),
-            (1, vec![H, Q, Q],    true),
-            (1, vec![Q, Q, Q, Q], true),
-            (1, vec![Q, Q, Q],    false),
-            (1, vec![Q, W],       false),
-            (2, vec![W, W],       true),
-            (2, vec![H, W, H],    true),
-            (2, vec![H, W, Q],    false),
-            (2, vec![W, W, S],    false),
-        ];
-        for (measures, notes, should_be_valid) in cases.iter() {
-            let actual_result = Sequence::new(*measures, notes.clone()).is_ok();
-            assert_eq!(actual_result, *should_be_valid,
-                       "Input was: {:?}, {:?}, {:?}", measures, notes, *should_be_valid);
-        }
+    fn whole() {
+        let result = Phrase::new(&[A, B, C]).range(0., 1.);
+        assert_eq!(result, vec!(A, B, C))
     }
 
     #[test]
-    fn sequence_rest_events() {
-        let cases: &[(&[Note], &[Event])] = &[
-            (&[W],              &[R, K, K, K, K, K, K, K, K, K, K, K, K, K, K, K]),
-            (&[H, H],           &[R, K, K, K, K, K, K, K, R, K, K, K, K, K, K, K]),
-            (&[H, Q, Q],        &[R, K, K, K, K, K, K, K, R, K, K, K, R, K, K, K]),
-            (&[H, Q, E, S, S],  &[R, K, K, K, K, K, K, K, R, K, K, K, R, K, R, R]),
-        ];
-        for (notes, expected_events) in cases.iter() {
-            let sequence = Sequence::new(1, notes.to_vec())
-                .expect("Expected a valid Sequence");
-            let actual_result = sequence.events;
-            assert_eq!(actual_result, expected_events.to_vec(),
-                       "Input was: {:?}, {:?}", notes, *expected_events);
-        }
+    fn beginning() {
+        let result = Phrase::new(&[A, B, C]).range(0., 0.5);
+        assert_eq!(result, vec!(A))
     }
 
     #[test]
-    fn sequence_a_phrase() {
-        let phrase = &[
-            note(Quarter, (Same, I1)),
-            rest(Quarter),
-            note(Quarter, (Same, I2)),
-            note(Half,    (Same, I3)),
-            rest(Quarter),
-            note(Quarter, (Same, I2)),
-            note(Quarter, (Same, I1)),
-        ];
-        let sequence = Sequence::new(2, phrase.to_vec())
-            .expect("Expected a valid Sequence");
-        let expected_events = &[
-            N((Same, I1)), K, K, K,
-            R, K, K, K,
-            N((Same, I2)), K, K, K,
-            N((Same, I3)), K, K, K, K, K, K, K,
-            R, K, K, K,
-            N((Same, I2)), K, K, K,
-            N((Same, I1)), K, K, K,
-        ];
-        let actual_result = sequence.events;
-        assert_eq!(actual_result, expected_events.to_vec(),
-                   "Input was: {:?}, {:?}", phrase, *expected_events);
+    fn end() {
+        let result = Phrase::new(&[A, B, C]).range(0.4, 1.);
+        assert_eq!(result, vec!(B, C))
+    }
+
+    #[test]
+    fn middle() {
+        let result = Phrase::new(&[A, B, C]).range(0.5, 0.6);
+        assert_eq!(result, vec!(B))
+    }
+
+    #[test]
+    fn wrapping() {
+        let result = Phrase::new(&[A, B, C]).range(0.9, 0.1);
+        assert_eq!(result, vec!(A))
+    }
+
+    #[test]
+    fn invalid_range() {
+        let result = Phrase::new(&[A, B, C]).range(1., 2.);
+        assert_eq!(result, vec!())
+    }
+
+    #[test]
+    fn invalid_and_valid_ranges() {
+        let result = Phrase::new(&[A, B, C]).range(-1., 2.);
+        assert_eq!(result, vec!(A, B, C))
     }
 
 }

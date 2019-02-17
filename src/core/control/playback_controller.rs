@@ -36,7 +36,7 @@ impl State {
     }
 
     fn tick_song(&mut self) {
-        self.song.next().into_iter()
+        self.song.next().commands.into_iter()
             .for_each(|cmd| self.interpret(cmd));
     }
 

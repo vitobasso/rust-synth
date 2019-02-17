@@ -1,9 +1,12 @@
 use std::sync::mpsc::{Receiver, SyncSender};
+use std::time::Duration;
+
 use crate::core::{
-    control::{Millis, arpeggiator::Arpeggiator, loops, duration_recorder::DurationRecorder,
-              instrument_player::{self as player, Command::*}, transposer},
-    music_theory::{Hz, pitch::PitchClass, rhythm::Sequence},
-    synth::{Sample, instrument, oscillator},
+    control::{arpeggiator::Arpeggiator, duration_recorder::DurationRecorder,
+              instrument_player::{self as player, Command::*}, loops, Millis,
+              pulse::{Pulse, PulseReading}, transposer, song::MeasurePosition},
+    music_theory::{Hz, pitch::PitchClass, rhythm::Phrase},
+    synth::{instrument, oscillator, Sample},
 };
 
 pub fn loop_forever(sample_rate: Hz, presets: Vec<Patch>, cmd_in: Receiver<Command>, signal_out: SyncSender<Sample>) {
@@ -20,8 +23,9 @@ pub fn loop_forever(sample_rate: Hz, presets: Vec<Patch>, cmd_in: Receiver<Comma
     }
 }
 
-const PULSES_PER_BEAT: u64 = 4;
-const DEFAULT_BEAT: Millis = 100 * PULSES_PER_BEAT;
+const BEATS_PER_MEASURE: u64 = 4;
+const PULSES_PER_BEAT: u64 = 32;
+const DEFAULT_PULSE: Millis = 12;
 
 #[derive(Clone, Copy)]
 pub enum Command {
@@ -36,7 +40,7 @@ pub enum Command {
 pub enum Patch {
     Instrument(instrument::Specs),
     Oscillator(oscillator::Specs),
-    Arpeggiator(Option<Sequence>),
+    Arpeggiator(Option<Phrase>),
     Noop,
 }
 
@@ -44,8 +48,9 @@ struct State {
     player: player::State,
     transposer: transposer::State,
     patches: Vec<Patch>,
-    beat: Millis,
+    pulse: Pulse,
     arpeggiator: Option<Arpeggiator>,
+    arp_index: f64,
     duration_recorder: DurationRecorder,
     loops: loops::Manager,
 }
@@ -57,8 +62,9 @@ impl State {
             player: player::State::with_default_specs(sample_rate),
             transposer: transposer::State::new(PitchClass::C),
             duration_recorder: Default::default(),
-            beat: DEFAULT_BEAT,
+            pulse: Pulse::new_with_millis(DEFAULT_PULSE),
             arpeggiator: None,
+            arp_index: 0.,
             loops: Default::default(),
         }
     }
@@ -104,30 +110,36 @@ impl State {
         }
     }
 
-    fn set_arpeggiator(&mut self, seq: Option<Sequence>) {
+    fn set_arpeggiator(&mut self, seq: Option<Phrase>) {
         self.arpeggiator = seq.map(|s|
-            Arpeggiator::new(self.get_pulse_millis(), PitchClass::C, s));
+            Arpeggiator::new(PitchClass::C, s));
     }
 
     fn record_beat(&mut self) {
         self.duration_recorder.record();
-        if let Some(duration) = self.duration_recorder.read() {
-            self.beat = duration;
-            let pulse = self.get_pulse_millis();
-            if let Some(arp) = &mut self.arpeggiator {
-                arp.set_pulse(pulse)
-            }
+        if let Some(beat) = self.duration_recorder.read() {
+            let pulse_period = Duration::from_millis(beat / PULSES_PER_BEAT);
+            self.pulse = self.pulse.with_period(pulse_period);
         }
     }
 
-    fn get_pulse_millis(&self) -> Millis {
-        self.beat / PULSES_PER_BEAT
+    fn tick_arpeggiator(&mut self) {
+        if let Some(measure_progress) = self.tick_around_measure() {
+            let from = self.arp_index;
+            let to = self.arp_index + measure_progress;
+            self.arp_index = to;
+            self.arpeggiator.as_mut()
+                .map(|arp| arp.next(from, to)).unwrap_or_else(|| vec!())
+                .into_iter().for_each(|cmd| self.play_transposed(cmd));
+        }
     }
 
-    fn tick_arpeggiator(&mut self) {
-        self.arpeggiator.as_mut()
-            .map( |arp| arp.next()).unwrap_or_else(|| vec!())
-            .into_iter().for_each(|cmd| self.play_transposed(cmd));
+    fn tick_around_measure(&mut self) -> Option<MeasurePosition> {
+        self.pulse.read().map(|PulseReading{ missed, .. }| {
+            let pulses_passed = 1 + missed;
+            let pulses_per_measure = PULSES_PER_BEAT * BEATS_PER_MEASURE;
+            f64::from(pulses_passed) / pulses_per_measure as MeasurePosition
+        })
     }
 
     fn next_sample(&mut self) -> Sample {

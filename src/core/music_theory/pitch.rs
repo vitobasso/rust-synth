@@ -56,7 +56,6 @@ impl Pitch {
     }
 
     /// Frequencies on the equal tempered scale:
-    ///
     ///     fn = f0 * (a)^n
     ///
     /// where

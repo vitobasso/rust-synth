@@ -2,11 +2,11 @@ use super::{Semitones, Octave, pitch::{Pitch, PitchClass::{self, *}}, num_traits
 use self::ScaleDegree::*;
 use std::ops::{Add, Sub};
 
-#[derive(Clone, Copy, PartialEq, Debug, FromPrimitive)]
+#[derive(Clone, Copy, PartialEq, Eq, Debug, FromPrimitive)]
 pub enum ScaleDegree {
     I1, I2, I3, I4, I5, I6, I7
 }
-#[derive(Clone, Copy, PartialEq, Debug, FromPrimitive)]
+#[derive(Clone, Copy, PartialEq, Eq, Debug, FromPrimitive)]
 pub enum OctaveShift {
     Down3=-3, Down2=-2, Down1=-1, Same=0, Up1=1, Up2=2, Up3=3
 }

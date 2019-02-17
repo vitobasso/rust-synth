@@ -73,10 +73,10 @@ pub struct Id {
     pub discriminator: Option<Discriminator>,
 }
 
-pub fn id(pitch: Pitch) -> Id {
+pub const fn id(pitch: Pitch) -> Id {
     Id { pitch, discriminator: None }
 }
 
-pub fn id_discr(pitch: Pitch, discriminator: Discriminator) -> Id {
+pub const fn id_discr(pitch: Pitch, discriminator: Discriminator) -> Id {
     Id { pitch, discriminator: Some(discriminator) }
 }

@@ -1,6 +1,6 @@
 use crate::core::{
     music_theory::{
-        rhythm::{Sequence, Duration::*, note},
+        rhythm::{Note, Phrase, NoteDuration::*},
         diatonic_scale::{ScaleDegree::*, OctaveShift::*}
     },
     synth::{builder::*, lfo,
@@ -21,7 +21,7 @@ pub fn instruments() -> Vec<instrument::Specs> {
     )
 }
 
-pub fn sequences() -> Vec<Sequence> {
+pub fn sequences() -> Vec<Phrase> {
     vec!(
         cyborg_chase(),
         topgear(),
@@ -61,59 +61,59 @@ pub fn supersaw() -> instrument::Specs {
             .lfo(lfo::Specs::simple(0.1), Filter(Cutoff), 0.8).build()
 }
 
-fn octaves() -> Sequence {
-    Sequence::new(1, vec![
-        note(Eight, (Down1, I1)),
-        note(Eight, (Same, I1)),
-        note(Eight, (Down1, I1)),
-        note(Eight, (Same, I1)),
-        note(Eight, (Down1, I1)),
-        note(Eight, (Same, I1)),
-        note(Eight, (Down1, I1)),
-        note(Eight, (Same, I1)),
-    ]).expect("Invalid sequence")
+fn octaves() -> Phrase {
+    Phrase::new(&[
+        Note::new(Eight, Down1, I1),
+        Note::new(Eight, Same, I1),
+        Note::new(Eight, Down1, I1),
+        Note::new(Eight, Same, I1),
+        Note::new(Eight, Down1, I1),
+        Note::new(Eight, Same, I1),
+        Note::new(Eight, Down1, I1),
+        Note::new(Eight, Same, I1),
+    ])
 }
 
 
-fn topgear() -> Sequence {
-    Sequence::new(1, vec![
-        note(Sixteenth, (Down1, I1)),
-        note(Sixteenth, (Down1, I3)),
-        note(Sixteenth, (Down1, I5)),
-        note(Sixteenth, (Same, I1)),
-        note(Sixteenth, (Same, I3)),
-        note(Sixteenth, (Same, I5)),
-        note(Sixteenth, (Up1, I1)),
-        note(Sixteenth, (Up1, I3)),
-        note(Sixteenth, (Up1, I5)),
-        note(Sixteenth, (Up1, I3)),
-        note(Sixteenth, (Up1, I1)),
-        note(Sixteenth, (Same, I5)),
-        note(Sixteenth, (Same, I3)),
-        note(Sixteenth, (Same, I1)),
-        note(Sixteenth, (Down1, I5)),
-        note(Sixteenth, (Down1, I3)),
-    ]).expect("Invalid sequence")
+fn topgear() -> Phrase {
+    Phrase::new(&[
+        Note::new(Sixteenth, Down1, I1),
+        Note::new(Sixteenth, Down1, I3),
+        Note::new(Sixteenth, Down1, I5),
+        Note::new(Sixteenth, Same, I1),
+        Note::new(Sixteenth, Same, I3),
+        Note::new(Sixteenth, Same, I5),
+        Note::new(Sixteenth, Up1, I1),
+        Note::new(Sixteenth, Up1, I3),
+        Note::new(Sixteenth, Up1, I5),
+        Note::new(Sixteenth, Up1, I3),
+        Note::new(Sixteenth, Up1, I1),
+        Note::new(Sixteenth, Same, I5),
+        Note::new(Sixteenth, Same, I3),
+        Note::new(Sixteenth, Same, I1),
+        Note::new(Sixteenth, Down1, I5),
+        Note::new(Sixteenth, Down1, I3),
+    ])
 }
 
-fn cyborg_chase() -> Sequence {
-    Sequence::new(1, vec![
-        note(Sixteenth, (Same, I6)),
-        note(Sixteenth, (Same, I6)),
-        note(Sixteenth, (Up1,  I4)),
-        note(Sixteenth, (Up1,  I3)),
-        note(Sixteenth, (Up1,  I1)),
-        note(Sixteenth, (Same, I6)),
-        note(Sixteenth, (Same, I6)),
-        note(Sixteenth, (Same, I6)),
-        note(Sixteenth, (Up1,  I1)),
-        note(Sixteenth, (Same, I6)),
-        note(Sixteenth, (Same, I6)),
-        note(Sixteenth, (Up1,  I2)),
-        note(Sixteenth, (Same, I6)),
-        note(Sixteenth, (Same, I6)),
-        note(Sixteenth, (Up1,  I2)),
-        note(Sixteenth, (Up1,  I3)),
-    ]).expect("Invalid sequence")
+fn cyborg_chase() -> Phrase {
+    Phrase::new(&[
+        Note::new(Sixteenth, Same, I6),
+        Note::new(Sixteenth, Same, I6),
+        Note::new(Sixteenth, Up1,  I4),
+        Note::new(Sixteenth, Up1,  I3),
+        Note::new(Sixteenth, Up1,  I1),
+        Note::new(Sixteenth, Same, I6),
+        Note::new(Sixteenth, Same, I6),
+        Note::new(Sixteenth, Same, I6),
+        Note::new(Sixteenth, Up1,  I1),
+        Note::new(Sixteenth, Same, I6),
+        Note::new(Sixteenth, Same, I6),
+        Note::new(Sixteenth, Up1,  I2),
+        Note::new(Sixteenth, Same, I6),
+        Note::new(Sixteenth, Same, I6),
+        Note::new(Sixteenth, Up1,  I2),
+        Note::new(Sixteenth, Up1,  I3),
+    ])
 }
 

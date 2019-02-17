@@ -2,6 +2,7 @@ use super::rimd::{MetaEvent, MetaCommand};
 use crate::core::control::song::Tempo;
 use std::{mem, collections::HashMap, time::Duration};
 use crate::core::{ control::{ song::* }, music_theory::{pitch::*, Modality} };
+use crate::util;
 
 #[derive(Debug)]
 pub enum Meta {
@@ -150,17 +151,25 @@ impl SectionChanges {
     fn to_section(&self, previous: Option<&Section>, ticks_per_beat: u16) -> Option<Section> {
         let default = Section::default();
         self.begin_tick.map(|begin_tick| {
-            let begin_time: Duration = previous.map(|p| calculate_section_begin_time(begin_tick, p))
+            let time_since_previous = previous.map(|p| {
+                let ticks_since_previous = begin_tick - p.begin_tick;
+                util::duration::mul_f64(p.tick_duration, ticks_since_previous as f64)
+            });
+            let begin_time: Duration = time_since_previous
+                .and_then(|time| previous.map(|p| p.begin_time + time))
                 .unwrap_or_else(|| Duration::default());
             let beat_duration = self.beat_duration.or(previous.map(|p| p.beat_duration))
                 .unwrap_or_else(|| default.beat_duration);
-            let tick_duration = Duration::from_micros(beat_duration as u64 / ticks_per_beat as u64);
+            let tick_duration = Duration::from_micros(u64::from(beat_duration) / u64::from(ticks_per_beat));
+            let beats_per_measure = self.beats_per_measure.or(previous.map(|p| p.beats_per_measure))
+                .unwrap_or_else(|| default.beats_per_measure);
+            let begin_measure = time_since_previous
+                .and_then(|time| previous.map(|p| calculate_section_begin_measure(time, p)))
+                .unwrap_or_else(|| 0.);
             Section {
-                begin_tick, begin_time, beat_duration, tick_duration,
+                begin_tick, begin_time, begin_measure, beat_duration, tick_duration, beats_per_measure,
                 key: self.key.or(previous.map(|p| p.key)).unwrap_or_else(|| default.key),
                 modality: self.modality.or(previous.map(|p| p.modality)).unwrap_or_else(|| default.modality),
-                beats_per_measure: self.beats_per_measure.or(previous.map(|p| p.beats_per_measure))
-                    .unwrap_or_else(|| default.beats_per_measure),
             }
         })
     }
@@ -178,8 +187,9 @@ impl Default for SectionChanges {
     }
 }
 
-fn calculate_section_begin_time(begin_tick: Tick, previous_section: &Section) -> Duration {
-    let ticks = begin_tick - previous_section.begin_tick;
-    let millis = previous_section.beat_duration as u64 * ticks;
-    Duration::from_millis(millis)
+fn calculate_section_begin_measure(time_since_previous_section: Duration, previous_section: &Section) -> f64 {
+    let beat_duration = Duration::from_micros(u64::from(previous_section.beat_duration));
+    let beats_since_previous = util::duration::div_duration(time_since_previous_section, beat_duration);
+    let measures_since_previous = beats_since_previous / f64::from(previous_section.beats_per_measure);
+    previous_section.begin_measure + measures_since_previous
 }

@@ -5,6 +5,7 @@ mod io;
 pub mod core;
 pub mod preset;
 mod gui;
+pub mod util;
 
 use std::{thread, sync::mpsc::{channel, sync_channel}};
 use crate::core::{synth::Sample, control::{manual_controller::{self, Command}, playback_controller}};

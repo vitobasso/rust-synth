@@ -14,6 +14,7 @@
     - combine oscillators with +, *, ...
 
 # TODO
-- rename arpeggiator Sequence to rhythm::Pattern
+- newtype instead of type aliases. 
+- restrictive types for RecklessFloat, range 0-1 (rhythm)
 - move midi -> preset mapping out of rust-synth
 - From(usize) for PitchClass, Pitch

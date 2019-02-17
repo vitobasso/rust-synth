@@ -46,10 +46,16 @@ fn merge_tracks(mut left: Song, mut right: Song) -> Song {
     let default_song = Song::default();
     Song {
         title: if left.title != default_song.title {left.title} else {right.title},
-        sections: if left.sections != default_song.sections {left.sections} else {right.sections},
+        sections: if !is_default_sections(&left.sections) {left.sections} else {right.sections},
         ticks_per_beat: if left.ticks_per_beat != default_song.ticks_per_beat {left.ticks_per_beat} else {right.ticks_per_beat},
         end: if left.end > right.end {left.end} else {right.end},
         voices: left_voices,
+    }
+}
+fn is_default_sections(sections: &[Section]) -> bool {
+    match sections {
+        [section] => section.is_default(),
+        _ => false
     }
 }
 

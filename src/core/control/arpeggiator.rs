@@ -1,11 +1,10 @@
-use crate::core::control::{Millis, pulse::Pulse, instrument_player::{Command, Id, id}};
-use crate::core::music_theory::{pitch::Pitch, rhythm::{Sequence, Event}, diatonic_scale::*};
 use std::mem;
 
+use crate::core::control::{instrument_player::{Command, Id, id}, song::MeasurePosition};
+use crate::core::music_theory::{diatonic_scale::*, pitch::Pitch, rhythm::{Note, Phrase}};
+
 pub struct Arpeggiator {
-    sequence: Sequence,
-    index: usize,
-    pulse: Pulse,
+    phrase: Phrase,
     pub key: Key,
     holding_pitch: Option<Pitch>,
     playing_pitch: Option<Pitch>,
@@ -14,11 +13,9 @@ pub struct Arpeggiator {
 
 impl Arpeggiator {
 
-    pub fn new(pulse_period: Millis, key: Key, sequence: Sequence) -> Arpeggiator {
+    pub fn new(key: Key, phrase: Phrase) -> Arpeggiator {
         Arpeggiator {
-            sequence, key,
-            index: 0,
-            pulse: Pulse::with_period_millis(pulse_period),
+            phrase, key,
             holding_pitch: None,
             playing_pitch: None,
             pending_command: None,
@@ -49,31 +46,27 @@ impl Arpeggiator {
         self.holding_pitch.map(|p| p == id.pitch).unwrap_or(false)
     }
 
-    pub fn next(&mut self) -> Vec<Command> {
+    pub fn next(&mut self, from_measure: MeasurePosition, to_measure: MeasurePosition) -> Vec<Command> {
         match mem::replace(&mut self.pending_command, None) {
             Some(pending) => vec![pending],
-            None => self.pulse.read()
-                        .and_then(|_| self.next_event())
-                        .map(|e| self.update_and_command(e))
-                        .unwrap_or_else(|| vec!()),
+            None => self.next_notes(from_measure, to_measure).iter()
+                        .flat_map(|e| self.update_and_command(e)).collect()
         }
     }
 
-    fn next_event(&mut self) -> Option<Event> {
-        let events = &self.sequence.events;
-        self.index = (self.index + 1) % events.len();
-        events.get(self.index).cloned()
+    fn next_notes(&mut self, from_measure: MeasurePosition, to_measure: MeasurePosition) -> Vec<Note> {
+        self.phrase.range(from_measure % 1., to_measure % 1.)
     }
 
-    fn update_and_command(&mut self, event: Event) -> Vec<Command> {
-        match (event, self.holding_pitch, self.playing_pitch) {
-            (Event::Note(relative_pitch), Some(holding), None) =>
-                self.update_note_on(relative_pitch, holding).into_iter().collect(),
-            (Event::Note(relative_pitch), Some(holding), Some(playing)) =>
+    fn update_and_command(&mut self, note: &Note) -> Vec<Command> {
+        match (self.holding_pitch, self.playing_pitch) {
+            (Some(holding), None) =>
+                self.update_note_on(note.pitch, holding).into_iter().collect(),
+            (Some(holding), Some(playing)) =>
                 vec![ Some(note_off(playing)),
-                      self.update_note_on(relative_pitch, holding),
+                      self.update_note_on(note.pitch, holding),
                 ].into_iter().flatten().collect(),
-            (Event::Rest, None, Some(playing)) => {
+            (None, Some(playing)) => {
                 self.playing_pitch = None;
                 vec![note_off(playing)]
             }
@@ -85,10 +78,6 @@ impl Arpeggiator {
         let next_pitch = self.key.pitch_at(holding, relative_pitch);
         self.playing_pitch = next_pitch;
         next_pitch.map(note_on)
-    }
-
-    pub fn set_pulse(&mut self, period: Millis) {
-        self.pulse = Pulse::with_period_millis(period)
     }
 
 }
