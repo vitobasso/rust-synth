@@ -40,3 +40,27 @@ impl Ord for RecklessFloat {
             )
     }
 }
+
+impl From<RecklessFloat> for f64 {
+    fn from(wrapped_value: RecklessFloat) -> Self {
+        wrapped_value.0
+    }
+}
+
+impl From<&RecklessFloat> for f64 {
+    fn from(wrapped_value: &RecklessFloat) -> Self {
+        wrapped_value.0
+    }
+}
+
+impl From<f64> for RecklessFloat {
+    fn from(value: f64) -> Self {
+        RecklessFloat(value)
+    }
+}
+
+impl From<&f64> for RecklessFloat {
+    fn from(value: &f64) -> Self {
+        RecklessFloat(*value)
+    }
+}
