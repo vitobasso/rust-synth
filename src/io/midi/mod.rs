@@ -139,24 +139,15 @@ fn decode_note_event(msg: &MidiMessage) -> Option<Command> {
                 (Status::NoteOn, 0) => Some(note_off),
                 (Status::NoteOn, _) => Some(note_on),
                 (Status::NoteOff, _) => Some(note_off),
-                _ => {
-                    eprintln!("MIDI: Ignored note event: {:?}, data={:?}", msg.status(), msg.data);
-                    None
-                }
+                _ => None,
             }
         }
         [_, byte] => {
             match msg.status() {
                 Status::ProgramChange => patch::decode(*byte).map(SetPatch),
-                _ => {
-                    eprintln!("MIDI: Ignored note event: {:?}, data={:?}", msg.status(), msg.data);
-                    None
-                }
+                _ => None,
             }
         }
-        _ => {
-            eprintln!("MIDI: Ignored note event: {:?}, data={:?}", msg.status(), msg.data);
-            None
-        }
+        _ => None,
     }
 }

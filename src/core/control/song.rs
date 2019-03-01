@@ -62,12 +62,13 @@ impl Section {
     }
 
     pub fn measure_at_time(&self, time_elapsed: Duration) -> MeasurePosition {
-        let time_in_section = time_elapsed - self.begin_time;
+        let time_in_section = time_elapsed - self.begin_time; //FIXME panic if out of section
         self.measure_at(time_in_section)
     }
 
-    pub fn mesaure_at_tick(&self, tick: Tick) -> MeasurePosition {
-        let time_in_section = util::duration::mul_f64(self.tick_duration, tick as f64);
+    pub fn measure_at_tick(&self, tick: Tick) -> MeasurePosition {
+        let tick_in_section = tick - self.begin_tick; //FIXME panic if out of section
+        let time_in_section = util::duration::mul_f64(self.tick_duration, tick_in_section as f64);
         self.measure_at(time_in_section)
     }
 
