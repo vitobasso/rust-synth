@@ -1,22 +1,10 @@
 use std::time::Duration;
 use std::u64;
 
-//TODO replace with std Duration after rust 1.33
+//TODO replace with std Duration when stable
 
 const NANOS_PER_SEC: u32 = 1_000_000_000;
 const MAX_NANOS_F64: f64 = ((u64::MAX as u128 + 1)*(NANOS_PER_SEC as u128)) as f64;
-
-pub fn as_nanos(duration: Duration) -> u64 {
-    let secs = duration.as_secs();
-    let nanos = duration.subsec_nanos();
-    secs * 1_000_000 + u64::from(nanos)
-}
-
-pub fn as_millis(duration: Duration) -> u64{
-    let secs = duration.as_secs();
-    let millis = duration.subsec_millis();
-    secs * 1_000 + u64::from(millis)
-}
 
 pub fn as_float_secs(duration: Duration) -> f64 {
     (duration.as_secs() as f64) + (duration.subsec_nanos() as f64) / (NANOS_PER_SEC as f64)

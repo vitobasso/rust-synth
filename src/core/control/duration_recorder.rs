@@ -1,5 +1,4 @@
 use std::time::Instant;
-use crate::util;
 use super::Millis;
 
 #[derive(Default)]
@@ -27,7 +26,7 @@ impl DurationRecorder {
     pub fn read(&self) -> Option<Millis> {
         match (self.begin, self.end) {
             (Some(begin), Some(end)) if begin < end =>
-                Some(util::duration::as_millis(end - begin)),
+                Some((end - begin).as_millis() as u64),
             _ => None,
         }
     }

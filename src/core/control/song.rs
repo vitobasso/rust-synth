@@ -176,7 +176,7 @@ impl PlayingVoice {
 
 fn get_time(tick: Tick, section: &Section) -> Duration {
     let ticks = tick - section.begin_tick;
-    let nanos = ticks as u64 * util::duration::as_nanos(section.tick_duration);
+    let nanos = ticks as u64 * section.tick_duration.as_nanos() as u64;
     section.begin_time + Duration::from_nanos(nanos)
 }
 
