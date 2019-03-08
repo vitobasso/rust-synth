@@ -6,6 +6,8 @@ pub enum PitchClass {
     C, Db, D, Eb, E, F, Gb, G, Ab, A, Bb, B
 }
 
+pub const NUM_CLASSES: usize = 12;
+
 impl PitchClass {
     pub fn from_index(i: usize) -> Option<PitchClass> {
         FromPrimitive::from_usize(i)
@@ -15,7 +17,8 @@ impl PitchClass {
 impl Add<Semitones> for PitchClass {
     type Output = Self;
     fn add(self, rhs: Semitones) -> Self {
-        let i = ((((self as Semitones + rhs) % 12) + 12) % 12) as usize;
+        let limit = NUM_CLASSES as i8;
+        let i = ((((self as Semitones + rhs) % limit) + limit) % limit) as usize;
         PitchClass::from_index(i).unwrap_or_else(|| panic!("Failed to get PitchClass for i={}", i))
     }
 }
@@ -76,15 +79,15 @@ impl Pitch {
     /// Follows the MIDI convention: the index for C4 is 60
     /// https://newt.phys.unsw.edu.au/jw/notes.html
     pub fn index(self) -> usize{
-        ((self.octave + 1) * 12 + self.class as i8) as usize
+        ((self.octave + 1) as usize * NUM_CLASSES + self.class as usize)
     }
 
     /// Follows the MIDI convention: the index for C4 is 60
     /// https://newt.phys.unsw.edu.au/jw/notes.html
     pub fn from_index(i: usize) -> Pitch {
         Pitch {
-            octave: ((i/12) as Octave - 1),
-            class: PitchClass::from_index(i%12)
+            octave: ((i / NUM_CLASSES) as Octave - 1),
+            class: PitchClass::from_index(i % NUM_CLASSES)
                 .unwrap_or_else(|| panic!("Failed to get PitchClass for i={}", i))
         }
     }
