@@ -1,4 +1,4 @@
-use super::{Semitones, Octave, pitch::{Pitch, PitchClass::{self, *}}, num_traits::FromPrimitive};
+use super::{Octave, pitch::{Pitch, PitchClass::{self, *}}, num_traits::FromPrimitive};
 use self::ScaleDegree::*;
 use std::ops::{Add, Sub};
 
@@ -89,8 +89,29 @@ impl Key {
         )
     }
 
-    pub fn circle_of_fifths(self, increment: Semitones) -> Key {
+    pub fn shift_fifths(self, increment: i8) -> Key {
         self + (7 * increment) % 12
+    }
+
+    pub fn distance_fifths(self, other: Key) -> i8 {
+        let norm_self = self - C;
+        let norm_other_usize = (other - norm_self) as usize % 12;
+        let norm_other = PitchClass::from_index(norm_other_usize)
+            .unwrap_or_else(|| panic!("Expected int < 12"));
+        match norm_other {
+            C => 0,
+            G => 1,
+            D => 2,
+            A => 3,
+            E => 4,
+            B => 5,
+            Gb => 6,
+            Db => -5,
+            Ab => -4,
+            Eb => -3,
+            Bb => -2,
+            F => -1,
+        }
     }
 
 }
@@ -98,7 +119,7 @@ impl Key {
 
 #[cfg(test)]
 mod tests {
-    use super::{PitchClass::{self, *}, Pitch, Key, Semitones,
+    use super::{PitchClass::{self, *}, Pitch, Key,
                 ScaleDegree::{self, *}, OctaveShift::*, RelativePitch};
 
     #[test]
@@ -186,8 +207,8 @@ mod tests {
     }
 
     #[test]
-    fn circle_of_fifths() {
-        let cases: &[(Key, Semitones, Key)] = &[
+    fn shift_fifths() {
+        let cases: &[(Key, i8, Key)] = &[
             (C,  1,  G),
             (C,  2,  D),
             (C,  3,  A),
@@ -203,9 +224,34 @@ mod tests {
             (C,  -2,  Bb),
         ];
         for (key, increment, expected_result) in cases.iter() {
-            let actual_result = key.circle_of_fifths(*increment);
+            let actual_result = key.shift_fifths(*increment);
             assert_eq!(actual_result, *expected_result,
                        "Input was: {:?}, {:?}, {:?}", *key, *increment, *expected_result);
+        }
+    }
+
+    #[test]
+    fn distance_fifths() {
+        let cases: &[(Key, Key, i8)] = &[
+            (C,  C,  0),
+            (C,  G,  1),
+            (C,  D,  2),
+            (C,  A,  3),
+            (C,  E,  4),
+            (C,  B,  5),
+            (C,  Gb, 6),
+            (C,  Db, -5),
+            (C,  Ab, -4),
+            (C,  Eb, -3),
+            (C,  Bb, -2),
+            (C,  F,  -1),
+            (G,  C,  -1),
+            (G,  D,  1),
+        ];
+        for (key, other, expected_result) in cases.iter() {
+            let actual_result = key.distance_fifths(*other);
+            assert_eq!(actual_result, *expected_result,
+                       "Input was: {:?}, {:?}, {:?}", *key, *other, *expected_result);
         }
     }
 

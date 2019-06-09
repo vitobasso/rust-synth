@@ -25,7 +25,7 @@ impl State {
 
     pub fn interpret(&mut self, command: Command) {
         match command {
-            Command::TransposeKey(n) => self.transposed_key = self.transposed_key.circle_of_fifths(n),
+            Command::TransposeKey(n) => self.transposed_key = self.transposed_key.shift_fifths(n),
             Command::ShiftPitch(n) => self.pitch_shift += n,
             Command::ShiftKeyboard(n) => {
                 self.transposed_key += n;

@@ -110,7 +110,7 @@ pub fn collect_meta_events(events: Vec<ScheduledMeta>, ticks_per_beat: u16) -> S
 fn add_section_change(section: &mut SectionChanges, event: Meta) {
     match event {
         Meta::KeySignature { sharps, minor } => {
-            section.key = Some(PitchClass::C.circle_of_fifths(sharps));
+            section.key = Some(PitchClass::C.shift_fifths(sharps));
             section.modality = Some(if minor {Modality::MINOR} else {Modality::MAJOR});
         },
         Meta::TempoSetting(t) =>
