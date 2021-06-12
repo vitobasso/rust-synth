@@ -5,13 +5,13 @@ use crate::core::music_theory::Hz;
 use self::rand::{Rng, ThreadRng};
 use std::f64::consts::PI;
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, PartialEq, Debug)]
 pub enum Specs {
     Sine, Saw, Square, Pulse(Proportion),
     Supersaw{ nvoices: u16, detune_amount: Hz }
 }
 
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, PartialEq, Debug)]
 pub enum ModTarget { PulseDuty, MixThickness }
 
 pub trait Oscillator: Modulated<ModTarget> {
@@ -76,7 +76,7 @@ impl Modulated<ModTarget> for Pulse {
 pub struct Saw;
 impl Oscillator for Saw {
     fn next_sample(&self, clock: Seconds, freq: Hz, phase: Seconds) -> Sample {
-        (((clock + phase) * freq) % 1.)
+        ((clock + phase) * freq) % 1.
     }
 }
 impl Modulated<ModTarget> for Saw {

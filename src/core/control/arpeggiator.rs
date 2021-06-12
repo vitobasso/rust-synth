@@ -89,3 +89,11 @@ fn note_on(pitch: Pitch) -> Command {
 fn note_off(pitch: Pitch) -> Command {
     Command::NoteOff(id(pitch))
 }
+
+use std::fmt::{Debug, Formatter};
+impl Debug for Arpeggiator {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "key: {:?}, holding: {:?}, playing: {:?}, pending: {:?}",
+               self.key, self.holding_pitch, self.playing_pitch, self.pending_command)
+    }
+}

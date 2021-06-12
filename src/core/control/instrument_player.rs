@@ -4,7 +4,7 @@ use crate::core::{
     synth::{Sample, Velocity, instrument::{self, Instrument}, oscillator},
 };
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, PartialEq, Debug)]
 pub enum Command {
     NoteOn(Pitch, Velocity, Id), NoteOff(Id),
     ModXY(f64, f64),
@@ -67,10 +67,17 @@ impl State {
 
 pub type Discriminator = u8;
 
-#[derive(Eq, PartialEq, Hash, Clone, Copy, Debug)]
+#[derive(Eq, PartialEq, Hash, Clone, Copy)]
 pub struct Id {
     pub pitch: Pitch,
     pub discriminator: Option<Discriminator>,
+}
+
+use std::fmt::{Debug, Formatter};
+impl Debug for Id {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "Id( {:?}, {:?} )", self.pitch, self.discriminator)
+    }
 }
 
 pub const fn id(pitch: Pitch) -> Id {

@@ -5,7 +5,7 @@ use std::collections::HashMap;
 /// Maps ranges of f64 to values.
 /// Keys are cyclic.
 /// Same key can have multiple values.
-#[derive(Clone, Debug)]
+#[derive(Clone, PartialEq, Debug)]
 pub struct RangeMap<T> {
     tree_map: BTreeMap<RecklessFloat, Vec<T>>,
 }
@@ -15,7 +15,7 @@ impl <T> RangeMap<T> {
         let map: BTreeMap<RecklessFloat, Vec<T>> = source.into_iter()
             .map(|(k, v)| (RecklessFloat::from(k), v))
             .fold(HashMap::<RecklessFloat, Vec<T>>::default(), |mut map, (k, v)| {
-                map.entry(k).or_insert_with(|| Vec::default()).push(v);
+                map.entry(k).or_insert_with(Vec::default).push(v);
                 map
             }).into_iter().collect();
         RangeMap { tree_map: map }
@@ -41,6 +41,14 @@ impl <T> RangeMap<T> {
         self.tree_map.into_iter()
             .flat_map(|(k,list)| list.into_iter().map(move |item| (f64::from(k), item)))
             .collect()
+    }
+}
+
+impl <T> Default for RangeMap<T> {
+    fn default() -> Self {
+        RangeMap {
+            tree_map: BTreeMap::default()
+        }
     }
 }
 

@@ -2,7 +2,7 @@ use super::{Sample, Seconds, Proportion, Velocity, oscillator::{self, Oscillator
             filter::{self, Filter}, envelope::Adsr, lfo::{self, LFO}, modulated::*};
 use crate::core::music_theory::{Hz, pitch::Pitch};
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, PartialEq, Debug)]
 pub struct Specs {
     pub max_voices: u8,
     pub oscillator: oscillator::Specs,
@@ -15,14 +15,14 @@ pub struct Specs {
     pub modulation_lfo: ModSpecs,
 }
 
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, PartialEq, Debug)]
 pub enum ModTarget {
     Noop, Volume,
     Filter(filter::ModTarget),
     Oscillator(oscillator::ModTarget),
 }
 
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, PartialEq, Debug)]
 pub struct ModSpecs {
     pub target: ModTarget,
     pub amount: Proportion,
@@ -44,8 +44,8 @@ impl Instrument {
 
     pub fn new(specs: Specs, sample_rate: Hz) -> Instrument {
         Instrument {
-            oscillator: Oscillator::new(specs.oscillator),
-            filter: Filter::new(specs.filter, sample_rate),
+            oscillator: <dyn Oscillator>::new(specs.oscillator),
+            filter: <dyn Filter>::new(specs.filter, sample_rate),
             lfo: specs.lfo.map(LFO::new),
             adsr: specs.adsr,
             volume: ModParam::with_base(specs.volume, 0., 1.),
@@ -81,7 +81,7 @@ impl Instrument {
         sample_filtered * self.volume.calculate()
     }
 
-    fn next_sample_for_voice (voice: &mut Voice, oscillator: &Box<dyn Oscillator>, adsr: &Adsr) -> Sample {
+    fn next_sample_for_voice(voice: &mut Voice, oscillator: &Box<dyn Oscillator>, adsr: &Adsr) -> Sample {
         let clock = voice.clock.tick();
         let sample = oscillator.next_sample(clock, voice.pitch.freq(), 0.) * voice.velocity;
         adsr.apply(voice.clock(), voice.released_clock().unwrap_or(0.), sample)
@@ -99,7 +99,7 @@ impl Instrument {
     }
 
     pub fn set_oscillator(&mut self, specs: oscillator::Specs) {
-        self.oscillator = Oscillator::new(specs)
+        self.oscillator = <dyn Oscillator>::new(specs)
     }
 
     fn run_next_lfo_modulation(&mut self) {

@@ -57,7 +57,7 @@ fn decode_key_signature(data: &[u8]) -> Option<Meta> {
         [byte1, byte2] => {
             let meta = Meta::KeySignature {
                 sharps: unsafe { mem::transmute(*byte1) },
-                minor: unsafe { mem::transmute(*byte2) },
+                minor: *byte2 != 0,
             };
             Some(meta)
         }
@@ -96,7 +96,7 @@ pub fn collect_meta_events(events: Vec<ScheduledMeta>, ticks_per_beat: u16) -> S
             Meta::TrackName(name) => song.title = name,
             Meta::EndOfTrack => song.end = tick,
             other => {
-                let changes = changes_per_section.entry(tick).or_insert_with(|| SectionChanges::default());
+                let changes = changes_per_section.entry(tick).or_insert_with(SectionChanges::default);
                 changes.begin_tick = Some(tick);
                 add_section_change(changes, other)
             },
@@ -124,7 +124,7 @@ fn add_section_change(section: &mut SectionChanges, event: Meta) {
 fn create_sections(changes_per_section: HashMap<Tick, SectionChanges>, ticks_per_beat: u16) -> Vec<Section> {
     let mut result = vec!();
     let mut begin_ticks: Vec<Tick> = changes_per_section.keys().cloned().collect::<Vec<_>>();
-    begin_ticks.sort();
+    begin_ticks.sort_unstable();
     for i in 0..changes_per_section.len() {
         let previous = result.last();
         let current = begin_ticks.get(i)
@@ -153,23 +153,23 @@ impl SectionChanges {
         self.begin_tick.map(|begin_tick| {
             let time_since_previous = previous.map(|p| {
                 let ticks_since_previous = begin_tick - p.begin_tick;
-                util::duration::mul_f64(p.tick_duration, ticks_since_previous as f64)
+                p.tick_duration.mul_f64(ticks_since_previous as f64)
             });
             let begin_time: Duration = time_since_previous
                 .and_then(|time| previous.map(|p| p.begin_time + time))
-                .unwrap_or_else(|| Duration::default());
-            let beat_duration = self.beat_duration.or(previous.map(|p| p.beat_duration))
-                .unwrap_or_else(|| default.beat_duration);
+                .unwrap_or_else(Duration::default);
+            let beat_duration = self.beat_duration.or_else(|| previous.map(|p| p.beat_duration))
+                .unwrap_or(default.beat_duration);
             let tick_duration = Duration::from_micros(u64::from(beat_duration) / u64::from(ticks_per_beat));
-            let beats_per_measure = self.beats_per_measure.or(previous.map(|p| p.beats_per_measure))
-                .unwrap_or_else(|| default.beats_per_measure);
+            let beats_per_measure = self.beats_per_measure.or_else(|| previous.map(|p| p.beats_per_measure))
+                .unwrap_or(default.beats_per_measure);
             let begin_measure = time_since_previous
                 .and_then(|time| previous.map(|p| calculate_section_begin_measure(time, p)))
-                .unwrap_or_else(|| 0.);
+                .unwrap_or( 0.);
             Section {
                 begin_tick, begin_time, begin_measure, beat_duration, tick_duration, beats_per_measure,
-                key: self.key.or(previous.map(|p| p.key)).unwrap_or_else(|| default.key),
-                modality: self.modality.or(previous.map(|p| p.modality)).unwrap_or_else(|| default.modality),
+                key: self.key.or_else(|| previous.map(|p| p.key)).unwrap_or(default.key),
+                modality: self.modality.or_else(|| previous.map(|p| p.modality)).unwrap_or(default.modality),
             }
         })
     }

@@ -46,7 +46,13 @@ impl AddAssign<Semitones> for PitchClass {
     }
 }
 
-#[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
+impl Default for PitchClass {
+    fn default() -> Self {
+        PitchClass::A
+    }
+}
+
+#[derive(Clone, Copy, PartialEq, Eq, Hash)]
 pub struct Pitch {
     pub class: PitchClass,
     pub octave: Octave,
@@ -73,13 +79,13 @@ impl Pitch {
         let f0: Hz = 440.;
         let a: f64 = 2_f64.powf(1./12.);
         let n: isize = self.index() as isize - 69;
-        (f0 * a.powf(n as f64))
+        f0 * a.powf(n as f64)
     }
 
     /// Follows the MIDI convention: the index for C4 is 60
     /// https://newt.phys.unsw.edu.au/jw/notes.html
     pub fn index(self) -> usize{
-        ((self.octave + 1) as usize * NUM_CLASSES + self.class as usize)
+        (self.octave + 1) as usize * NUM_CLASSES + self.class as usize
     }
 
     /// Follows the MIDI convention: the index for C4 is 60
@@ -107,6 +113,12 @@ impl Add<Semitones> for Pitch {
     }
 }
 
+use std::fmt::{Debug, Formatter};
+impl Debug for Pitch {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{:?}{:?}", self.class, self.octave)
+    }
+}
 
 #[cfg(test)]
 mod tests {

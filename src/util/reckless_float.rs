@@ -1,16 +1,16 @@
-use std::{hash, mem, cmp::Ordering};
+use std::{hash, cmp::Ordering};
 
 /// Compares f64's for equality by binary value, ignoring that there are 16 million different NaN values.
 /// Orders f64's considering NaN to be greater than everything, with undefined order between NaN's.
 ///
 /// https://stackoverflow.com/questions/39638363/how-can-i-use-a-hashmap-with-f64-as-key-in-rust
 /// https://stackoverflow.com/questions/28247990/how-to-do-a-binary-search-on-a-vec-of-floats
-#[derive(Debug, Copy, Clone, PartialOrd)]
+#[derive(Copy, Clone, PartialOrd, Default, Debug)]
 pub struct RecklessFloat(pub f64);
 
 impl RecklessFloat {
     fn key(&self) -> u64 {
-        unsafe { mem::transmute(self.0) }
+        self.0.to_bits()
     }
 }
 

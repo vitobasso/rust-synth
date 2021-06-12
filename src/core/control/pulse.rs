@@ -45,7 +45,6 @@ pub struct PulseReading {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::util;
     use std::ops::Sub;
 
     #[test]
@@ -60,11 +59,11 @@ mod tests {
         let mut pulse = Pulse { period: Duration::from_millis(1000), latest: past_instant };
         match pulse.read() {
             Some(PulseReading { latest, missed }) => {
-                let elapsed = util::duration::as_float_secs(latest.elapsed());
+                let elapsed = latest.elapsed().as_secs_f64();
                 assert!(elapsed > 0. && elapsed < 2000.);
                 assert_eq!(missed, 0);
             },
-            None => assert!(false)
+            None => panic!()
         }
     }
 
@@ -74,12 +73,12 @@ mod tests {
         let mut pulse = Pulse { period: Duration::from_millis(1000), latest: past_instant };
         match pulse.read() {
             Some(PulseReading { latest, missed }) => {
-                let elapsed = util::duration::as_float_secs(latest.elapsed());
+                let elapsed = latest.elapsed().as_secs_f64();
                 assert!(elapsed > 0. && elapsed < 2000.);
                 assert_eq!(missed, 1);
             },
 
-            None => assert!(false)
+            None => panic!()
         }
     }
 }

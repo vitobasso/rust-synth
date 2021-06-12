@@ -1,6 +1,6 @@
 use super::{Sample, Seconds, Proportion};
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, PartialEq, Debug)]
 pub struct Adsr {
     pub attack: Seconds,
     pub decay: Seconds,
@@ -11,7 +11,7 @@ impl Adsr {
     pub fn new(attack: Seconds, decay: Seconds, sustain: Proportion, release: Seconds) -> Adsr {
         assert!(attack >= 0., "attack was: {}", attack);
         assert!(decay >= 0., "decay was: {}", decay);
-        assert!(sustain >= 0. && sustain <= 1., "sustain was: {}", sustain);
+        assert!((0. ..=1.).contains(&sustain), "sustain was: {}", sustain);
         assert!(release >= 0., "release was: {}", release);
         Adsr { attack, decay, sustain, release }
     }
@@ -26,7 +26,7 @@ impl Adsr {
             let release_scale = (1. - release_progress).max(0.);
             self.sustain * release_scale
         } else if elapsed < self.attack {
-            (elapsed / self.attack)
+            elapsed / self.attack
         } else if elapsed < self.attack + self.decay {
             let decay_progress = (elapsed - self.attack) / self.decay;
             let sustain_head_room = 1. - self.sustain;
