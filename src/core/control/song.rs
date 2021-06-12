@@ -68,7 +68,7 @@ impl Section {
 
     pub fn measure_at_tick(&self, tick: Tick) -> MeasurePosition {
         let tick_in_section = tick - self.begin_tick; //FIXME panic if out of section
-        let time_in_section = util::duration::mul_f64(self.tick_duration, tick_in_section as f64);
+        let time_in_section = self.tick_duration.mul_f64(tick_in_section as f64);
         self.measure_at(time_in_section)
     }
 
@@ -182,7 +182,7 @@ fn get_time(tick: Tick, section: &Section) -> Duration {
 
 fn song_duration(song: &Song) -> Duration {
     let default_section = Section::default();
-    let last_section = song.sections.last().unwrap_or_else(|| &default_section);
+    let last_section = song.sections.last().unwrap_or(&default_section);
     get_time(song.end, last_section)
 }
 

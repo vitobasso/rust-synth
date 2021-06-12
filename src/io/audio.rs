@@ -42,8 +42,8 @@ fn loop_forever(device: &Device, format: &Format, sig_in: Receiver<Sample>) {
 
     let channels = format.channels as usize;
     let event_loop = EventLoop::new();
-    let stream_id = event_loop.build_output_stream(&device, &format).unwrap();
-    event_loop.play_stream(stream_id.clone());
+    let stream_id = event_loop.build_output_stream(device, format).unwrap();
+    event_loop.play_stream(stream_id);
 
     event_loop.run(move |_, data| {
         match data {

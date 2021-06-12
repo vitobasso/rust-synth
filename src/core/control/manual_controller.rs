@@ -129,7 +129,7 @@ impl State {
             let to = self.arp_index + measure_progress;
             self.arp_index = to;
             self.arpeggiator.as_mut()
-                .map(|arp| arp.next(from, to)).unwrap_or_else(|| vec!())
+                .map(|arp| arp.next(from, to)).unwrap_or_else(Vec::default)
                 .into_iter().for_each(|cmd| self.play_transposed(cmd));
         }
     }

@@ -9,10 +9,10 @@ pub trait Filter: Modulated<ModTarget> {
     fn filter(&mut self, input: Sample) -> Sample;
 }
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, PartialEq, Debug)]
 pub enum Specs { LPF, HPF, BPF, Notch, }
 
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, PartialEq, Debug)]
 pub enum ModTarget { Cutoff, QFactor }
 
 impl dyn Filter {
@@ -42,9 +42,9 @@ mod biquad {
         pub(super) fn new(sample_rate: Hz, specs: Specs) -> BiquadFilter {
             assert!(sample_rate > 0., "sample_rate was: {}", sample_rate);
             let filter_type: Box<dyn FilterType> = match specs {
-                Specs::LPF => Box::new(LPF),
-                Specs::HPF => Box::new(HPF),
-                Specs::BPF => Box::new(BPF),
+                Specs::LPF => Box::new(Lpf),
+                Specs::HPF => Box::new(Hpf),
+                Specs::BPF => Box::new(Bpf),
                 Specs::Notch => Box::new(Notch),
             };
             BiquadFilter {
@@ -97,8 +97,8 @@ mod biquad {
         fn specific_coefficients(&self, w0: f64, alpha: f64) -> Coefficients;
     }
 
-    struct LPF;
-    impl FilterType for LPF {
+    struct Lpf;
+    impl FilterType for Lpf {
         fn specific_coefficients(&self, w0: f64, alpha: f64) -> Coefficients {
             let cos_w0 = w0.cos();
             Coefficients {
@@ -112,8 +112,8 @@ mod biquad {
         }
     }
 
-    struct HPF;
-    impl FilterType for HPF {
+    struct Hpf;
+    impl FilterType for Hpf {
         fn specific_coefficients(&self, w0: f64, alpha: f64) -> Coefficients {
             let cos_w0 = w0.cos();
             Coefficients{
@@ -127,8 +127,8 @@ mod biquad {
         }
     }
 
-    struct BPF;
-    impl FilterType for BPF {
+    struct Bpf;
+    impl FilterType for Bpf {
         fn specific_coefficients(&self, w0: f64, alpha: f64) -> Coefficients {
             let sin_w0 = w0.sin();
             let cos_w0 = w0.cos();

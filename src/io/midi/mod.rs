@@ -1,6 +1,6 @@
 use rimd;
 
-use std::{ path::Path, collections::HashMap, mem, u8 };
+use std::{ path::Path, collections::HashMap, u8 };
 use crate::core::{
     control::{ song::*, instrument_player::{id, Command, Command::*} },
     music_theory::pitch::*,
@@ -14,7 +14,7 @@ mod meta_events;
 
 pub fn read_file(file_path: &str) -> Option<Song> {
     println!("MIDI: Reading file: {}", file_path);
-    match SMF::from_file(&Path::new(&file_path[..])) {
+    match SMF::from_file(Path::new(file_path)) {
         Ok(smf) =>
             Some(decode_midi_file(&smf))
         ,
@@ -36,12 +36,12 @@ fn decode_midi_file(midi_file: &SMF) -> Song {
     let new_song = Song { ticks_per_beat, ..Default::default() };
     midi_file.tracks.iter()
         .map(|track| decode_track(track, ticks_per_beat))
-        .fold(new_song, |merged, track| merge_tracks(merged, track))
+        .fold(new_song, merge_tracks)
 }
 
 fn merge_tracks(mut left: Song, mut right: Song) -> Song {
-    let mut left_voices = mem::replace(&mut left.voices, vec!());
-    let mut right_voices = mem::replace(&mut right.voices, vec!());
+    let mut left_voices = std::mem::take(&mut left.voices);
+    let mut right_voices = std::mem::take(&mut right.voices);
     left_voices.append(&mut right_voices);
     let default_song = Song::default();
     Song {
@@ -80,7 +80,7 @@ fn organize_events(events: Vec<Event>) -> (HashMap<ChannelId, Vec<ScheduledComma
     for event in events.into_iter() {
         match event {
             Event::Midi(cmd, channel) =>
-                commands_by_channel.entry(channel).or_insert_with(|| vec!()).push(cmd),
+                commands_by_channel.entry(channel).or_insert_with(Vec::default).push(cmd),
             Event::Meta(meta) =>
                 meta_events.push(meta),
         }

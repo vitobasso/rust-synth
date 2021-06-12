@@ -12,3 +12,9 @@ pub type Hz = f64;
 pub enum Modality {
     MAJOR, MINOR
 }
+
+impl Default for Modality {
+    fn default() -> Self {
+        Modality::MINOR
+    }
+}
