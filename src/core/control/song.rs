@@ -105,7 +105,7 @@ pub struct PlayingSong {
     sections: Vec<Section>,
     voices: Vec<PlayingVoice>,
     begin: Instant,
-    end: Instant,
+    #[allow(dead_code)] end: Instant,
     current_section_index: usize,
 }
 impl PlayingSong {

@@ -7,6 +7,7 @@ const MIN_QFACTOR: f64 = 1.;
 
 pub trait Filter: Modulated<ModTarget> {
     fn filter(&mut self, input: Sample) -> Sample;
+    fn view(&self) -> View;
 }
 
 #[derive(Clone, Copy, PartialEq, Debug)]
@@ -14,6 +15,12 @@ pub enum Specs { LPF, HPF, BPF, Notch, }
 
 #[derive(Copy, Clone, PartialEq, Debug)]
 pub enum ModTarget { Cutoff, QFactor }
+
+#[derive(Copy, Clone, PartialEq, Debug)]
+pub struct View {
+    pub cutoff: f64,
+    pub resonance: f64,
+}
 
 impl dyn Filter {
     pub fn new(specs: Specs, sample_rate: Hz) -> Box<dyn Filter> {
@@ -77,6 +84,13 @@ mod biquad {
             self.output_history = [self.output_history[1], output];
 
             output
+        }
+
+        fn view(&self) -> View {
+            View {
+                cutoff: self.cutoff.get_signal(),
+                resonance: self.qfactor.get_signal(),
+            }
         }
     }
 
@@ -163,5 +177,14 @@ mod biquad {
 impl Default for Specs {
     fn default() -> Self {
         Specs::LPF
+    }
+}
+
+impl Default for View {
+    fn default() -> Self {
+        View {
+            cutoff: 1.,
+            resonance: 0.
+        }
     }
 }
