@@ -44,6 +44,10 @@ impl State {
         self.instrument.next_sample()
     }
 
+    pub fn view(&self) -> instrument::View {
+        self.instrument.view()
+    }
+
     fn handle_note_on(&mut self, pitch: Pitch, velocity: Velocity, id: Id) {
         if self.holding_notes.insert(id, pitch).is_none() {
             self.instrument.hold(pitch, velocity)

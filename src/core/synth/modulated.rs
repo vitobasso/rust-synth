@@ -3,6 +3,7 @@ pub trait Modulated<T> {
     fn mod_param(&mut self, target: T) -> Option<&mut ModParam>;
 }
 
+#[derive(Debug)]
 pub struct ModParam {
     base: f64,
     mod_signal: f64,
@@ -24,6 +25,9 @@ impl ModParam {
     }
     pub fn set_signal(&mut self, value: f64) {
         self.mod_signal = value.max(0.).min(1.);
+    }
+    pub fn get_signal(&self) -> f64 {
+        self.mod_signal
     }
     pub fn calculate(&self) -> f64 {
         let normalized = (1. - self.mod_signal) * self.base;

@@ -28,6 +28,11 @@ pub struct ModSpecs {
     pub amount: Proportion,
 }
 
+#[derive(Copy, Clone, PartialEq, Default, Debug)]
+pub struct View {
+    pub filter: filter::View
+}
+
 pub struct Instrument {
     oscillator: Box<dyn Oscillator>,
     filter: Box<dyn Filter>,
@@ -40,6 +45,7 @@ pub struct Instrument {
     modulation_lfo: ModSpecs,
     clock: Clock,
 }
+
 impl Instrument {
 
     pub fn new(specs: Specs, sample_rate: Hz) -> Instrument {
@@ -119,6 +125,11 @@ impl Instrument {
         }
     }
 
+    pub fn view(&self) -> View {
+        View {
+            filter: self.filter.view()
+        }
+    }
 }
 
 impl Modulated<ModTarget> for Instrument {
@@ -264,4 +275,3 @@ impl Default for ModSpecs {
         ModSpecs { target: ModTarget::Noop, amount: 1. }
     }
 }
-
