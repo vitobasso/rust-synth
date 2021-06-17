@@ -1,3 +1,14 @@
+This is a synthesizer library written from scratch in Rust. 
+
+It works by receiving commands, e.g. `NoteOn`, `NoteOff`, `SetPatch`, 
+and producing a sound signal that can be sent to your computer's audio device to produce sound.
+
+
+[rust-synth-gui](https://github.com/vitobasso/rust-synth-gui) lets you play it with your computer keyboard 
+and is also an example on how to use the library.  
+
+## Features
+This is the progress so far
 - [x] Oscillators
     - Sine, Saw, Square, Pulse, Supersaw
     - [ ] Noise
@@ -18,6 +29,4 @@
 - [x] Loop recorder
     - [ ] Snap to measures
 - [ ] Drums
-- [ ] GUI
-- [ ] Patch save/select
 - [x] Read Midi
