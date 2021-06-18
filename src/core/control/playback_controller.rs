@@ -4,7 +4,7 @@ use crate::core::{
     control::{instrument_player as player, song::*}, music_theory::Hz, synth::Sample,
 };
 
-pub fn loop_forever(sample_rate: Hz, song_specs: Song, signal_out: SyncSender<Sample>) {
+pub fn start(sample_rate: Hz, song_specs: Song, signal_out: SyncSender<Sample>) {
     let mut state = State::new(sample_rate, song_specs);
     loop {
         state.tick_song();

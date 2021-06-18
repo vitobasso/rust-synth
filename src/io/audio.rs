@@ -33,13 +33,12 @@ impl Out {
         self.sample_rate() as usize / LATENCY as usize
     }
 
-    pub fn loop_forever(&self, sig_in: Receiver<Sample>) {
-        loop_forever(&self.device, &self.format, sig_in)
+    pub fn start(&self, sound_in: Receiver<Sample>) {
+        start(&self.device, &self.format, sound_in)
     }
 }
 
-fn loop_forever(device: &Device, format: &Format, sig_in: Receiver<Sample>) {
-
+fn start(device: &Device, format: &Format, sound_in: Receiver<Sample>) {
     let channels = format.channels as usize;
     let event_loop = EventLoop::new();
     let stream_id = event_loop.build_output_stream(device, format).unwrap();
@@ -47,9 +46,9 @@ fn loop_forever(device: &Device, format: &Format, sig_in: Receiver<Sample>) {
 
     event_loop.run(move |_, data| {
         match data {
-            Output { buffer: F32(buffer) } => feed_buffer(buffer, &sig_in, channels),
-            Output { buffer: I16(buffer) } => feed_buffer(buffer, &sig_in, channels),
-            Output { buffer: U16(buffer) } => feed_buffer(buffer, &sig_in, channels),
+            Output { buffer: F32(buffer) } => feed_buffer(buffer, &sound_in, channels),
+            Output { buffer: I16(buffer) } => feed_buffer(buffer, &sound_in, channels),
+            Output { buffer: U16(buffer) } => feed_buffer(buffer, &sound_in, channels),
             _ => panic!("Unexpected buffer type."),
         }
     });
@@ -79,11 +78,11 @@ impl SampleFromF64 for f32 {
 }
 impl SampleFromF64 for i16 {
     fn from_f64(value: f64) -> i16 {
-        (value * f64::from(std::i16::MAX)) as i16
+        (value * f64::from(f64::MAX)) as i16
     }
 }
 impl SampleFromF64 for u16 {
     fn from_f64(value: f64) -> u16 {
-        ((value * 0.5 + 0.5) * f64::from(std::u16::MAX)) as u16
+        ((value * 0.5 + 0.5) * f64::from(u16::MAX)) as u16
     }
 }

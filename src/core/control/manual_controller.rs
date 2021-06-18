@@ -9,16 +9,16 @@ use crate::core::{
     synth::{instrument, oscillator, Sample},
 };
 
-pub fn loop_forever(sample_rate: Hz, presets: Vec<Patch>, cmd_in: Receiver<Command>, signal_out: SyncSender<Sample>) {
+pub fn start(sample_rate: Hz, presets: Vec<Patch>, command_in: Receiver<Command>, sound_out: SyncSender<Sample>) {
     let mut state = State::new(sample_rate, presets);
     loop {
-        if let Ok(command) = cmd_in.try_recv() {
+        if let Ok(command) = command_in.try_recv() {
             state.interpret(command);
         }
         state.tick_arpeggiator();
 
         let new_sample = state.next_sample();
-        signal_out.send(new_sample).expect("Failed to send a sample");
+        sound_out.send(new_sample).expect("Failed to send a sample");
         state.loops.write(new_sample);
     }
 }

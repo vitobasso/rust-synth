@@ -6,7 +6,7 @@ edition = "2018"
 
 [dependencies]
 cpal = "0.8.2"
+rimd = { git = "https://github.com/RustAudio/rimd.git" }
 rand = "0.5.5"
 num-traits = "0.2.6"
 num-derive = "0.2.3"
-rimd = { git = "https://github.com/RustAudio/rimd.git" }
