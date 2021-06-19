@@ -5,7 +5,7 @@ authors = ["Victor Basso <vitobasso@gmail.com>"]
 edition = "2018"
 
 [dependencies]
-cpal = "0.8.2"
+cpal = "0.13.3"
 rimd = { git = "https://github.com/RustAudio/rimd.git" }
 rand = "0.5.5"
 num-traits = "0.2.6"
