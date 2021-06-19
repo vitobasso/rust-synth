@@ -5,7 +5,7 @@ use self::cpal::{
     OutputBuffer, Device, Format, EventLoop
 };
 use std::sync::mpsc::Receiver;
-use crate::core::{music_theory::Hz, synth::Sample, control::Millis};
+use crate::core::{music_theory::Hz, synth::Sample, tools::Millis};
 
 const LATENCY: Millis = 250;
 

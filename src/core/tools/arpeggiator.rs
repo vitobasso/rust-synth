@@ -1,6 +1,7 @@
 use std::mem;
 
-use crate::core::control::{instrument_player::{Command, Id, id}, song::MeasurePosition};
+use crate::core::control::{synth::{Command, Id, id}};
+use crate::core::sheet_music::sheet_music::MeasurePosition;
 use crate::core::music_theory::{diatonic_scale::*, pitch::Pitch, rhythm::{Note, Phrase}};
 
 pub struct Arpeggiator {

@@ -2,6 +2,10 @@ use super::{Sample, Seconds, Proportion, Velocity, oscillator::{self, Oscillator
             filter::{self, Filter}, envelope::Adsr, lfo::{self, LFO}, modulated::*};
 use crate::core::music_theory::{Hz, pitch::Pitch};
 
+///
+/// Connects modules of the synthesizer together to produce a stream of sound samples.
+///
+
 #[derive(Clone, Copy, PartialEq, Debug)]
 pub struct Specs {
     pub max_voices: u8,

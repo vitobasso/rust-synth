@@ -1,6 +1,6 @@
-use super::{Octave, pitch::{Pitch, PitchClass::{self, *}}, num_traits::FromPrimitive};
-use self::ScaleDegree::*;
 use std::ops::{Add, Sub};
+use super::{num_traits::FromPrimitive, Octave, pitch::Pitch, pitch_class::PitchClass::{self, *}};
+use self::ScaleDegree::*;
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug, FromPrimitive)]
 pub enum ScaleDegree {
@@ -119,8 +119,8 @@ impl Key {
 
 #[cfg(test)]
 mod tests {
-    use super::{PitchClass::{self, *}, Pitch, Key,
-                ScaleDegree::{self, *}, OctaveShift::*, RelativePitch};
+    use super::{Key, OctaveShift::*, Pitch,
+                PitchClass::{self, *}, RelativePitch, ScaleDegree::{self, *}};
 
     #[test]
     fn pitch_class_to_scale_degree() {

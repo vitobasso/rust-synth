@@ -1,8 +1,8 @@
-use super::rimd::{MetaEvent, MetaCommand};
-use crate::core::control::song::Tempo;
-use std::{mem, collections::HashMap, time::Duration};
-use crate::core::{ control::{ song::* }, music_theory::{pitch::*, Modality} };
+use std::{collections::HashMap, mem, time::Duration};
+use crate::core::{music_theory::{Modality, pitch_class::*}, sheet_music::sheet_music::*};
 use crate::util;
+use super::rimd::{MetaCommand, MetaEvent};
+
 
 #[derive(Debug)]
 pub enum Meta {
@@ -88,13 +88,13 @@ fn decode_time_signature(data: &[u8]) -> Option<Meta> {
     }
 }
 
-pub fn collect_meta_events(events: Vec<ScheduledMeta>, ticks_per_beat: u16) -> Song {
-    let mut song = Song::default();
+pub fn collect_meta_events(events: Vec<ScheduledMeta>, ticks_per_beat: u16) -> SheetMusic {
+    let mut music = SheetMusic::default();
     let mut changes_per_section: HashMap<Tick, SectionChanges> = HashMap::default();
     for (meta, tick) in events.into_iter() {
         match meta {
-            Meta::TrackName(name) => song.title = name,
-            Meta::EndOfTrack => song.end = tick,
+            Meta::TrackName(name) => music.title = name,
+            Meta::EndOfTrack => music.end = tick,
             other => {
                 let changes = changes_per_section.entry(tick).or_insert_with(SectionChanges::default);
                 changes.begin_tick = Some(tick);
@@ -103,8 +103,8 @@ pub fn collect_meta_events(events: Vec<ScheduledMeta>, ticks_per_beat: u16) -> S
         }
     }
 
-    song.sections = create_sections(changes_per_section, ticks_per_beat);
-    song
+    music.sections = create_sections(changes_per_section, ticks_per_beat);
+    music
 }
 
 fn add_section_change(section: &mut SectionChanges, event: Meta) {

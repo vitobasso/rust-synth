@@ -4,6 +4,10 @@ use crate::core::{
     synth::{Sample, Velocity, instrument::{self, Instrument}, oscillator},
 };
 
+///
+/// Interprets commands by translating to synth::instrument method calls
+///
+
 #[derive(Clone, Copy, PartialEq, Debug)]
 pub enum Command {
     NoteOn(Pitch, Velocity, Id), NoteOff(Id),

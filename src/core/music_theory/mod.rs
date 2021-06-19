@@ -1,5 +1,6 @@
 use num_traits;
 
+pub mod pitch_class;
 pub mod pitch;
 pub mod diatonic_scale;
 pub mod rhythm;

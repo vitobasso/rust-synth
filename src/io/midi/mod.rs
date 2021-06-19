@@ -1,18 +1,21 @@
+use std::{collections::HashMap, path::Path};
+
 use rimd;
 
-use std::{ path::Path, collections::HashMap, u8 };
 use crate::core::{
-    control::{ song::*, instrument_player::{id, Command, Command::*} },
+    control::{synth::{Command, Command::*, id}},
     music_theory::pitch::*,
 };
-use self::meta_events::{ScheduledMeta, decode_meta_event, collect_meta_events};
-use self::rimd::{SMF, SMFError, MidiMessage, Status,
-                 Event as RimdEvent, TrackEvent as RimdTrackEvent, Track as RimdTrack};
+use crate::core::sheet_music::sheet_music::*;
+
+use self::meta_events::{collect_meta_events, decode_meta_event, ScheduledMeta};
+use self::rimd::{Event as RimdEvent, MidiMessage, SMF, SMFError,
+                 Status, Track as RimdTrack, TrackEvent as RimdTrackEvent};
 
 mod patch;
 mod meta_events;
 
-pub fn read_file(file_path: &str) -> Option<Song> {
+pub fn read_file(file_path: &str) -> Option<SheetMusic> {
     println!("MIDI: Reading file: {}", file_path);
     match SMF::from_file(Path::new(file_path)) {
         Ok(smf) =>
@@ -30,24 +33,24 @@ pub fn read_file(file_path: &str) -> Option<Song> {
     }
 }
 
-fn decode_midi_file(midi_file: &SMF) -> Song {
+fn decode_midi_file(midi_file: &SMF) -> SheetMusic {
     assert!(midi_file.division > 0, "MIDI: Unsupported format. Header has negative division.");
     let ticks_per_beat: u16 = midi_file.division as u16;
-    let new_song = Song { ticks_per_beat, ..Default::default() };
+    let music = SheetMusic { ticks_per_beat, ..Default::default() };
     midi_file.tracks.iter()
         .map(|track| decode_track(track, ticks_per_beat))
-        .fold(new_song, merge_tracks)
+        .fold(music, merge_tracks)
 }
 
-fn merge_tracks(mut left: Song, mut right: Song) -> Song {
+fn merge_tracks(mut left: SheetMusic, mut right: SheetMusic) -> SheetMusic {
     let mut left_voices = std::mem::take(&mut left.voices);
     let mut right_voices = std::mem::take(&mut right.voices);
     left_voices.append(&mut right_voices);
-    let default_song = Song::default();
-    Song {
-        title: if left.title != default_song.title {left.title} else {right.title},
+    let default = SheetMusic::default();
+    SheetMusic {
+        title: if left.title != default.title {left.title} else {right.title},
         sections: if !is_default_sections(&left.sections) {left.sections} else {right.sections},
-        ticks_per_beat: if left.ticks_per_beat != default_song.ticks_per_beat {left.ticks_per_beat} else {right.ticks_per_beat},
+        ticks_per_beat: if left.ticks_per_beat != default.ticks_per_beat {left.ticks_per_beat} else {right.ticks_per_beat},
         end: if left.end > right.end {left.end} else {right.end},
         voices: left_voices,
     }
@@ -59,13 +62,13 @@ fn is_default_sections(sections: &[Section]) -> bool {
     }
 }
 
-fn decode_track(track: &RimdTrack, ticks_per_beat: u16) -> Song {
+fn decode_track(track: &RimdTrack, ticks_per_beat: u16) -> SheetMusic {
     let mixed_events: Vec<Event> = decode_events(track);
     let (commands_by_channel, meta_events) = organize_events(mixed_events);
 
-    let mut song = collect_meta_events(meta_events, ticks_per_beat);
-    song.voices = collect_note_events(commands_by_channel);
-    song
+    let mut music = collect_meta_events(meta_events, ticks_per_beat);
+    music.voices = collect_note_events(commands_by_channel);
+    music
 }
 
 fn collect_note_events(commands_by_channel: HashMap<ChannelId, Vec<ScheduledCommand>>) -> Vec<Voice> {

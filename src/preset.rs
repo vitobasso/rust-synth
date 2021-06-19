@@ -8,7 +8,7 @@ use crate::core::{
             oscillator::{Specs::*, ModTarget::*},
             filter::ModTarget::*
     },
-    control::manual_controller::Patch,
+    control::tools::Patch,
 };
 
 

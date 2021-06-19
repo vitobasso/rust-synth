@@ -1,13 +1,16 @@
 use std::sync::mpsc::{Receiver, SyncSender};
 use std::time::Duration;
-
 use crate::core::{
-    control::{arpeggiator::Arpeggiator, duration_recorder::DurationRecorder,
-              instrument_player::{self as player, Command::*}, loops, Millis,
-              pulse::{Pulse, PulseReading}, transposer, song::MeasurePosition},
-    music_theory::{Hz, pitch::PitchClass, rhythm::Phrase},
+    control::{synth::{self, Command::*}},
+    music_theory::{Hz, pitch_class::PitchClass, rhythm::Phrase},
     synth::{instrument, oscillator, Sample},
+    tools::{pulse::*, transposer, loops, arpeggiator::*, tap_tempo::*, Millis},
+    sheet_music::sheet_music::MeasurePosition,
 };
+
+///
+/// Connects tools and synth together, interprets commands and delegates to them
+///
 
 pub fn start(sample_rate: Hz, presets: Vec<Patch>, command_in: Receiver<Command>, sound_out: SyncSender<Sample>) {
     let mut state = State::new(sample_rate, presets);
@@ -29,11 +32,11 @@ const DEFAULT_PULSE: Millis = 12;
 
 #[derive(Clone, Copy)]
 pub enum Command {
-    Instrument(player::Command),
+    Instrument(synth::Command),
     Transposer(transposer::Command),
     SetPatchNo(usize),
     Loop(loops::Command),
-    PulseRecord,
+    TapTempo,
 }
 
 #[derive(Clone)]
@@ -45,13 +48,13 @@ pub enum Patch {
 }
 
 struct State {
-    player: player::State,
+    player: synth::State,
     transposer: transposer::State,
     patches: Vec<Patch>,
     pulse: Pulse,
     arpeggiator: Option<Arpeggiator>,
     arp_index: f64,
-    duration_recorder: DurationRecorder,
+    tap_tempo: TapTempo,
     loops: loops::Manager,
 }
 
@@ -59,9 +62,9 @@ impl State {
     fn new(sample_rate: Hz, patches: Vec<Patch>) -> State {
         State {
             patches,
-            player: player::State::with_default_specs(sample_rate),
+            player: synth::State::with_default_specs(sample_rate),
             transposer: transposer::State::new(PitchClass::C),
-            duration_recorder: Default::default(),
+            tap_tempo: Default::default(),
             pulse: Pulse::new_with_millis(DEFAULT_PULSE),
             arpeggiator: None,
             arp_index: 0.,
@@ -75,11 +78,11 @@ impl State {
             Command::Transposer(cmd) => self.transposer.interpret(cmd),
             Command::SetPatchNo(i) => self.set_patch(i),
             Command::Loop(cmd) => self.loops.interpret(cmd),
-            Command::PulseRecord => self.record_beat(),
+            Command::TapTempo => self.tap_tempo(),
         }
     }
 
-    fn play_or_arpeggiate(&mut self, command: player::Command) {
+    fn play_or_arpeggiate(&mut self, command: synth::Command) {
         match command {
             NoteOn(_, _, _) | NoteOff(_) =>  {
                 if let Some(arp) = &mut self.arpeggiator {
@@ -92,7 +95,7 @@ impl State {
         }
     }
 
-    fn play_transposed(&mut self, command: player::Command) {
+    fn play_transposed(&mut self, command: synth::Command) {
         let changed_command = match command {
             NoteOn(pitch, velocity, id) => NoteOn(self.transposer.transpose(pitch), velocity, id),
             other => other,
@@ -103,7 +106,7 @@ impl State {
     fn set_patch(&mut self, i: usize) {
         let patch: Patch = self.patches.get(i).cloned().unwrap_or(Patch::Noop);
         match patch {
-            Patch::Instrument(specs) => self.player.interpret(player::Command::SetPatch(specs)),
+            Patch::Instrument(specs) => self.player.interpret(SetPatch(specs)),
             Patch::Oscillator(specs) => self.player.set_oscillator(specs),
             Patch::Arpeggiator(seq) => self.set_arpeggiator(seq),
             Patch::Noop => (),
@@ -115,9 +118,9 @@ impl State {
             Arpeggiator::new(PitchClass::C, s));
     }
 
-    fn record_beat(&mut self) {
-        self.duration_recorder.record();
-        if let Some(beat) = self.duration_recorder.read() {
+    fn tap_tempo(&mut self) {
+        self.tap_tempo.tap();
+        if let Some(beat) = self.tap_tempo.read() {
             let pulse_period = Duration::from_millis(beat / PULSES_PER_BEAT);
             self.pulse = self.pulse.with_period(pulse_period);
         }

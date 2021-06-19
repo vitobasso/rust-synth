@@ -2,14 +2,14 @@ use std::time::Instant;
 use super::Millis;
 
 #[derive(Default)]
-pub struct DurationRecorder {
+pub struct TapTempo {
     begin: Option<Instant>,
     end: Option<Instant>,
 }
 
-impl DurationRecorder {
+impl TapTempo {
 
-    pub fn record(&mut self) {
+    pub fn tap(&mut self) {
         let now = Instant::now();
         match (self.begin, self.end) {
             (Some(begin), Some(end)) if begin < end && end < now => {

@@ -7,24 +7,25 @@ An example of usage can be found in [rust-synth-gui](https://github.com/vitobass
 
 ## Features
 This is the progress so far
-- [x] Oscillators
-    - Sine, Saw, Square, Pulse, Supersaw
-    - [ ] Noise
-- [x] Filters
-    - Biquad LPF, HPF, BPF, Notch
-- Modulation
-    - [x] ADSR
-        - [ ] Filter ADSR
-    - [x] LFO's
-    - [x] Wire modulation to parameters
+- Synth
+  - Oscillators
+      - [x] Sine, Saw, Square, Pulse, Supersaw
+      - [ ] Noise
+  - Filters
+      - [x] Biquad LPF, HPF, BPF, Notch
+  - Modulation
+      - [x] ADSR
+      - [x] LFO's
+      - [x] Wire modulation to parameters
+  - [x] Polyphony
 - Effects
     - [ ] Compression
     - [ ] Distortion
     - [ ] Delay
-- [x] Polyphony
-- [x] Arpeggiator
-    - [x] Set beat
-- [x] Loop recorder
-    - [ ] Snap to measures
+- Tools
+  - [x] Arpeggiator
+      - [x] Tap tempo
+  - [x] Loop recorder
+      - [ ] Snap to measures
 - [ ] Drums
 - [x] Read Midi
