@@ -14,7 +14,7 @@ pub enum Specs {
 #[derive(Copy, Clone, PartialEq, Debug)]
 pub enum ModTarget { PulseDuty, MixThickness }
 
-pub trait Oscillator: Modulated<ModTarget> {
+pub trait Oscillator: Modulated<ModTarget> + Send {
     fn next_sample(&self, clock: Seconds, freq: Hz, phase: Seconds) -> Sample;
 }
 impl dyn Oscillator {

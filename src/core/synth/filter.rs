@@ -5,7 +5,7 @@ const MAX_CUTOFF: Hz = 440. * 8.;
 const MAX_QFACTOR: f64 = 50.;
 const MIN_QFACTOR: f64 = 1.;
 
-pub trait Filter: Modulated<ModTarget> {
+pub trait Filter: Modulated<ModTarget> + Send {
     fn filter(&mut self, input: Sample) -> Sample;
     fn view(&self) -> View;
 }
@@ -107,7 +107,7 @@ mod biquad {
         b0: f64, b1: f64, b2: f64, a0: f64, a1: f64, a2: f64,
     }
 
-    trait FilterType {
+    trait FilterType : Send {
         fn specific_coefficients(&self, w0: f64, alpha: f64) -> Coefficients;
     }
 

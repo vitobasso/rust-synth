@@ -1,4 +1,4 @@
-use std::sync::mpsc::{Receiver, SyncSender};
+use std::sync::mpsc::Receiver;
 use std::time::Duration;
 use crate::core::{
     control::{synth::{self, Command::*}},
@@ -7,22 +7,24 @@ use crate::core::{
     tools::{pulse::*, transposer, loops, arpeggiator::*, tap_tempo::*, Millis},
     sheet_music::sheet_music::MeasurePosition,
 };
+use crate::io::audio::AudioOut;
 
 ///
 /// Connects tools and synth together, interprets commands and delegates to them
 ///
 
-pub fn start(sample_rate: Hz, presets: Vec<Patch>, command_in: Receiver<Command>, sound_out: SyncSender<Sample>) {
-    let mut state = State::new(sample_rate, presets);
-    loop {
+pub fn start(presets: Vec<Patch>, command_in: Receiver<Command>, sound_out: AudioOut) {
+    let mut state = State::new(sound_out.sample_rate(), presets);
+    sound_out.start(Box::new(|| state.next_sample()));
+
+    loop { //TODO throttle?
         if let Ok(command) = command_in.try_recv() {
             state.interpret(command);
         }
         state.tick_arpeggiator();
 
-        let new_sample = state.next_sample();
-        sound_out.send(new_sample).expect("Failed to send a sample");
-        state.loops.write(new_sample);
+        // let new_sample = state.next_sample();
+        // state.loops.write(new_sample);
     }
 }
 

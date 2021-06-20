@@ -1,18 +1,17 @@
-use std::sync::mpsc::SyncSender;
 use std::collections::HashMap;
 use crate::core::{control::synth, music_theory::Hz, synth::Sample};
 use crate::core::sheet_music::{sheet_music::*, playing_music::*};
+use crate::io::audio::AudioOut;
 
 ///
 /// Orchestrates synths to play commands from sheet music
 ///
 
-pub fn start(sample_rate: Hz, music: SheetMusic, signal_out: SyncSender<Sample>) {
-    let mut state = State::new(sample_rate, music);
-    loop {
+pub fn start(music: SheetMusic, sound_out: AudioOut) {
+    let mut state = State::new(sound_out.sample_rate(), music);
+    sound_out.start(Box::new(|| state.next_sample()));
+    loop { //TODO throttle?
         state.tick_music();
-        let sample = state.next_sample();
-        signal_out.send(sample).expect("Failed to send a sample");
     }
 }
 
