@@ -2,7 +2,7 @@
 pub mod instrument;
 pub mod oscillator;
 pub mod filter;
-pub mod envelope;
+pub mod adsr;
 pub mod builder;
 pub mod lfo;
 pub mod modulated;

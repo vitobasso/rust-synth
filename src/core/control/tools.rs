@@ -4,7 +4,7 @@ use crate::core::{
     control::{synth::{self, Command::*}},
     music_theory::{Hz, pitch_class::PitchClass, rhythm::Phrase},
     synth::{instrument, oscillator, Sample},
-    tools::{pulse::*, transposer, loops, arpeggiator::*, tap_tempo::*, Millis},
+    tools::{pulse, transposer, loops, arpeggiator, tap_tempo, Millis},
     sheet_music::sheet_music::MeasurePosition,
 };
 
@@ -12,7 +12,7 @@ use crate::core::{
 /// Connects tools and synth together, interprets commands and delegates to them
 ///
 
-pub fn start(sample_rate: Hz, presets: Vec<Patch>, command_in: Receiver<Command>, sound_out: SyncSender<Sample>) {
+pub fn start(sample_rate: Hz, presets: Vec<Patch>, command_in: Receiver<Command>, sound_out: SyncSender<Sample>, view_out: SyncSender<View>) {
     let mut state = State::new(sample_rate, presets);
     loop {
         if let Ok(command) = command_in.try_recv() {
@@ -23,6 +23,9 @@ pub fn start(sample_rate: Hz, presets: Vec<Patch>, command_in: Receiver<Command>
         let new_sample = state.next_sample();
         sound_out.send(new_sample).expect("Failed to send a sample");
         state.loops.write(new_sample);
+
+        let view = state.view();
+        let _ = view_out.try_send(view);
     }
 }
 
@@ -47,25 +50,39 @@ pub enum Patch {
     Noop,
 }
 
-struct State {
-    player: synth::State,
+pub struct State {
+    synth: synth::State,
     transposer: transposer::State,
     patches: Vec<Patch>,
-    pulse: Pulse,
-    arpeggiator: Option<Arpeggiator>,
+    selected_patch: usize,
+    pulse: pulse::Pulse,
+    arpeggiator: Option<arpeggiator::Arpeggiator>,
     arp_index: f64,
-    tap_tempo: TapTempo,
+    tap_tempo: tap_tempo::TapTempo,
     loops: loops::Manager,
+}
+
+#[derive(Clone, PartialEq, Default, Debug)]
+pub struct View {
+    pub synth: synth::View,
+    pub selected_patch: usize,
+    pub transposer: transposer::State,
+    pub pulse: pulse::View,
+    pub arpeggiator: Option<arpeggiator::View>,
+    pub arp_index: f64,
+    pub tap_tempo: tap_tempo::TapTempo,
+    pub loops: loops::View,
 }
 
 impl State {
     fn new(sample_rate: Hz, patches: Vec<Patch>) -> State {
         State {
             patches,
-            player: synth::State::with_default_specs(sample_rate),
+            selected_patch: 0,
+            synth: synth::State::with_default_specs(sample_rate),
             transposer: transposer::State::new(PitchClass::C),
             tap_tempo: Default::default(),
-            pulse: Pulse::new_with_millis(DEFAULT_PULSE),
+            pulse: pulse::Pulse::new_with_millis(DEFAULT_PULSE),
             arpeggiator: None,
             arp_index: 0.,
             loops: Default::default(),
@@ -100,14 +117,18 @@ impl State {
             NoteOn(pitch, velocity, id) => NoteOn(self.transposer.transpose(pitch), velocity, id),
             other => other,
         };
-        self.player.interpret(changed_command)
+        self.synth.interpret(changed_command)
     }
 
     fn set_patch(&mut self, i: usize) {
-        let patch: Patch = self.patches.get(i).cloned().unwrap_or(Patch::Noop);
+        let maybe_patch = self.patches.get(i);
+        if maybe_patch.is_some() {
+            self.selected_patch = i;
+        }
+        let patch: Patch = maybe_patch.cloned().unwrap_or(Patch::Noop);
         match patch {
-            Patch::Instrument(specs) => self.player.interpret(SetPatch(specs)),
-            Patch::Oscillator(specs) => self.player.set_oscillator(specs),
+            Patch::Instrument(specs) => self.synth.interpret(SetPatch(specs)),
+            Patch::Oscillator(specs) => self.synth.set_oscillator(specs),
             Patch::Arpeggiator(seq) => self.set_arpeggiator(seq),
             Patch::Noop => (),
         }
@@ -115,7 +136,7 @@ impl State {
 
     fn set_arpeggiator(&mut self, seq: Option<Phrase>) {
         self.arpeggiator = seq.map(|s|
-            Arpeggiator::new(PitchClass::C, s));
+            arpeggiator::Arpeggiator::new(PitchClass::C, s));
     }
 
     fn tap_tempo(&mut self) {
@@ -138,7 +159,7 @@ impl State {
     }
 
     fn tick_around_measure(&mut self) -> Option<MeasurePosition> {
-        self.pulse.read().map(|PulseReading{ missed, .. }| {
+        self.pulse.read().map(|pulse::PulseReading{ missed, .. }| {
             let pulses_passed = 1 + missed;
             let pulses_per_measure = PULSES_PER_BEAT * BEATS_PER_MEASURE;
             f64::from(pulses_passed) / pulses_per_measure as MeasurePosition
@@ -146,9 +167,22 @@ impl State {
     }
 
     fn next_sample(&mut self) -> Sample {
-        let new_sample = self.player.next_sample();
+        let new_sample = self.synth.next_sample();
         let loop_sample = self.loops.next_sample();
         loop_sample + new_sample
+    }
+
+    pub fn view(&self) -> View {
+        View {
+            synth: self.synth.view(),
+            selected_patch: self.selected_patch,
+            transposer: self.transposer.clone(),
+            pulse: self.pulse.view(),
+            arpeggiator: self.arpeggiator.as_ref().map(|a| a.view()),
+            arp_index: self.arp_index % 1.,
+            tap_tempo: self.tap_tempo.clone(),
+            loops: self.loops.view(),
+        }
     }
 
 }

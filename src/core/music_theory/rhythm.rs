@@ -20,7 +20,7 @@ impl Note {
 
 /// Range is valid between 0 and 1. TODO restrictive newtype
 /// Values outside this range will result in an empty `Vec`.
-#[derive(Clone)]
+#[derive(Clone, PartialEq, Default, Debug)]
 pub struct Phrase {
     map: RangeMap<Note>,
 }

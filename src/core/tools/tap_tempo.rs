@@ -1,10 +1,10 @@
 use std::time::Instant;
 use super::Millis;
 
-#[derive(Default)]
+#[derive(Clone, PartialEq, Default, Debug)]
 pub struct TapTempo {
-    begin: Option<Instant>,
-    end: Option<Instant>,
+    pub begin: Option<Instant>,
+    pub end: Option<Instant>,
 }
 
 impl TapTempo {

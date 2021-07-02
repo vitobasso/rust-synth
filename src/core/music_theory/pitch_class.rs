@@ -1,5 +1,6 @@
 use std::ops::{Add, Sub, AddAssign};
 use super::{Semitones, num_traits::FromPrimitive};
+use std::fmt::{Display, Formatter};
 
 #[derive(Clone, Copy, PartialEq, Eq, Hash, FromPrimitive, Debug)]
 pub enum PitchClass {
@@ -49,5 +50,11 @@ impl AddAssign<Semitones> for PitchClass {
 impl Default for PitchClass {
     fn default() -> Self {
         PitchClass::A
+    }
+}
+
+impl Display for PitchClass {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{:?}", self)
     }
 }

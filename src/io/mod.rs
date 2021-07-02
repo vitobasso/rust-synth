@@ -1,8 +1,8 @@
-use std::sync::mpsc::{Sender, SyncSender};
+use std::sync::mpsc::{Sender, SyncSender, Receiver};
 use std::sync::mpsc;
 use std::thread;
 
-use crate::core::{control::{tools, tools::Command, sheet_music}};
+use crate::core::{control::{tools, sheet_music}};
 use crate::core::synth::Sample;
 use crate::io::audio::Out;
 use crate::preset;
@@ -18,11 +18,12 @@ pub fn start_audio() -> (SyncSender<Sample>, f64){
     (sound_out, sample_rate)
 }
 
-pub fn start_manual() -> Sender<Command>{
+pub fn start_manual() -> (Sender<tools::Command>, Receiver<tools::View>) {
     let (sound_out, sample_rate) = start_audio();
-    let (command_out, command_in) = mpsc::channel::<Command>();
-    thread::spawn(move || tools::start(sample_rate, preset::patches(), command_in, sound_out));
-    command_out
+    let (command_out, command_in) = mpsc::channel::<tools::Command>();
+    let (view_out, view_in) = mpsc::sync_channel::<tools::View>(1);
+    thread::spawn(move || tools::start(sample_rate, preset::patches(), command_in, sound_out, view_out));
+    (command_out, view_in)
 }
 
 pub fn start_midi(file_path: &str) {

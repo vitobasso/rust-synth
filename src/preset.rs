@@ -57,7 +57,7 @@ pub fn saw_pad() -> instrument::Specs {
 }
 
 pub fn supersaw() -> instrument::Specs {
-    Builder::osc(Supersaw { nvoices: 8, detune_amount: 3., specs: Box::new(Saw)})
+    Builder::osc(Mix { nvoices: 8, detune_amount: 3., specs: Box::new(Saw)})
             .lfo(lfo::Specs::simple(0.1), Filter(Cutoff), 0.8).build()
 }
 

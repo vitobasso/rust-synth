@@ -31,6 +31,12 @@ impl Oscillator for Mix {
             .map(|v| v.next_sample(clock, freq, phase))
             .sum()
     }
+
+    fn view(&self) -> View {
+        View::Mix {
+            voices: self.voices.iter().map(|v| v.view()).collect()
+        }
+    }
 }
 
 impl Modulated<ModTarget> for Mix {
@@ -54,5 +60,12 @@ impl Voice {
     fn next_sample(&self, clock: Seconds, freq: Hz, phase: Seconds) -> Sample {
         let final_freq = freq + self.tuning;
         self.oscillator.next_sample(clock, final_freq, phase)
+    }
+
+    fn view(&self) -> MixVoiceView {
+        MixVoiceView {
+            tuning: self.tuning,
+            oscillator: Box::new(self.oscillator.view())
+        }
     }
 }

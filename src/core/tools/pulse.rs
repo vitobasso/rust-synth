@@ -8,6 +8,11 @@ pub struct Pulse {
     latest: Instant,
 }
 
+#[derive(Clone, PartialEq, Default, Debug)]
+pub struct View {
+    pub period: Duration,
+}
+
 impl Pulse {
 
     pub fn new_with_millis(period: Millis) -> Self {
@@ -32,6 +37,12 @@ impl Pulse {
 
     pub fn with_period(&self, period: Duration) -> Self {
         Pulse { period, latest: self.latest }
+    }
+
+    pub fn view(&self) -> View {
+        View {
+            period: self.period
+        }
     }
 
 }

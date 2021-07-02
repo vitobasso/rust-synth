@@ -21,6 +21,12 @@ pub struct State {
     holding_notes: HashMap<Id, Pitch>,
 }
 
+#[derive(Clone, PartialEq, Default, Debug)]
+pub struct View {
+    pub instrument: instrument::View,
+    pub holding_notes: HashMap<Id, Pitch>,
+}
+
 impl State {
 
     pub fn new(specs: instrument::Specs, sample_rate: Hz) -> State {
@@ -48,8 +54,11 @@ impl State {
         self.instrument.next_sample()
     }
 
-    pub fn view(&self) -> instrument::View {
-        self.instrument.view()
+    pub fn view(&self) -> View {
+        View {
+            instrument: self.instrument.view(),
+            holding_notes: self.holding_notes.clone(),
+        }
     }
 
     fn handle_note_on(&mut self, pitch: Pitch, velocity: Velocity, id: Id) {

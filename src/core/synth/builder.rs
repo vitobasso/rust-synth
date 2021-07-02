@@ -1,4 +1,4 @@
-use super::{Seconds, Proportion, instrument::{self, ModTarget, ModSpecs}, oscillator, filter, envelope::Adsr, lfo};
+use super::{Seconds, Proportion, instrument::{self, ModTarget, ModSpecs}, oscillator, filter, adsr::Adsr, lfo};
 
 pub struct Builder {
     max_voices: u8,

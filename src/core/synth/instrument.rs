@@ -1,5 +1,5 @@
 use super::{Sample, Seconds, Proportion, Velocity, oscillator::{self, Oscillator},
-            filter::{self, Filter}, envelope::Adsr, lfo::{self, LFO}, modulated::*};
+            filter::{self, Filter}, adsr::Adsr, lfo::{self, LFO}, modulated::*};
 use crate::core::music_theory::{Hz, pitch::Pitch};
 
 ///
@@ -32,9 +32,13 @@ pub struct ModSpecs {
     pub amount: Proportion,
 }
 
-#[derive(Copy, Clone, PartialEq, Default, Debug)]
+#[derive(Clone, PartialEq, Default, Debug)]
 pub struct View {
-    pub filter: filter::View
+    pub oscillator: oscillator::View,
+    pub filter: filter::View,
+    pub lfo: Option<lfo::View>,
+    pub adsr: Adsr,
+    pub volume: Proportion,
 }
 
 pub struct Instrument {
@@ -131,7 +135,11 @@ impl Instrument {
 
     pub fn view(&self) -> View {
         View {
-            filter: self.filter.view()
+            filter: self.filter.view(),
+            oscillator: self.oscillator.view(),
+            lfo: self.lfo.as_ref().map(|l| l.view()),
+            adsr: self.adsr.clone(),
+            volume: self.volume.normalized(),
         }
     }
 }

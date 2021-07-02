@@ -12,6 +12,14 @@ pub struct Arpeggiator {
     pending_command: Option<Command>,
 }
 
+#[derive(Clone, PartialEq, Default, Debug)]
+pub struct View {
+    pub phrase: Phrase,
+    pub key: Key,
+    pub holding_pitch: Option<Pitch>,
+    pub playing_pitch: Option<Pitch>,
+}
+
 impl Arpeggiator {
 
     pub fn new(key: Key, phrase: Phrase) -> Arpeggiator {
@@ -79,6 +87,15 @@ impl Arpeggiator {
         let next_pitch = self.key.pitch_at(holding, relative_pitch);
         self.playing_pitch = next_pitch;
         next_pitch.map(note_on)
+    }
+
+    pub fn view(&self) -> View {
+        View {
+            phrase: self.phrase.clone(),
+            key: self.key,
+            holding_pitch: self.holding_pitch,
+            playing_pitch: self.playing_pitch,
+        }
     }
 
 }

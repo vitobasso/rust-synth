@@ -5,7 +5,7 @@ pub trait Modulated<T> {
 
 #[derive(Debug)]
 pub struct ModParam {
-    base: f64,
+    pub base: f64,
     mod_signal: f64,
     min: f64,
     range: f64,
@@ -26,12 +26,11 @@ impl ModParam {
     pub fn set_signal(&mut self, value: f64) {
         self.mod_signal = value.max(0.).min(1.);
     }
-    pub fn get_signal(&self) -> f64 {
-        self.mod_signal
+    pub fn normalized(&self) -> f64 {
+        (1. - self.mod_signal) * self.base
     }
     pub fn calculate(&self) -> f64 {
-        let normalized = (1. - self.mod_signal) * self.base;
-        normalized * self.range + self.min
+        self.normalized() * self.range + self.min
     }
 }
 impl Default for ModParam {

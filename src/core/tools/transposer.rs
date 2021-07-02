@@ -7,10 +7,11 @@ pub enum Command {
     ShiftKeyboard(Semitones),
 }
 
+#[derive(Clone, PartialEq, Default, Debug)]
 pub struct State {
-    input_key: Key,
-    transposed_key: Key,
-    pitch_shift: Semitones,
+    pub input_key: Key,
+    pub transposed_key: Key,
+    pub pitch_shift: Semitones,
 }
 
 impl State {

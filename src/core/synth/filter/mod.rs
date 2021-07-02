@@ -18,12 +18,6 @@ pub enum Specs { LPF, HPF, BPF, Notch, }
 #[derive(Copy, Clone, PartialEq, Debug)]
 pub enum ModTarget { Cutoff, QFactor }
 
-#[derive(Copy, Clone, PartialEq, Debug)]
-pub struct View {
-    pub cutoff: f64,
-    pub resonance: f64,
-}
-
 impl dyn Filter {
     pub fn new(specs: Specs, sample_rate: Hz) -> Box<dyn Filter> {
         let filter = biquad::BiquadFilter::new(sample_rate, specs);
@@ -37,11 +31,19 @@ impl Default for Specs {
     }
 }
 
+#[derive(Copy, Clone, PartialEq, Debug)]
+pub struct View {
+    pub cutoff: f64,
+    pub resonance: f64,
+    pub filter_type: Specs,
+}
+
 impl Default for View {
     fn default() -> Self {
         View {
             cutoff: 1.,
-            resonance: 0.
+            resonance: 0.,
+            filter_type: Specs::LPF
         }
     }
 }

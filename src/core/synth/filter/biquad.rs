@@ -56,8 +56,9 @@ impl Filter for BiquadFilter {
 
     fn view(&self) -> View {
         View {
-            cutoff: self.cutoff.get_signal(),
-            resonance: self.qfactor.get_signal(),
+            cutoff: self.cutoff.normalized(),
+            resonance: self.qfactor.normalized(),
+            filter_type: self.filter_type.specs(),
         }
     }
 }
@@ -77,6 +78,7 @@ struct Coefficients {
 
 trait FilterType {
     fn coefficients(&self, w0: f64, alpha: f64) -> Coefficients;
+    fn specs(&self) -> Specs;
 }
 
 struct Lpf;
@@ -92,6 +94,10 @@ impl FilterType for Lpf {
             a2:  1. - alpha,
         }
     }
+
+    fn specs(&self) -> Specs {
+        Specs::LPF
+    }
 }
 
 struct Hpf;
@@ -106,6 +112,10 @@ impl FilterType for Hpf {
             a1:  -2. * cos_w0,
             a2:   1. - alpha,
         }
+    }
+
+    fn specs(&self) -> Specs {
+        Specs::HPF
     }
 }
 
@@ -123,6 +133,10 @@ impl FilterType for Bpf {
             a2:   1. - alpha,
         }
     }
+
+    fn specs(&self) -> Specs {
+        Specs::BPF
+    }
 }
 
 struct Notch;
@@ -137,5 +151,9 @@ impl FilterType for Notch {
             a1:  -2. * cos_w0,
             a2:   1. - alpha,
         }
+    }
+
+    fn specs(&self) -> Specs {
+        Specs::Notch
     }
 }

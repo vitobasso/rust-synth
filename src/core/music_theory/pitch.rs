@@ -1,4 +1,4 @@
-use std::fmt::{Debug, Formatter};
+use std::fmt::{Debug, Formatter, Display};
 use std::ops::Add;
 use super::{Hz, Semitones, Octave, pitch_class::{PitchClass, NUM_CLASSES}};
 
@@ -64,6 +64,12 @@ impl Add<Semitones> for Pitch {
 }
 
 impl Debug for Pitch {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{:?}{:?}", self.class, self.octave)
+    }
+}
+
+impl Display for Pitch {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         write!(f, "{:?}{:?}", self.class, self.octave)
     }

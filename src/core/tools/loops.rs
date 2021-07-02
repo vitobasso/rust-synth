@@ -11,6 +11,12 @@ pub struct Manager {
     recording_loop: Option<Recorder>,
 }
 
+#[derive(Clone, PartialEq, Default, Debug)]
+pub struct View {
+    pub playing_loops: HashMap<usize, bool>,
+    pub recording_loop: Option<usize>,
+}
+
 impl Manager {
 
     pub fn interpret(&mut self, command: Command) {
@@ -25,7 +31,7 @@ impl Manager {
             let new_loop = recorder.stop_recording();
             self.loops.insert(index, new_loop);
         } else {
-            self.recording_loop = Some(Recorder::new())
+            self.recording_loop = Some(Recorder::new(index))
         }
     }
 
@@ -48,6 +54,13 @@ impl Manager {
             .filter_map(|l| l.next())
             .sum()
     }
+
+    pub fn view(&self) -> View {
+        View {
+            playing_loops: self.loops.keys().map(|k| (*k, self.playing_loops.contains_key(k))).collect(),
+            recording_loop: self.recording_loop.as_ref().map(|l| l.position),
+        }
+    }
 }
 
 struct Loop {
@@ -60,11 +73,12 @@ impl Loop {
 }
 
 struct Recorder {
+    position: usize,
     samples: Vec<Sample>,
 }
 impl Recorder {
-    fn new() -> Recorder {
-        Recorder { samples: vec![] }
+    fn new(position: usize) -> Recorder {
+        Recorder { position, samples: vec![] }
     }
     fn write(&mut self, sample: Sample) {
         self.samples.push(sample)
