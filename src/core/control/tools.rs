@@ -13,19 +13,25 @@ use crate::core::{
 ///
 
 pub fn start(sample_rate: Hz, presets: Vec<Patch>, command_in: Receiver<Command>, sound_out: SyncSender<Sample>, view_out: SyncSender<View>) {
+    let command_rate = 10; //TODO in hz
+    let view_refresh_rate = 1000; //TODO in hz
     let mut state = State::new(sample_rate, presets);
-    loop {
-        if let Ok(command) = command_in.try_recv() {
-            state.interpret(command);
+    for i in 0.. {
+        if i % command_rate == 0 {
+            if let Ok(command) = command_in.try_recv() {
+                state.interpret(command);
+            }
+            state.tick_arpeggiator();
         }
-        state.tick_arpeggiator();
 
         let new_sample = state.next_sample();
         sound_out.send(new_sample).expect("Failed to send a sample");
         state.loops.write(new_sample);
 
-        let view = state.view();
-        let _ = view_out.try_send(view);
+        if i % view_refresh_rate == 0 {
+            let view = state.view();
+            let _ = view_out.try_send(view);
+        }
     }
 }
 
