@@ -69,7 +69,7 @@ impl PlayingVoice {
         let result: Vec<Command> = self.voice.events.iter()
             .skip(begin)
             .take_while(|(_, t)| get_time(*t, section) <= elapsed_time)
-            .map(|(cmd, _)| *cmd)
+            .map(|(cmd, _)| cmd.clone())
             .collect();
         self.current_event_index += result.len();
         result

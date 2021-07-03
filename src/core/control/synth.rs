@@ -8,7 +8,7 @@ use crate::core::{
 /// Interprets commands by translating to synth::instrument method calls
 ///
 
-#[derive(Clone, Copy, PartialEq, Debug)]
+#[derive(Clone, PartialEq, Debug)]
 pub enum Command {
     NoteOn(Pitch, Velocity, Id), NoteOff(Id),
     ModXY(f64, f64),

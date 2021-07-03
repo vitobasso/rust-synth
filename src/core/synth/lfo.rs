@@ -2,7 +2,7 @@ use super::oscillator::{self, Oscillator};
 use crate::core::synth::{Seconds};
 use crate::core::music_theory::Hz;
 
-#[derive(Copy, Clone, PartialEq, Debug)]
+#[derive(Clone, PartialEq, Debug)]
 pub struct Specs {
     oscillator: oscillator::Specs,
     freq: Hz,
@@ -23,7 +23,7 @@ pub struct LFO {
 impl LFO {
     pub fn new(specs: Specs) -> LFO {
         LFO {
-            oscillator: <dyn Oscillator>::new(specs.oscillator),
+            oscillator: <dyn Oscillator>::new(&specs.oscillator),
             freq: specs.freq,
             phase: specs.phase,
         }

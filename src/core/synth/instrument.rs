@@ -6,7 +6,7 @@ use crate::core::music_theory::{Hz, pitch::Pitch};
 /// Connects modules of the synthesizer together to produce a stream of sound samples.
 ///
 
-#[derive(Clone, Copy, PartialEq, Debug)]
+#[derive(Clone, PartialEq, Debug)]
 pub struct Specs {
     pub max_voices: u8,
     pub oscillator: oscillator::Specs,
@@ -54,7 +54,7 @@ impl Instrument {
 
     pub fn new(specs: Specs, sample_rate: Hz) -> Instrument {
         Instrument {
-            oscillator: <dyn Oscillator>::new(specs.oscillator),
+            oscillator: <dyn Oscillator>::new(&specs.oscillator),
             filter: <dyn Filter>::new(specs.filter, sample_rate),
             lfo: specs.lfo.map(LFO::new),
             adsr: specs.adsr,
@@ -109,7 +109,7 @@ impl Instrument {
     }
 
     pub fn set_oscillator(&mut self, specs: oscillator::Specs) {
-        self.oscillator = <dyn Oscillator>::new(specs)
+        self.oscillator = <dyn Oscillator>::new(&specs)
     }
 
     fn run_next_lfo_modulation(&mut self) {

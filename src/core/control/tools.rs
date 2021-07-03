@@ -30,7 +30,7 @@ const BEATS_PER_MEASURE: u64 = 4;
 const PULSES_PER_BEAT: u64 = 32;
 const DEFAULT_PULSE: Millis = 12;
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub enum Command {
     Instrument(synth::Command),
     Transposer(transposer::Command),
