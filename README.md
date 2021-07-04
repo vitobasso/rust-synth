@@ -1,15 +1,17 @@
-This is a synthesizer library written from scratch in Rust. 
+I'm writing this synthesizer library from scratch as an excuse to learn Rust.  
+It's definitely not stable. There's quite a variety of rough features I've been slowly polishing and completing. 
 
 It works by receiving commands, e.g. `NoteOn`, `NoteOff`, `SetPatch`, 
-and producing a sound signal that can be sent to your computer's audio device to produce sound.
+and producing a sound signal that can be sent to your computer's audio output device.
 
-An example of usage can be found in [rust-synth-gui](https://github.com/vitobasso/rust-synth-gui).  
+An example of usage and runnable demo can be found in [rust-synth-gui](https://github.com/vitobasso/rust-synth-gui).  
 
 ## Features
-This is the progress so far
+This is the progress so far:
 - Synth
   - Oscillators
-      - [x] Sine, Saw, Square, Pulse, Supersaw
+      - [x] Sine, Saw, Square, Pulse
+      - [x] Mix of detuned oscillators
       - [ ] Noise
   - Filters
       - [x] Biquad LPF, HPF, BPF, Notch
@@ -29,3 +31,4 @@ This is the progress so far
       - [ ] Snap to measures
 - [ ] Drums
 - [x] Read Midi
+- [x] State accessible for visualization
