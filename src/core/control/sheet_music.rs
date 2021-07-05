@@ -25,7 +25,7 @@ impl State {
     fn new(sample_rate: Hz, sheet_music: SheetMusic) -> State {
         State {
             synths: sheet_music.voices.iter()
-                .map(|track| (track.instrument_id, synth::State::with_default_specs(sample_rate)))
+                .map(|track| (track.instrument_id, synth::State::new(sample_rate)))
                 .collect(),
             music: PlayingMusic::new(sheet_music),
         }

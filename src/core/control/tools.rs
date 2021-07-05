@@ -3,7 +3,7 @@ use std::time::Duration;
 use crate::core::{
     control::{synth::{self, Command::*}},
     music_theory::{Hz, pitch_class::PitchClass, rhythm::Phrase},
-    synth::{instrument, oscillator, Sample},
+    synth::{instrument, Sample},
     tools::{pulse, transposer, loops, arpeggiator, tap_tempo, Millis},
     sheet_music::sheet_music::MeasurePosition,
 };
@@ -12,10 +12,10 @@ use crate::core::{
 /// Connects tools and synth together, interprets commands and delegates to them
 ///
 
-pub fn start(sample_rate: Hz, presets: Vec<Patch>, command_in: Receiver<Command>, sound_out: SyncSender<Sample>, view_out: SyncSender<View>) {
+pub fn start(sample_rate: Hz, command_in: Receiver<Command>, sound_out: SyncSender<Sample>, view_out: SyncSender<View>) {
     let command_rate = 10; //TODO in hz
     let view_refresh_rate = 1000; //TODO in hz
-    let mut state = State::new(sample_rate, presets);
+    let mut state = State::new(sample_rate);
     for i in 0.. {
         if i % command_rate == 0 {
             if let Ok(command) = command_in.try_recv() {
@@ -43,7 +43,7 @@ const DEFAULT_PULSE: Millis = 12;
 pub enum Command {
     Instrument(synth::Command),
     Transposer(transposer::Command),
-    SetPatchNo(usize),
+    SetPatch(Patch),
     Loop(loops::Command),
     TapTempo,
 }
@@ -51,7 +51,6 @@ pub enum Command {
 #[derive(Clone)]
 pub enum Patch {
     Instrument(instrument::Specs),
-    Oscillator(oscillator::Specs),
     Arpeggiator(Option<Phrase>),
     Noop,
 }
@@ -59,8 +58,6 @@ pub enum Patch {
 pub struct State {
     synth: synth::State,
     transposer: transposer::State,
-    patches: Vec<Patch>,
-    selected_patch: usize,
     pulse: pulse::Pulse,
     arpeggiator: Option<arpeggiator::Arpeggiator>,
     arp_index: f64,
@@ -71,7 +68,6 @@ pub struct State {
 #[derive(Clone, PartialEq, Default, Debug)]
 pub struct View {
     pub synth: synth::View,
-    pub selected_patch: usize,
     pub transposer: transposer::State,
     pub pulse: pulse::View,
     pub arpeggiator: Option<arpeggiator::View>,
@@ -81,11 +77,9 @@ pub struct View {
 }
 
 impl State {
-    fn new(sample_rate: Hz, patches: Vec<Patch>) -> State {
+    fn new(sample_rate: Hz) -> State {
         State {
-            patches,
-            selected_patch: 0,
-            synth: synth::State::with_default_specs(sample_rate),
+            synth: synth::State::new(sample_rate),
             transposer: transposer::State::new(PitchClass::C),
             tap_tempo: Default::default(),
             pulse: pulse::Pulse::new_with_millis(DEFAULT_PULSE),
@@ -99,7 +93,7 @@ impl State {
         match command {
             Command::Instrument(cmd) => self.play_or_arpeggiate(cmd),
             Command::Transposer(cmd) => self.transposer.interpret(cmd),
-            Command::SetPatchNo(i) => self.set_patch(i),
+            Command::SetPatch(patch) => self.set_patch(patch),
             Command::Loop(cmd) => self.loops.interpret(cmd),
             Command::TapTempo => self.tap_tempo(),
         }
@@ -126,15 +120,9 @@ impl State {
         self.synth.interpret(changed_command)
     }
 
-    fn set_patch(&mut self, i: usize) {
-        let maybe_patch = self.patches.get(i);
-        if maybe_patch.is_some() {
-            self.selected_patch = i;
-        }
-        let patch: Patch = maybe_patch.cloned().unwrap_or(Patch::Noop);
+    fn set_patch(&mut self, patch: Patch) {
         match patch {
             Patch::Instrument(specs) => self.synth.interpret(SetPatch(specs)),
-            Patch::Oscillator(specs) => self.synth.set_oscillator(specs),
             Patch::Arpeggiator(seq) => self.set_arpeggiator(seq),
             Patch::Noop => (),
         }
@@ -181,7 +169,6 @@ impl State {
     pub fn view(&self) -> View {
         View {
             synth: self.synth.view(),
-            selected_patch: self.selected_patch,
             transposer: self.transposer.clone(),
             pulse: self.pulse.view(),
             arpeggiator: self.arpeggiator.as_ref().map(|a| a.view()),

@@ -41,16 +41,23 @@ pub struct View {
     pub volume: Proportion,
 }
 
+#[derive(Clone)]
+pub struct State {
+    voices: Voices,
+    clock: Clock,
+}
+
 pub struct Instrument {
     oscillator: Box<dyn Oscillator>,
     filter: Box<dyn Filter>,
     lfo: Option<LFO>,
     adsr: Adsr,
     volume: ModParam,
-    voices: Voices,
     modulation_x: ModTarget,
     modulation_y: ModTarget,
     modulation_lfo: ModSpecs,
+    specs: Specs,
+    voices: Voices,
     clock: Clock,
 }
 
@@ -58,6 +65,7 @@ impl Instrument {
 
     pub fn new(specs: Specs, sample_rate: Hz) -> Instrument {
         Instrument {
+            specs: specs.clone(),
             oscillator: <dyn Oscillator>::new(&specs.oscillator),
             filter: <dyn Filter>::new(specs.filter, sample_rate),
             lfo: specs.lfo.map(LFO::new),
@@ -112,10 +120,6 @@ impl Instrument {
         }
     }
 
-    pub fn set_oscillator(&mut self, specs: oscillator::Specs) {
-        self.oscillator = <dyn Oscillator>::new(&specs)
-    }
-
     fn run_next_lfo_modulation(&mut self) {
         let maybe_lfo_sample = {
             let clock_ref = &mut self.clock;
@@ -131,6 +135,22 @@ impl Instrument {
                 param.set_signal(normalized * specs.amount);
             }
         }
+    }
+
+    pub fn get_specs(&self) -> Specs {
+        self.specs.clone()
+    }
+
+    pub fn get_state(&self) -> State{
+        State {
+            voices: self.voices.clone(),
+            clock: self.clock.clone(),
+        }
+    }
+
+    pub fn set_state(&mut self, state: State) {
+        self.clock = state.clock;
+        self.voices = state.voices;
     }
 
     pub fn view(&self) -> View {
@@ -155,6 +175,7 @@ impl Modulated<ModTarget> for Instrument {
     }
 }
 
+#[derive(Clone)]
 struct Voices {
     max_voices: u8,
     voices: Vec<Voice>,
@@ -198,6 +219,7 @@ impl Voices {
 
 }
 
+#[derive(Clone)]
 struct Voice {
     pitch: Pitch,
     velocity: Velocity,
@@ -239,6 +261,7 @@ impl Voice {
 
 }
 
+#[derive(Clone)]
 struct Clock {
     sample_rate: Hz,
     clock: f64,

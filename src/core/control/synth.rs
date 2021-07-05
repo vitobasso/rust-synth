@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 use crate::core::{
     music_theory::{Hz, pitch::Pitch},
-    synth::{Sample, Velocity, instrument::{self, Instrument}, oscillator},
+    synth::{Sample, Velocity, instrument::{self, Instrument}},
 };
 
 ///
@@ -29,7 +29,8 @@ pub struct View {
 
 impl State {
 
-    pub fn new(specs: instrument::Specs, sample_rate: Hz) -> State {
+    pub fn new(sample_rate: Hz) -> State {
+        let specs = instrument::Specs::default();
         State {
             sample_rate,
             instrument: Instrument::new(specs, sample_rate),
@@ -37,16 +38,12 @@ impl State {
         }
     }
 
-    pub fn with_default_specs(sample_rate: Hz) -> State {
-        State::new(instrument::Specs::default(), sample_rate)
-    }
-
     pub fn interpret(&mut self, command: Command) {
         match command {
             Command::NoteOn(pitch, velocity, id) => self.handle_note_on(pitch, velocity, id),
             Command::NoteOff(id) => self.handle_note_off(id),
             Command::ModXY(x, y) => self.instrument.set_xy_params(x, y),
-            Command::SetPatch(specs) => self.set_instrument(specs),
+            Command::SetPatch(specs) => self.set_specs(specs),
         }
     }
 
@@ -73,12 +70,14 @@ impl State {
         }
     }
 
-    fn set_instrument(&mut self, specs: instrument::Specs) {
+    fn set_specs(&mut self, specs: instrument::Specs) {
+        let state = self.instrument.get_state();
         self.instrument = Instrument::new(specs, self.sample_rate);
+        self.instrument.set_state(state);
     }
 
-    pub fn set_oscillator(&mut self, specs: oscillator::Specs) {
-        self.instrument.set_oscillator(specs);
+    pub fn get_specs(&self) -> instrument::Specs {
+        self.instrument.get_specs()
     }
 }
 

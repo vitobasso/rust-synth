@@ -5,7 +5,6 @@ use std::thread;
 use crate::core::{control::{tools, sheet_music}};
 use crate::core::synth::Sample;
 use crate::io::audio::Out;
-use crate::preset;
 
 pub mod midi;
 pub mod audio;
@@ -22,7 +21,7 @@ pub fn start_manual() -> (Sender<tools::Command>, Receiver<tools::View>) {
     let (sound_out, sample_rate) = start_audio();
     let (command_out, command_in) = mpsc::channel::<tools::Command>();
     let (view_out, view_in) = mpsc::sync_channel::<tools::View>(1);
-    thread::spawn(move || tools::start(sample_rate, preset::patches(), command_in, sound_out, view_out));
+    thread::spawn(move || tools::start(sample_rate, command_in, sound_out, view_out));
     (command_out, view_in)
 }
 
