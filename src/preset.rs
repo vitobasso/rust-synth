@@ -5,7 +5,7 @@ use crate::core::{
     },
     synth::{builder::*, lfo,
             instrument::{self, ModTarget::*},
-            oscillator::{Specs::*, ModTarget::*},
+            oscillator::{Basic::*, Specs::*, ModTarget::*},
             filter::ModTarget::*
     },
     control::tools::Patch,
@@ -45,7 +45,7 @@ pub fn patches() -> Vec<Patch> {
 }
 
 pub fn sine() -> instrument::Specs {
-    Builder::osc(Sine).mod_y(Volume).build()
+    Builder::osc(Basic(Sine)).mod_y(Volume).build()
 }
 
 pub fn pulse() -> instrument::Specs {
@@ -53,11 +53,11 @@ pub fn pulse() -> instrument::Specs {
 }
 
 pub fn saw_pad() -> instrument::Specs {
-    Builder::osc(Saw).adsr(0.25, 0., 1., 0.25).build()
+    Builder::osc(Basic(Saw)).adsr(0.25, 0., 1., 0.25).build()
 }
 
 pub fn supersaw() -> instrument::Specs {
-    Builder::osc(Mix { nvoices: 8, detune_amount: 3., specs: Box::new(Saw)})
+    Builder::osc(Mix { n_voices: 8, detune_amount: 3., specs: Saw, random_seed: 0 })
             .lfo(lfo::Specs::simple(0.1), Filter(Cutoff), 0.8).build()
 }
 

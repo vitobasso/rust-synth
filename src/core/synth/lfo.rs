@@ -1,16 +1,16 @@
-use super::oscillator::{self, Oscillator};
+use super::oscillator::{self, Oscillator, Basic::Sine};
 use crate::core::synth::Seconds;
 use crate::core::music_theory::Hz;
 
 #[derive(Clone, PartialEq, Debug)]
 pub struct Specs {
-    oscillator: oscillator::Specs,
-    freq: Hz,
-    phase: Seconds,
+    pub oscillator: oscillator::Specs,
+    pub freq: Hz,
+    pub phase: Seconds,
 }
 impl Specs {
     pub fn simple(freq: Hz) -> Specs {
-        Specs { freq, oscillator: oscillator::Specs::Sine, phase: 0. }
+        Specs { freq, oscillator: oscillator::Specs::Basic(Sine), phase: 0. }
     }
 }
 

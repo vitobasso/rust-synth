@@ -7,13 +7,20 @@ use crate::core::music_theory::Hz;
 use crate::core::synth::oscillator::basic::{Sine, Square, Saw};
 use crate::core::synth::oscillator::pulse::Pulse;
 
+#[derive(Copy, Clone, PartialEq, Debug)]
+pub enum Basic {
+    Sine, Saw, Square
+}
+
 #[derive(Clone, PartialEq, Debug)]
 pub enum Specs {
-    Sine, Saw, Square, Pulse(Proportion),
+    Basic(Basic),
+    Pulse(Proportion),
     Mix {
-        nvoices: usize,
+        n_voices: usize,
         detune_amount: Hz,
-        specs: Box<Specs>,
+        specs: Basic,
+        random_seed: u64,
     }
 }
 
@@ -28,19 +35,19 @@ pub trait Oscillator: Modulated<ModTarget> {
 impl dyn Oscillator {
     pub fn new(spec: &Specs) -> Box<dyn Oscillator> {
         match spec {
-            Specs::Sine => Box::new(Sine),
-            Specs::Square => Box::new(Square),
-            Specs::Pulse(d) => Box::new(Pulse::new(*d)),
-            Specs::Saw => Box::new(Saw),
-            Specs::Mix {nvoices: v, detune_amount: d, specs: s} =>
-                Box::new(mix::Mix::detuned(*v, *d, s)),
+            Specs::Basic(Basic::Sine) => Box::new(Sine),
+            Specs::Basic(Basic::Square) => Box::new(Square),
+            Specs::Basic(Basic::Saw) => Box::new(Saw),
+            Specs::Pulse(duty_cycle) => Box::new(Pulse::new(*duty_cycle)),
+            Specs::Mix { n_voices, detune_amount, specs, random_seed } =>
+                Box::new(mix::Mix::detuned(*n_voices, *detune_amount, *specs, *random_seed)),
         }
     }
 }
 
 impl Default for Specs {
     fn default() -> Self {
-        Specs::Sine
+        Specs::Basic(Basic::Sine)
     }
 }
 

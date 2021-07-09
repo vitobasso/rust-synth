@@ -2,21 +2,21 @@
 use crate::core::synth::{Sample, Seconds, modulated::*};
 use crate::core::music_theory::Hz;
 use super::*;
-use rand::{self, Rng};
+use rand::{self, Rng, StdRng, SeedableRng};
 
 pub struct Mix {
     voices: Vec<Voice>,
 }
 
 impl Mix {
-    pub fn detuned(n_voices: usize, detune_amount: Hz, specs: &Specs) -> Mix {
-        Mix { voices: create_voices(n_voices, detune_amount, specs) }
+    pub fn detuned(n_voices: usize, detune_amount: Hz, specs: Basic, random_seed: u64) -> Mix {
+        Mix { voices: create_voices(n_voices, detune_amount, specs, random_seed) }
     }
 }
 
-fn create_voices(n_voices: usize, detune_amount: Hz, specs: &Specs) -> Vec<Voice> {
-    let mut rng = rand::thread_rng();
-    fn random_around_zero(rng: &mut rand::ThreadRng, amount: Hz) -> Hz {
+fn create_voices(n_voices: usize, detune_amount: Hz, specs: Basic, random_seed: u64) -> Vec<Voice> {
+    let mut rng = StdRng::seed_from_u64(random_seed);
+    fn random_around_zero(rng: &mut StdRng, amount: Hz) -> Hz {
         rng.gen_range(-amount, amount)
     }
 
@@ -50,10 +50,10 @@ struct Voice {
 }
 
 impl Voice {
-    pub fn new(tuning: f64, specs: &Specs) -> Self {
+    pub fn new(tuning: f64, specs: Basic) -> Self {
         Self {
             tuning,
-            oscillator: <dyn Oscillator>::new(specs),
+            oscillator: <dyn Oscillator>::new(&Specs::Basic(specs)),
         }
     }
 
