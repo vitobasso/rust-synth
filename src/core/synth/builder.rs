@@ -17,7 +17,7 @@ impl Builder {
         Builder {
             oscillator,
             max_voices: 8,
-            filter: filter::Specs::LPF,
+            filter: filter::Specs::default(),
             lfo: None,
             adsr: Adsr::new(0., 0.05, 0.8, 0.2),
             volume: 0.2,

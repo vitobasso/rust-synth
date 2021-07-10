@@ -3,7 +3,8 @@ mod biquad;
 use super::{Sample, modulated::*};
 use crate::core::music_theory::Hz;
 
-const MAX_CUTOFF: Hz = 440. * 8.;
+const MAX_CUTOFF: Hz = 440. * 32.;
+const MIN_CUTOFF: Hz = 0.;
 const MAX_QFACTOR: f64 = 50.;
 const MIN_QFACTOR: f64 = 1.;
 
@@ -13,7 +14,14 @@ pub trait Filter: Modulated<ModTarget> {
 }
 
 #[derive(Clone, Copy, PartialEq, Debug)]
-pub enum Specs { LPF, HPF, BPF, Notch, }
+pub struct Specs {
+    pub filter_type: TypeSpec,
+    pub cutoff: f64,
+    pub resonance: f64,
+}
+
+#[derive(Clone, Copy, PartialEq, Debug)]
+pub enum TypeSpec { LPF, HPF, BPF, Notch }
 
 #[derive(Copy, Clone, PartialEq, Debug)]
 pub enum ModTarget { Cutoff, QFactor }
@@ -27,15 +35,19 @@ impl dyn Filter {
 
 impl Default for Specs {
     fn default() -> Self {
-        Specs::LPF
+        Specs {
+            filter_type: TypeSpec::LPF,
+            cutoff: 1.,
+            resonance: 0.05,
+        }
     }
 }
 
 #[derive(Copy, Clone, PartialEq, Debug)]
-pub struct View {
+pub struct View { //TODO remove if identical to Specs?
     pub cutoff: f64,
     pub resonance: f64,
-    pub filter_type: Specs,
+    pub filter_type: TypeSpec,
 }
 
 impl Default for View {
@@ -43,7 +55,7 @@ impl Default for View {
         View {
             cutoff: 1.,
             resonance: 0.,
-            filter_type: Specs::LPF
+            filter_type: TypeSpec::LPF
         }
     }
 }

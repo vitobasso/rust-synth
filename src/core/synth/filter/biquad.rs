@@ -16,16 +16,16 @@ pub(super) struct BiquadFilter{
 impl BiquadFilter {
     pub(super) fn new(sample_rate: Hz, specs: Specs) -> BiquadFilter {
         assert!(sample_rate > 0., "sample_rate was: {}", sample_rate);
-        let filter_type: Box<dyn FilterType> = match specs {
-            Specs::LPF => Box::new(Lpf),
-            Specs::HPF => Box::new(Hpf),
-            Specs::BPF => Box::new(Bpf),
-            Specs::Notch => Box::new(Notch),
+        let filter_type: Box<dyn FilterType> = match specs.filter_type {
+            TypeSpec::LPF => Box::new(Lpf),
+            TypeSpec::HPF => Box::new(Hpf),
+            TypeSpec::BPF => Box::new(Bpf),
+            TypeSpec::Notch => Box::new(Notch),
         };
         BiquadFilter {
             sample_rate, filter_type,
-            cutoff: ModParam::with_base(1., 0., MAX_CUTOFF),
-            qfactor: ModParam::with_base(0.05, MIN_QFACTOR, MAX_QFACTOR),
+            cutoff: ModParam::with_base(specs.cutoff, MIN_CUTOFF, MAX_CUTOFF),
+            qfactor: ModParam::with_base(specs.resonance, MIN_QFACTOR, MAX_QFACTOR),
             input_history: [0., 0.],
             output_history: [0., 0.],
         }
@@ -58,7 +58,7 @@ impl Filter for BiquadFilter {
         View {
             cutoff: self.cutoff.normalized(),
             resonance: self.qfactor.normalized(),
-            filter_type: self.filter_type.specs(),
+            filter_type: self.filter_type.spec(),
         }
     }
 }
@@ -78,7 +78,7 @@ struct Coefficients {
 
 trait FilterType {
     fn coefficients(&self, w0: f64, alpha: f64) -> Coefficients;
-    fn specs(&self) -> Specs;
+    fn spec(&self) -> TypeSpec;
 }
 
 struct Lpf;
@@ -95,8 +95,8 @@ impl FilterType for Lpf {
         }
     }
 
-    fn specs(&self) -> Specs {
-        Specs::LPF
+    fn spec(&self) -> TypeSpec {
+        TypeSpec::LPF
     }
 }
 
@@ -114,8 +114,8 @@ impl FilterType for Hpf {
         }
     }
 
-    fn specs(&self) -> Specs {
-        Specs::HPF
+    fn spec(&self) -> TypeSpec {
+        TypeSpec::HPF
     }
 }
 
@@ -134,8 +134,8 @@ impl FilterType for Bpf {
         }
     }
 
-    fn specs(&self) -> Specs {
-        Specs::BPF
+    fn spec(&self) -> TypeSpec {
+        TypeSpec::BPF
     }
 }
 
@@ -153,7 +153,7 @@ impl FilterType for Notch {
         }
     }
 
-    fn specs(&self) -> Specs {
-        Specs::Notch
+    fn spec(&self) -> TypeSpec {
+        TypeSpec::Notch
     }
 }
