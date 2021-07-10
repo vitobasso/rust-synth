@@ -2,9 +2,9 @@ use std::sync::mpsc::{Receiver, SyncSender};
 use std::time::Duration;
 use crate::core::{
     control::{synth::{self, Command::*}},
-    music_theory::{Hz, pitch_class::PitchClass, rhythm::Phrase},
+    music_theory::{Hz, pitch_class::PitchClass},
     synth::{instrument, Sample},
-    tools::{pulse, transposer, loops, arpeggiator, tap_tempo, Millis},
+    tools::{pulse, transposer, loops, arpeggiator, arpeggiator::phrase::Phrase, tap_tempo, Millis},
     sheet_music::sheet_music::MeasurePosition,
 };
 
@@ -51,7 +51,8 @@ pub enum Command {
 #[derive(Clone)]
 pub enum Patch {
     Instrument(instrument::Specs),
-    Arpeggiator(Option<Phrase>),
+    ArpeggiatorPhrase(Option<Phrase>), //TODO deprecate
+    Arpeggiator(Option<arpeggiator::Specs>),
     Noop,
 }
 
@@ -123,14 +124,32 @@ impl State {
     fn set_patch(&mut self, patch: Patch) {
         match patch {
             Patch::Instrument(specs) => self.synth.interpret(SetPatch(specs)),
-            Patch::Arpeggiator(seq) => self.set_arpeggiator(seq),
+            Patch::Arpeggiator(specs) => self.set_arpeggiator(specs),
+            Patch::ArpeggiatorPhrase(seq) => self.set_arpeggiator_phrase(seq),
             Patch::Noop => (),
         }
     }
 
-    fn set_arpeggiator(&mut self, seq: Option<Phrase>) {
-        self.arpeggiator = seq.map(|s|
-            arpeggiator::Arpeggiator::new(PitchClass::C, s));
+    fn set_arpeggiator(&mut self, specs: Option<arpeggiator::Specs>) {
+        let old_state = self.arpeggiator.as_ref().map(|a| a.state());
+        self.arpeggiator = specs.map(|s| {
+            let mut arp = arpeggiator::Arpeggiator::from_specs(s);
+            if let Some(state) = old_state {
+                arp.set_state(state);
+            }
+            arp
+        });
+    }
+
+    fn set_arpeggiator_phrase(&mut self, phrase: Option<Phrase>) {
+        let old_state = self.arpeggiator.as_ref().map(|a| a.state());
+        self.arpeggiator = phrase.map(|p| {
+            let mut arp = arpeggiator::Arpeggiator::from_phrase(PitchClass::C, p);
+            if let Some(state) = old_state {
+                arp.set_state(state);
+            }
+            arp
+        });
     }
 
     fn tap_tempo(&mut self) {
@@ -172,7 +191,7 @@ impl State {
             transposer: self.transposer.clone(),
             pulse: self.pulse.view(),
             arpeggiator: self.arpeggiator.as_ref().map(|a| a.view()),
-            arp_index: self.arp_index % 1.,
+            arp_index: self.arp_index,
             tap_tempo: self.tap_tempo.clone(),
             loops: self.loops.view(),
         }

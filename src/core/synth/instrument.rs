@@ -56,7 +56,6 @@ pub struct Instrument {
     modulation_x: ModTarget,
     modulation_y: ModTarget,
     modulation_lfo: ModSpecs,
-    specs: Specs,
     voices: Voices,
     clock: Clock,
 }
@@ -65,7 +64,6 @@ impl Instrument {
 
     pub fn new(specs: Specs, sample_rate: Hz) -> Instrument {
         Instrument {
-            specs: specs.clone(),
             oscillator: <dyn Oscillator>::new(&specs.oscillator),
             filter: <dyn Filter>::new(specs.filter, sample_rate),
             lfo: specs.lfo.map(LFO::new),
@@ -135,10 +133,6 @@ impl Instrument {
                 param.set_signal(normalized * specs.amount);
             }
         }
-    }
-
-    pub fn get_specs(&self) -> Specs {
-        self.specs.clone()
     }
 
     pub fn get_state(&self) -> State{

@@ -76,9 +76,6 @@ impl State {
         self.instrument.set_state(state);
     }
 
-    pub fn get_specs(&self) -> instrument::Specs {
-        self.instrument.get_specs()
-    }
 }
 
 pub type Discriminator = u8;

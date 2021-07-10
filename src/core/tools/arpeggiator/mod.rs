@@ -2,7 +2,10 @@ use std::mem;
 
 use crate::core::control::{synth::{Command, Id, id}};
 use crate::core::sheet_music::sheet_music::MeasurePosition;
-use crate::core::music_theory::{diatonic_scale::*, pitch::Pitch, rhythm::{Note, Phrase}};
+use crate::core::music_theory::{diatonic_scale::*, pitch::Pitch, rhythm::Note};
+
+pub mod builder;
+pub mod phrase;
 
 pub struct Arpeggiator {
     phrase: Phrase,
@@ -13,16 +16,33 @@ pub struct Arpeggiator {
 }
 
 #[derive(Clone, PartialEq, Default, Debug)]
+pub struct Specs {
+    pub key: Key,
+    pub phrase: builder::Specs,
+}
+
+#[derive(Clone, PartialEq, Default, Debug)]
 pub struct View {
-    pub phrase: Phrase,
+    pub phrase: phrase::View,
     pub key: Key,
     pub holding_pitch: Option<Pitch>,
     pub playing_pitch: Option<Pitch>,
 }
 
+#[derive(Clone, PartialEq, Default, Debug)]
+pub struct State {
+    holding_pitch: Option<Pitch>,
+    playing_pitch: Option<Pitch>,
+    pending_command: Option<Command>,
+}
+
 impl Arpeggiator {
 
-    pub fn new(key: Key, phrase: Phrase) -> Arpeggiator {
+    pub fn from_specs(specs: Specs) -> Arpeggiator {
+        Arpeggiator::from_phrase(specs.key, Phrase::from_specs(specs.phrase))
+    }
+
+    pub fn from_phrase(key: Key, phrase: Phrase) -> Arpeggiator {
         Arpeggiator {
             phrase, key,
             holding_pitch: None,
@@ -64,7 +84,7 @@ impl Arpeggiator {
     }
 
     fn next_notes(&mut self, from_measure: MeasurePosition, to_measure: MeasurePosition) -> Vec<Note> {
-        self.phrase.range(from_measure % 1., to_measure % 1.)
+        self.phrase.range(from_measure, to_measure)
     }
 
     fn update_and_command(&mut self, note: &Note) -> Vec<Command> {
@@ -91,11 +111,25 @@ impl Arpeggiator {
 
     pub fn view(&self) -> View {
         View {
-            phrase: self.phrase.clone(),
+            phrase: self.phrase.view(),
             key: self.key,
             holding_pitch: self.holding_pitch,
             playing_pitch: self.playing_pitch,
         }
+    }
+
+    pub fn state(&self) -> State {
+        State {
+            holding_pitch: self.holding_pitch,
+            playing_pitch: self.playing_pitch,
+            pending_command: self.pending_command.clone(),
+        }
+    }
+
+    pub fn set_state(&mut self, state: State) {
+        self.holding_pitch = state.holding_pitch;
+        self.playing_pitch = state.playing_pitch;
+        self.pending_command = state.pending_command;
     }
 
 }
@@ -109,6 +143,8 @@ fn note_off(pitch: Pitch) -> Command {
 }
 
 use std::fmt::{Debug, Formatter};
+use crate::core::tools::arpeggiator::phrase::Phrase;
+
 impl Debug for Arpeggiator {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         write!(f, "key: {:?}, holding: {:?}, playing: {:?}, pending: {:?}",

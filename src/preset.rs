@@ -1,6 +1,6 @@
 use crate::core::{
     music_theory::{
-        rhythm::{Note, Phrase, NoteDuration::*},
+        rhythm::{Note, NoteDuration::*},
         diatonic_scale::{ScaleDegree::*, OctaveShift::*}
     },
     synth::{builder::*, lfo,
@@ -9,6 +9,7 @@ use crate::core::{
             filter::ModTarget::*
     },
     control::tools::Patch,
+    tools::arpeggiator::phrase::Phrase,
 };
 
 
@@ -37,10 +38,10 @@ pub fn patches() -> Vec<Patch> {
         Patch::Instrument(saw_pad()),
         Patch::Noop,
         Patch::Noop,
-        Patch::Arpeggiator(Some(cyborg_chase())),
-        Patch::Arpeggiator(Some(topgear())),
-        Patch::Arpeggiator(Some(octaves())),
-        Patch::Arpeggiator(None),
+        Patch::ArpeggiatorPhrase(Some(cyborg_chase())),
+        Patch::ArpeggiatorPhrase(Some(topgear())),
+        Patch::ArpeggiatorPhrase(Some(octaves())),
+        Patch::ArpeggiatorPhrase(None),
     )
 }
 

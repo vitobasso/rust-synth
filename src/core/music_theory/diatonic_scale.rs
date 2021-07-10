@@ -10,7 +10,18 @@ pub enum ScaleDegree {
 pub enum OctaveShift {
     Down3=-3, Down2=-2, Down1=-1, Same=0, Up1=1, Up2=2, Up3=3
 }
+impl OctaveShift {
+    pub fn from_i8(i: i8) -> Option<OctaveShift> {
+        FromPrimitive::from_i8(i)
+    }
+}
+
 pub type RelativePitch = (OctaveShift, ScaleDegree);
+
+pub fn degree_from(pitch: RelativePitch) -> i32 {
+    let (octave, degree) = pitch;
+    octave as i32 * 7 + degree as i32
+}
 
 impl Add<ScaleDegree> for ScaleDegree {
     type Output = Self;
@@ -26,6 +37,12 @@ impl Sub<ScaleDegree> for ScaleDegree {
         let i = ((((self as i8 - rhs as i8) % 7) + 7) % 7) as u8;
         FromPrimitive::from_u8(i)
             .unwrap_or_else(|| panic!("Failed to get ScaleDegree for i={}", i))
+    }
+}
+
+impl Default for OctaveShift {
+    fn default() -> Self {
+        OctaveShift::Same
     }
 }
 
@@ -115,7 +132,6 @@ impl Key {
     }
 
 }
-
 
 #[cfg(test)]
 mod tests {

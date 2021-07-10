@@ -37,7 +37,7 @@ impl State {
 
     pub fn transpose(&self, pitch: Pitch) -> Pitch {
         let transposed = self.input_key.transpose_to(self.transposed_key, pitch)
-            .unwrap_or_else(|| panic!("Failed to transpose: {:?}", pitch));
+            .unwrap_or_else(|| panic!("Failed to transpose {:?} from {} to {}", pitch, self.input_key, self.transposed_key));
         transposed + self.pitch_shift
     }
 
