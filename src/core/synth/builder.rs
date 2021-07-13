@@ -1,4 +1,4 @@
-use super::{Seconds, Proportion, instrument::{self, ModTarget, ModSpecs}, oscillator, filter, adsr::Adsr, lfo};
+use super::{Seconds, Proportion, instrument::{self, ModTarget}, oscillator, filter, adsr::Adsr, lfo};
 
 pub struct Builder {
     max_voices: u8,
@@ -9,7 +9,6 @@ pub struct Builder {
     volume: Proportion,
     modulation_x: ModTarget,
     modulation_y: ModTarget,
-    pub modulation_lfo: ModSpecs,
 }
 impl Builder {
 
@@ -23,7 +22,6 @@ impl Builder {
             volume: 0.2,
             modulation_x: ModTarget::Filter(filter::ModTarget::Cutoff),
             modulation_y: ModTarget::Filter(filter::ModTarget::QFactor),
-            modulation_lfo: ModSpecs{ target: ModTarget::Noop, amount: 1.},
         }
     }
 
@@ -37,7 +35,6 @@ impl Builder {
             volume: self.volume,
             modulation_x: self.modulation_x,
             modulation_y: self.modulation_y,
-            modulation_lfo: self.modulation_lfo,
         }
     }
 
@@ -61,9 +58,8 @@ impl Builder {
         self.adsr.release = value;
         self
     }
-    pub fn lfo(mut self, value: lfo::Specs, target: ModTarget, amount: Proportion) -> Self {
+    pub fn lfo(mut self, value: lfo::Specs) -> Self {
         self.lfo = Some(value);
-        self.modulation_lfo = ModSpecs{ target, amount };
         self
     }
     pub fn adsr(mut self, a: Seconds, d: Seconds, s: Proportion, r: Seconds) -> Self {

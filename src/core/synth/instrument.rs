@@ -16,7 +16,6 @@ pub struct Specs {
     pub volume: Proportion,
     pub modulation_x: ModTarget,
     pub modulation_y: ModTarget,
-    pub modulation_lfo: ModSpecs,
 }
 
 #[derive(Copy, Clone, PartialEq, Debug)]
@@ -55,7 +54,6 @@ pub struct Instrument {
     volume: ModParam,
     modulation_x: ModTarget,
     modulation_y: ModTarget,
-    modulation_lfo: ModSpecs,
     voices: Voices,
     clock: Clock,
 }
@@ -71,7 +69,6 @@ impl Instrument {
             volume: ModParam::with_base(specs.volume, 0., 1.),
             modulation_x: specs.modulation_x,
             modulation_y: specs.modulation_y,
-            modulation_lfo: specs.modulation_lfo,
             clock: Clock::new(sample_rate),
             voices: Voices::new(specs.max_voices, sample_rate, specs.adsr.release),
         }
@@ -119,18 +116,12 @@ impl Instrument {
     }
 
     fn run_next_lfo_modulation(&mut self) {
-        let maybe_lfo_sample = {
-            let clock_ref = &mut self.clock;
-            self.lfo.as_ref().map(|lfo| {
-                let clock = clock_ref.tick();
-                lfo.next(clock)
-            })
-        };
-        let specs = self.modulation_lfo;
-        if let Some(lfo_sample) = maybe_lfo_sample {
-            let normalized = (lfo_sample + 1.) / 2.;
-            if let Some(param) = self.mod_param(specs.target) {
-                param.set_signal(normalized * specs.amount);
+        if let Some(lfo) = &self.lfo {
+            let clock = self.clock.tick();
+            let sample = lfo.next(clock);
+            let target = lfo.target.clone();
+            if let Some(param) = self.mod_param(target) {
+                param.set_signal(sample);
             }
         }
     }
@@ -218,7 +209,7 @@ struct Voice {
     pitch: Pitch,
     velocity: Velocity,
     released_at: Option<Seconds>,
-    clock: Clock,
+    clock: Clock, //TODO share clock from Instrument?
 }
 impl Voice {
 
@@ -288,7 +279,6 @@ impl Default for Specs {
             volume: 1.,
             modulation_x: ModTarget::default(),
             modulation_y: ModTarget::default(),
-            modulation_lfo: ModSpecs::default(),
         }
     }
 }

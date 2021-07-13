@@ -59,7 +59,7 @@ pub fn saw_pad() -> instrument::Specs {
 
 pub fn supersaw() -> instrument::Specs {
     Builder::osc(Mix { n_voices: 8, detune_amount: 3., specs: Saw, random_seed: 0 })
-            .lfo(lfo::Specs::simple(0.1), Filter(Cutoff), 0.8).build()
+            .lfo(lfo::Specs::simple(0.1, 0.8, Filter(Cutoff))).build()
 }
 
 fn octaves() -> Phrase {

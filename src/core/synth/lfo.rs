@@ -1,16 +1,19 @@
 use super::oscillator::{self, Oscillator, Basic::Sine};
-use crate::core::synth::Seconds;
+use crate::core::synth::{Seconds, Proportion};
 use crate::core::music_theory::Hz;
+use crate::core::synth::instrument::ModTarget;
 
 #[derive(Clone, PartialEq, Debug)]
 pub struct Specs {
     pub oscillator: oscillator::Specs,
     pub freq: Hz,
     pub phase: Seconds,
+    pub amount: Proportion,
+    pub target: ModTarget,
 }
 impl Specs {
-    pub fn simple(freq: Hz) -> Specs {
-        Specs { freq, oscillator: oscillator::Specs::Basic(Sine), phase: 0. }
+    pub fn simple(freq: Hz, amount: Proportion, target: ModTarget) -> Specs {
+        Specs { freq, oscillator: oscillator::Specs::Basic(Sine), phase: 0., amount, target }
     }
 }
 
@@ -18,6 +21,8 @@ pub struct LFO {
     oscillator: Box<dyn Oscillator>,
     freq: Hz,
     phase: Seconds,
+    amount: Proportion,
+    pub target: ModTarget,
 }
 
 impl LFO {
@@ -26,11 +31,15 @@ impl LFO {
             oscillator: <dyn Oscillator>::new(&specs.oscillator),
             freq: specs.freq,
             phase: specs.phase,
+            amount: specs.amount,
+            target: specs.target,
         }
     }
 
     pub fn next(&self, clock: Seconds) -> f64 {
-        self.oscillator.next_sample(clock, self.freq, self.phase)
+        let raw = self.oscillator.next_sample(clock, self.freq, self.phase);
+        let normalized = (raw + 1.) / 2.;
+        normalized * self.amount
     }
 
     pub fn view(&self) -> View {
@@ -38,6 +47,8 @@ impl LFO {
             oscillator: self.oscillator.view(),
             freq: self.freq,
             phase: self.phase,
+            amount: self.amount,
+            target: self.target,
         }
     }
 }
@@ -47,4 +58,6 @@ pub struct View {
     oscillator: oscillator::View,
     freq: Hz,
     phase: Seconds,
+    amount: Proportion,
+    target: ModTarget,
 }
