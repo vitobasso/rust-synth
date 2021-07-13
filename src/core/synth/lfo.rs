@@ -37,9 +37,9 @@ impl LFO {
     }
 
     pub fn next(&self, clock: Seconds) -> f64 {
-        let raw = self.oscillator.next_sample(clock, self.freq, self.phase);
-        let normalized = (raw + 1.) / 2.;
-        normalized * self.amount
+        let around_zero = self.oscillator.next_sample(clock, self.freq, self.phase);
+        let positive = (around_zero + 1.) / 2.;
+        positive * self.amount
     }
 
     pub fn view(&self) -> View {
@@ -55,9 +55,9 @@ impl LFO {
 
 #[derive(Clone, PartialEq, Default, Debug)]
 pub struct View {
-    oscillator: oscillator::View,
-    freq: Hz,
-    phase: Seconds,
-    amount: Proportion,
-    target: ModTarget,
+    pub oscillator: oscillator::View,
+    pub freq: Hz,
+    pub phase: Seconds,
+    pub amount: Proportion,
+    pub target: ModTarget,
 }
