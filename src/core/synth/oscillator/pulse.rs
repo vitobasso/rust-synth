@@ -5,19 +5,8 @@ pub struct Pulse {
     duty_cycle: ModParam,
 }
 impl Pulse {
-
     pub fn new(duty_cycle: Proportion) -> Self {
-        Self::restored(duty_cycle, 0.)
-    }
-
-    pub fn restored(base: Proportion, modulation: f64) -> Self {
-        let param = ModParam {
-            base,
-            mod_signal: modulation,
-            min: 0.,
-            range: 1.,
-        };
-        Self { duty_cycle: param }
+        Self { duty_cycle: ModParam::with_base(duty_cycle, 0., 1.) }
     }
 }
 impl Oscillator for Pulse {
@@ -30,8 +19,11 @@ impl Oscillator for Pulse {
         View::Pulse(self.duty_cycle.normalized())
     }
 
-    fn state(&self) -> State {
-        State::Pulse(self.duty_cycle.mod_signal)
+    fn set_specs(&mut self, specs: Specs) {
+        match specs {
+            Specs::Pulse(value) => self.duty_cycle.set_base(value),
+            _ => {},
+        }
     }
 }
 impl Modulated<ModTarget> for Pulse {

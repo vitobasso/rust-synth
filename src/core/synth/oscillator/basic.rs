@@ -12,9 +12,7 @@ impl Oscillator for Sine {
         View::Sine
     }
 
-    fn state(&self) -> State {
-        State::Empty
-    }
+    fn set_specs(&mut self, _: Specs) {}
 }
 impl Modulated<ModTarget> for Sine {
     fn mod_param(&mut self, _target: ModTarget) -> Option<&mut ModParam> { None }
@@ -30,9 +28,7 @@ impl Oscillator for Square {
         View::Square
     }
 
-    fn state(&self) -> State {
-        State::Empty
-    }
+    fn set_specs(&mut self, _: Specs) {}
 }
 impl Modulated<ModTarget> for Square {
     fn mod_param(&mut self, _target: ModTarget) -> Option<&mut ModParam> { None }
@@ -48,9 +44,7 @@ impl Oscillator for Saw {
         View::Saw
     }
 
-    fn state(&self) -> State {
-        State::Empty
-    }
+    fn set_specs(&mut self, _: Specs) {}
 }
 impl Modulated<ModTarget> for Saw {
     fn mod_param(&mut self, _target: ModTarget) -> Option<&mut ModParam> { None }

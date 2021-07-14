@@ -38,8 +38,12 @@ impl Oscillator for Mix {
         }
     }
 
-    fn state(&self) -> State {
-        State::Empty
+    fn set_specs(&mut self, specs: Specs) {
+        match specs {
+            Specs::Mix { n_voices, detune_amount, specs, random_seed } =>
+                self.voices = create_voices(n_voices, detune_amount, specs, random_seed),
+            _ => {},
+        }
     }
 }
 

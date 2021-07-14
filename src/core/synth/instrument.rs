@@ -40,15 +40,6 @@ pub struct View {
     pub volume: Proportion,
 }
 
-#[derive(Clone, Default)]
-pub struct State {
-    clock: Clock,
-    voices: Voices,
-    volume: f64,
-    oscillator: oscillator::State,
-    filter: filter::State,
-}
-
 pub struct Instrument {
     oscillator: Box<dyn Oscillator>,
     filter: Box<dyn Filter>,
@@ -59,17 +50,15 @@ pub struct Instrument {
     modulation_y: ModTarget,
     voices: Voices,
     clock: Clock,
+    specs: Specs,
 }
 
 impl Instrument {
 
     pub fn new(specs: Specs, sample_rate: Hz) -> Self {
-        Self::restored(specs, State::default(), sample_rate)
-    }
-
-    pub fn restored(specs: Specs, state: State, sample_rate: Hz) -> Self {
         Self {
-            oscillator: <dyn Oscillator>::restored(&specs.oscillator, state.oscillator),
+            specs: specs.clone(),
+            oscillator: <dyn Oscillator>::new(&specs.oscillator),
             filter: <dyn Filter>::new(specs.filter, sample_rate),
             lfo: specs.lfo.map(LFO::new),
             adsr: specs.adsr,
@@ -111,17 +100,6 @@ impl Instrument {
         adsr.apply(voice.clock(), voice.released_clock().unwrap_or(0.), sample)
     }
 
-    pub fn set_xy_params(&mut self, x: f64, y: f64) {
-        let x_target = self.modulation_x;
-        let y_target = self.modulation_y;
-        if let Some(param) = self.mod_param(x_target){
-            param.set_base(x);
-        }
-        if let Some(param) = self.mod_param(y_target){
-            param.set_base(y);
-        }
-    }
-
     fn run_next_lfo_modulation(&mut self) {
         if let Some(lfo) = &self.lfo {
             let clock = self.clock.tick();
@@ -133,16 +111,6 @@ impl Instrument {
         }
     }
 
-    pub fn get_state(&self) -> State{
-        State {
-            clock: self.clock.clone(),
-            voices: self.voices.clone(),
-            volume: self.volume.mod_signal,
-            oscillator: self.oscillator.state(),
-            filter: self.filter.state(),
-        }
-    }
-
     pub fn view(&self) -> View {
         View {
             filter: self.filter.view(),
@@ -150,6 +118,41 @@ impl Instrument {
             lfo: self.lfo.as_ref().map(|l| l.view()),
             adsr: self.adsr.clone(),
             volume: self.volume.normalized(),
+        }
+    }
+
+    pub fn set_xy_params(&mut self, x: f64, y: f64) {
+        let x_target = self.modulation_x;
+        let y_target = self.modulation_y;
+        if let Some(param) = self.mod_param(x_target){
+            param.set_base(x);
+        }
+        if let Some(param) = self.mod_param(y_target){
+            param.set_base(y);
+        }
+    }
+
+    pub fn set_specs(&mut self, specs: Specs) {
+        let old = self.specs.clone();
+        self.specs = specs.clone();
+        self.volume.base = specs.volume;
+        self.lfo = specs.lfo.map(LFO::new);
+        self.adsr = specs.adsr;
+        self.voices.set_specs(specs.max_voices, specs.adsr.release);
+
+        if std::mem::discriminant(&specs.oscillator) == std::mem::discriminant(&old.oscillator){
+            match specs.oscillator {
+                oscillator::Specs::Basic(_) => self.oscillator = <dyn Oscillator>::new(&specs.oscillator),
+                _ => self.oscillator.set_specs(specs.oscillator)
+            }
+        } else {
+            self.oscillator = <dyn Oscillator>::new(&specs.oscillator);
+        }
+
+        if std::mem::discriminant(&specs.filter) == std::mem::discriminant(&old.filter){
+            self.filter.set_specs(specs.filter);
+        } else {
+            self.filter = <dyn Filter>::new(specs.filter, self.clock.sample_rate);
         }
     }
 }
@@ -173,7 +176,7 @@ struct Voices {
     release: Seconds,
 }
 impl Voices {
-    fn new(max_voices: u8, sample_rate: Hz, release: Seconds,) -> Voices {
+    fn new(max_voices: u8, sample_rate: Hz, release: Seconds) -> Voices {
         Voices{ max_voices, voices: vec![], sample_rate, release }
     }
 
@@ -205,6 +208,11 @@ impl Voices {
 
     fn has_free_voice(&self) -> bool {
         self.voices.len() < self.max_voices as usize
+    }
+
+    pub fn set_specs(&mut self, max_voices: u8, release: Seconds) {
+        self.max_voices = max_voices;
+        self.release = release;
     }
 
 }

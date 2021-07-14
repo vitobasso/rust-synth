@@ -11,8 +11,7 @@ const MIN_QFACTOR: f64 = 1.;
 pub trait Filter: Modulated<ModTarget> {
     fn filter(&mut self, input: Sample) -> Sample;
     fn view(&self) -> View;
-    fn state(&self) -> State;
-    fn set_state(&mut self, state: State);
+    fn set_specs(&mut self, specs: Specs);
 }
 
 #[derive(Clone, Copy, PartialEq, Debug)]
@@ -60,9 +59,4 @@ impl Default for View {
             filter_type: TypeSpec::LPF
         }
     }
-}
-
-#[derive(Copy, Clone, PartialEq, Debug)]
-pub enum State {
-    Biquad(biquad::State)
 }
