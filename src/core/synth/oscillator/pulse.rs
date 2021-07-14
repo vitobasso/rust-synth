@@ -18,6 +18,17 @@ impl Oscillator for Pulse {
     fn view(&self) -> View {
         View::Pulse(self.duty_cycle.normalized())
     }
+
+    fn state(&self) -> State {
+        State::Pulse(self.duty_cycle.mod_signal)
+    }
+
+    fn set_state(&mut self, state: State) {
+        match state {
+            State::Pulse(value) => self.duty_cycle.mod_signal = value,
+            _ => {},
+        }
+    }
 }
 impl Modulated<ModTarget> for Pulse {
     fn mod_param(&mut self, target: ModTarget) -> Option<&mut ModParam> {

@@ -30,6 +30,8 @@ pub enum ModTarget { PulseDuty }
 pub trait Oscillator: Modulated<ModTarget> {
     fn next_sample(&self, clock: Seconds, freq: Hz, phase: Seconds) -> Sample;
     fn view(&self) -> View;
+    fn state(&self) -> State;
+    fn set_state(&mut self, state: State);
 }
 
 impl dyn Oscillator {
@@ -69,4 +71,9 @@ impl Default for View {
     fn default() -> Self {
         View::Sine
     }
+}
+
+#[derive(Clone, PartialEq, Debug)]
+pub enum State {
+    Empty, Pulse(f64)
 }

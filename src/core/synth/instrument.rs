@@ -42,8 +42,11 @@ pub struct View {
 
 #[derive(Clone)]
 pub struct State {
-    voices: Voices,
     clock: Clock,
+    voices: Voices,
+    volume: f64,
+    oscillator: oscillator::State,
+    filter: filter::State,
 }
 
 pub struct Instrument {
@@ -128,14 +131,18 @@ impl Instrument {
 
     pub fn get_state(&self) -> State{
         State {
-            voices: self.voices.clone(),
             clock: self.clock.clone(),
+            voices: self.voices.clone(),
+            volume: self.volume.mod_signal,
+            oscillator: self.oscillator.state(),
+            filter: self.filter.state(),
         }
     }
 
     pub fn set_state(&mut self, state: State) {
         self.clock = state.clock;
         self.voices = state.voices;
+
     }
 
     pub fn view(&self) -> View {

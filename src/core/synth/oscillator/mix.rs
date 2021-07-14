@@ -37,6 +37,12 @@ impl Oscillator for Mix {
             voices: self.voices.iter().map(|v| v.view()).collect()
         }
     }
+
+    fn state(&self) -> State {
+        State::Empty
+    }
+
+    fn set_state(&mut self, _: State) {}
 }
 
 impl Modulated<ModTarget> for Mix {

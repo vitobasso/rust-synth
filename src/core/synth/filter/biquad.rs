@@ -61,6 +61,18 @@ impl Filter for BiquadFilter {
             filter_type: self.filter_type.spec(),
         }
     }
+
+    fn state(&self) -> State {
+        State {
+            cutoff: self.cutoff.mod_signal,
+            resonance: self.qfactor.mod_signal,
+        }
+    }
+
+    fn set_state(&mut self, state: State) {
+        self.cutoff.mod_signal = state.cutoff;
+        self.qfactor.mod_signal = state.resonance
+    }
 }
 
 impl Modulated<ModTarget> for BiquadFilter {

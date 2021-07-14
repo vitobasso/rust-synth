@@ -6,7 +6,7 @@ pub trait Modulated<T> {
 #[derive(Debug)]
 pub struct ModParam {
     pub base: f64,
-    mod_signal: f64,
+    pub mod_signal: f64,
     min: f64,
     range: f64,
 }
