@@ -40,7 +40,7 @@ pub struct View {
     pub volume: Proportion,
 }
 
-#[derive(Clone)]
+#[derive(Clone, Default)]
 pub struct State {
     clock: Clock,
     voices: Voices,
@@ -63,9 +63,13 @@ pub struct Instrument {
 
 impl Instrument {
 
-    pub fn new(specs: Specs, sample_rate: Hz) -> Instrument {
-        Instrument {
-            oscillator: <dyn Oscillator>::new(&specs.oscillator),
+    pub fn new(specs: Specs, sample_rate: Hz) -> Self {
+        Self::restored(specs, State::default(), sample_rate)
+    }
+
+    pub fn restored(specs: Specs, state: State, sample_rate: Hz) -> Self {
+        Self {
+            oscillator: <dyn Oscillator>::restored(&specs.oscillator, state.oscillator),
             filter: <dyn Filter>::new(specs.filter, sample_rate),
             lfo: specs.lfo.map(LFO::new),
             adsr: specs.adsr,
@@ -137,12 +141,6 @@ impl Instrument {
             oscillator: self.oscillator.state(),
             filter: self.filter.state(),
         }
-    }
-
-    pub fn set_state(&mut self, state: State) {
-        self.clock = state.clock;
-        self.voices = state.voices;
-
     }
 
     pub fn view(&self) -> View {

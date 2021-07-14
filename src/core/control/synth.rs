@@ -72,8 +72,7 @@ impl State {
 
     fn set_specs(&mut self, specs: instrument::Specs) {
         let state = self.instrument.get_state();
-        self.instrument = Instrument::new(specs, self.sample_rate);
-        self.instrument.set_state(state);
+        self.instrument = Instrument::restored(specs, state, self.sample_rate);
     }
 
 }

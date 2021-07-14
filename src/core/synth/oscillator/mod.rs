@@ -31,7 +31,6 @@ pub trait Oscillator: Modulated<ModTarget> {
     fn next_sample(&self, clock: Seconds, freq: Hz, phase: Seconds) -> Sample;
     fn view(&self) -> View;
     fn state(&self) -> State;
-    fn set_state(&mut self, state: State);
 }
 
 impl dyn Oscillator {
@@ -41,6 +40,20 @@ impl dyn Oscillator {
             Specs::Basic(Basic::Square) => Box::new(Square),
             Specs::Basic(Basic::Saw) => Box::new(Saw),
             Specs::Pulse(duty_cycle) => Box::new(Pulse::new(*duty_cycle)),
+            Specs::Mix { n_voices, detune_amount, specs, random_seed } =>
+                Box::new(mix::Mix::detuned(*n_voices, *detune_amount, *specs, *random_seed)),
+        }
+    }
+
+    pub fn restored(spec: &Specs, state: State) -> Box<dyn Oscillator> {
+        match spec {
+            Specs::Basic(Basic::Sine) => Box::new(Sine),
+            Specs::Basic(Basic::Square) => Box::new(Square),
+            Specs::Basic(Basic::Saw) => Box::new(Saw),
+            Specs::Pulse(duty_cycle) => {
+                let modulation = if let State::Pulse(m) = state { m } else { 0. };
+                Box::new(Pulse::restored(*duty_cycle, modulation))
+            },
             Specs::Mix { n_voices, detune_amount, specs, random_seed } =>
                 Box::new(mix::Mix::detuned(*n_voices, *detune_amount, *specs, *random_seed)),
         }

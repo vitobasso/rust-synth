@@ -41,8 +41,6 @@ impl Oscillator for Mix {
     fn state(&self) -> State {
         State::Empty
     }
-
-    fn set_state(&mut self, _: State) {}
 }
 
 impl Modulated<ModTarget> for Mix {

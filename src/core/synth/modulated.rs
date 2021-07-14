@@ -7,18 +7,18 @@ pub trait Modulated<T> {
 pub struct ModParam {
     pub base: f64,
     pub mod_signal: f64,
-    min: f64,
-    range: f64,
+    pub min: f64,
+    pub range: f64,
 }
 impl ModParam {
-    pub fn with_bounds(min: f64, max: f64) -> ModParam {
+    pub fn with_bounds(min: f64, max: f64) -> Self {
         let range = max - min;
-        ModParam { base: 1., mod_signal: 0., min, range }
+        Self { base: 1., mod_signal: 0., min, range }
     }
-    pub fn with_base(base: f64, min: f64, max: f64) -> ModParam {
+    pub fn with_base(base: f64, min: f64, max: f64) -> Self {
         let range = max - min;
         let bounded_base = base.max(0.).min(1.);
-        ModParam { base: bounded_base, mod_signal: 0., min, range }
+        Self { base: bounded_base, mod_signal: 0., min, range }
     }
     pub fn set_base(&mut self, value: f64) {
         self.base = value.max(0.).min(1.);
