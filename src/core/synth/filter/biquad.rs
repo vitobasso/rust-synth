@@ -2,6 +2,7 @@
 use super::*;
 use crate::core::{synth::Sample, music_theory::Hz};
 use std::f64::consts::PI;
+use crate::core::synth::filter;
 
 /// http://www.musicdsp.org/files/Audio-EQ-Cookbook.txt
 pub(super) struct BiquadFilter{
@@ -62,16 +63,25 @@ impl Filter for BiquadFilter {
         }
     }
 
-    fn state(&self) -> State {
-        State {
+    fn state(&self) -> filter::State {
+        let state = State {
             cutoff: self.cutoff.mod_signal,
             resonance: self.qfactor.mod_signal,
-        }
+            input_history: self.input_history,
+            output_history: self.output_history,
+        };
+        filter::State::Biquad(state)
     }
 
-    fn set_state(&mut self, state: State) {
-        self.cutoff.mod_signal = state.cutoff;
-        self.qfactor.mod_signal = state.resonance
+    fn set_state(&mut self, state: filter::State) {
+        match state {
+            filter::State::Biquad(s) => {
+                self.cutoff.mod_signal = s.cutoff;
+                self.qfactor.mod_signal = s.resonance;
+                self.input_history = s.input_history;
+                self.output_history = s.output_history;
+            }
+        }
     }
 }
 
@@ -168,4 +178,12 @@ impl FilterType for Notch {
     fn spec(&self) -> TypeSpec {
         TypeSpec::Notch
     }
+}
+
+#[derive(Copy, Clone, PartialEq, Debug)]
+pub struct State {
+    pub cutoff: f64,
+    pub resonance: f64,
+    pub input_history: [Sample;2],
+    pub output_history: [Sample;2],
 }

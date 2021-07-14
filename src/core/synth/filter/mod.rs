@@ -63,7 +63,6 @@ impl Default for View {
 }
 
 #[derive(Copy, Clone, PartialEq, Debug)]
-pub struct State {
-    pub cutoff: f64,
-    pub resonance: f64,
+pub enum State {
+    Biquad(biquad::State)
 }
