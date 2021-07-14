@@ -3,7 +3,7 @@ use crate::core::synth::{Seconds, Proportion};
 use crate::core::music_theory::Hz;
 use crate::core::synth::instrument::ModTarget;
 
-#[derive(Clone, PartialEq, Debug)]
+#[derive(Clone, PartialEq, Default, Debug)]
 pub struct Specs {
     pub oscillator: oscillator::Specs,
     pub freq: Hz,

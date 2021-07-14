@@ -23,7 +23,6 @@ impl Modulated<ModTarget> for Pulse {
     fn mod_param(&mut self, target: ModTarget) -> Option<&mut ModParam> {
         match target {
             ModTarget::PulseDuty => Some(&mut self.duty_cycle),
-            _ => None
         }
     }
 }
