@@ -16,7 +16,6 @@ pub enum Command {
 }
 
 pub struct State {
-    sample_rate: Hz,
     instrument: Instrument,
     holding_notes: HashMap<Id, Pitch>,
 }
@@ -32,7 +31,6 @@ impl State {
     pub fn new(sample_rate: Hz) -> State {
         let specs = instrument::Specs::default();
         State {
-            sample_rate,
             instrument: Instrument::new(specs, sample_rate),
             holding_notes: HashMap::new(),
         }
