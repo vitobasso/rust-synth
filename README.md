@@ -4,7 +4,10 @@ It's definitely not stable. There's quite a variety of rough features I've been 
 It works by receiving commands, e.g. `NoteOn`, `NoteOff`, `SetPatch`, 
 and producing a sound signal that can be sent to your computer's audio output device.
 
-An example of usage and runnable demo can be found in [rust-synth-gui](https://github.com/vitobasso/rust-synth-gui).  
+An example of usage and runnable demo can be found in [rust-synth-gui](https://github.com/vitobasso/rust-synth-gui). 
+
+https://user-images.githubusercontent.com/1895014/157036647-2696a3bb-1ed7-4cfc-8a3c-401b13763e3d.mp4
+
 
 ## Features
 This is the progress so far:
